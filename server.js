@@ -1848,17 +1848,16 @@ app.post('/admin/settings/backup/send-otp', requireAuth, requireAdmin, validateC
     logAudit('backup_otp_requested', adminEmail, { delivered: !!sent }).catch(() => { });
 
     if (!sent) {
-      // Never leak OTP to client — even in logs don't print code in production
+      // Never leak OTP to client — dev logs server-side only, prod returns error
       console.warn(` Backup OTP email failed for ${adminEmail} — SMTP not delivered (check SMTP_HOST/PORT/USER/PASS / Gmail App Password).`);
-      // In non-production allow Dev OTP for local testing, but never in production
       if (process.env.NODE_ENV !== 'production') {
-        console.log(` [DEV] Backup OTP for ${adminEmail}: ${otpCode}`);
+        console.log(` [DEV] Backup OTP for ${adminEmail}: ${otpCode} (server log only, never in API response)`);
         return res.json({
           success: true,
-          message: `A 6-digit code has been sent to ${adminEmail}. (Dev OTP: ${otpCode})`
+          message: `Email not configured — Dev OTP logged to server console for ${adminEmail}. Check terminal logs to verify.`
         });
       }
-      return res.json({ success: false, error: `Failed to send verification email to ${adminEmail}. Please check SMTP configuration and try again. Also check Spam folder.` });
+      return res.json({ success: false, error: `Failed to send verification email to ${adminEmail}. Please check SMTP configuration, verify Gmail App Password, and check Spam folder. Code was not sent.` });
     }
 
     console.log(` Backup OTP sent to ${adminEmail}`);
