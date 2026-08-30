@@ -1,410 +1,695 @@
 <%- include('partials/header', { pageTitle: 'Customer Feedback Form - PSAU QMS' }) %>
 
-<div class="form-page">
-    <div class="form-container">
-        <form id="feedbackForm" action="/submit-feedback" method="POST" class="form-card">
-            
-            <!-- Header -->
-            <div class="form-header">
-                <div class="control-no">Quality Management System Unit &nbsp;&nbsp;&nbsp; Control No.: QMS-CFF-2026 &nbsp;-&nbsp; <span id="headerOfficeCode">OQA</span></div>
-                <h1>CUSTOMER FEEDBACK FORM</h1>
-                <div class="subtitle">Pampanga State Agricultural University</div>
-            </div>
+    <div class="form-page">
+        <div class="form-container">
+            <form id="feedbackForm" action="/submit-feedback" method="POST" class="form-card" novalidate>
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
-            <!-- Introduction -->
-            <div class="form-intro">
-                <strong style="color:var(--psau-gold);">TULUNGAN MO KAMI MAS MAPABUTI ANG AMING MGA PROSESO AT SERBISYO!</strong><br><br>
-                Salamat sa pagbisita sa Pampanga State Agricultural University (PSAU) isang malaking kasiyahan para amin na lagging maibigay sa inyo ang 
-                pinakamahusay na kalidad ng serbisyo. Ang Client Satisfaction Measurement (CSM) ay naglalayong masubaybayan ang karanasan ng taumbabayan
-                hingil sainyong naging karanasan sa kakatapos lamang na transaksyon, upang mas mapabuti at lalong mapahusay ang aming sebisyo publiko.
-                Ang personal ng impormasyon sa iyong ibabahagi ay mananatiling kumpidensyal. Maari ring piliin na hindi sagutan ang sarbey na ito.
-            </div>
-
-            <div class="form-body">
-                <!-- Personal Information -->
-                <div class="section-title"><i class="fas fa-user"></i> Impormasyon ng Kliyente</div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="pangalan">Pangalan</label>
-                        <input type="text" id="pangalan" name="pangalan" placeholder="Iyong pangalan" required>
+                <!-- Header -->
+                <div class="form-header">
+                    <div class="form-logo-wrap" style="margin-bottom: 0.75rem;">
+                        <img src="/images/logo.png" alt="PSAU Logo" class="form-logo-img"
+                            style="height: 70px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));">
                     </div>
-                    <div class="form-group">
-                        <label for="telepono">Telepono</label>
-                        <input type="text" id="telepono" name="telepono" placeholder="Numero ng telepono">
-                    </div>
+                    <div class="control-no">Quality Management System Unit &nbsp;&nbsp;&nbsp; Control No.: QMS-CFF-2026
+                        &nbsp;-&nbsp; <span id="headerOfficeCode">OQA</span></div>
+                    <h1>CUSTOMER FEEDBACK FORM</h1>
+                    <div class="subtitle">Pampanga State Agricultural University</div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Uri ng Kliyente</label>
-                        <div class="radio-group">
-                            <label class="radio-option">
-                                <input type="radio" name="uri_kliyente" value="Mamamayan" required>
-                                <span class="radio-label">Mamamayan</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="uri_kliyente" value="Negosyo">
-                                <span class="radio-label">Negosyo</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="uri_kliyente" value="Gobyerno">
-                                <span class="radio-label">Gobyerno (Empleyado o Ahensya)</span>
-                            </label>
+                <!-- Introduction -->
+                <div class="form-intro">
+                    <strong style="color:var(--psau-gold);">TULUNGAN MO KAMI MAS MAPABUTI ANG AMING MGA PROSESO AT
+                        SERBISYO!</strong><br><br>
+                    Salamat sa pagbisita sa Pampanga State Agricultural University (PSAU) isang malaking kasiyahan para
+                    amin na lagging maibigay sa inyo ang
+                    pinakamahusay na kalidad ng serbisyo. Ang Client Satisfaction Measurement (CSM) ay naglalayong
+                    masubaybayan ang karanasan ng taumbabayan
+                    hingil sainyong naging karanasan sa kakatapos lamang na transaksyon, upang mas mapabuti at lalong
+                    mapahusay ang aming sebisyo publiko.
+                    Ang personal ng impormasyon sa iyong ibabahagi ay mananatiling kumpidensyal. Maari ring piliin na
+                    hindi sagutan ang sarbey na ito.
+                </div>
+
+                <div class="form-body">
+                    <!-- Personal Information -->
+                    <div class="section-title"><i class="fas fa-user"></i> Impormasyon ng Kliyente</div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pangalan">Pangalan</label>
+                            <input type="text" id="pangalan" name="pangalan" placeholder="Iyong pangalan" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="telepono">Telepono</label>
+                            <input type="text" id="telepono" name="telepono" placeholder="Numero ng telepono">
                         </div>
                     </div>
-                </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="petsa">Petsa</label>
-                        <input type="date" id="petsa" name="petsa" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Kasarian</label>
-                        <div class="radio-group">
-                            <label class="radio-option">
-                                <input type="radio" name="kasarian" value="Lalaki" required>
-                                <span class="radio-label">Lalaki</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="kasarian" value="Babae">
-                                <span class="radio-label">Babae</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edad">Edad</label>
-                        <input type="number" id="edad" name="edad" placeholder="Edad" min="1" max="120" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="rehiyon">Rehiyon</label>
-                        <input type="text" id="rehiyon" name="rehiyon" placeholder="Rehiyon">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group full-width">
-                        <label for="tanggapan">Tanggapan na binisita</label>
-                        <select id="tanggapan" name="tanggapan" required>
-                            <option value="" disabled>Pumili ng tanggapan...</option>
-                            <optgroup label="President Cluster">
-                                <option value="Office of the President" data-code="OPR">Office of the President (OPR)</option>
-                                <option value="Internal Audit Unit" data-code="IAU">Internal Audit Unit (IAU)</option>
-                                <option value="Legal Unit" data-code="LEU">Legal Unit (LEU)</option>
-                                <option value="Security Unit" data-code="SEU">Security Unit (SEU)</option>
-                                <option value="Office of the Board Secretary" data-code="OBS">Office of the Board Secretary (OBS)</option>
-                                <option value="Office of Gender and Development" data-code="OGD">Office of Gender and Development (OGD)</option>
-                                <option value="Office of Institutional Quality Assurance" data-code="OQA" selected>Office of Institutional Quality Assurance (OQA)</option>
-                                <option value="Government-Initiated Accreditation and International Assessments Unit" data-code="GIU">Government-Initiated Accreditation and International Assessments Unit (GIU)</option>
-                                <option value="Institutional and Program Accreditation Unit" data-code="IPU">Institutional and Program Accreditation Unit (IPU)</option>
-                                <option value="Monitoring and Quality Analytics Unit" data-code="MQU">Monitoring and Quality Analytics Unit (MQU)</option>
-                                <option value="Quality Management System Unit" data-code="QMS">Quality Management System Unit (QMS)</option>
-                                <option value="Office of Public Affairs and International Linkages" data-code="OPI">Office of Public Affairs and International Linkages (OPI)</option>
-                                <option value="External Affairs Unit" data-code="EAU">External Affairs Unit (EAU)</option>
-                                <option value="Information Unit" data-code="IFU">Information Unit (IFU)</option>
-                                <option value="International Affairs Unit" data-code="INU">International Affairs Unit (INU)</option>
-                                <option value="Strategic Communication Unit" data-code="SCU">Strategic Communication Unit (SCU)</option>
-                                <option value="Bids and Awards Committee" data-code="BAC">Bids and Awards Committee (BAC)</option>
-                            </optgroup>
-                            <optgroup label="Academic Affairs Cluster">
-                                <option value="Office of the Vice President for Academic Affairs" data-code="VAA">Office of the Vice President for Academic Affairs (VAA)</option>
-                                <option value="College of Agriculture Systems and Technology" data-code="CAT">College of Agriculture Systems and Technology (CAT)</option>
-                                <option value="Department of Animal Science" data-code="DAS">Department of Animal Science (DAS)</option>
-                                <option value="Department of Crop Science" data-code="DCR">Department of Crop Science (DCR)</option>
-                                <option value="Department of Fisheries" data-code="DOF">Department of Fisheries (DOF)</option>
-                                <option value="Department of Food Technology" data-code="DFT">Department of Food Technology (DFT)</option>
-                                <option value="College of Forestry and Agroforestry" data-code="CFA">College of Forestry and Agroforestry (CFA)</option>
-                                <option value="Department of Agroforestry" data-code="DAF">Department of Agroforestry (DAF)</option>
-                                <option value="Department of Forestry" data-code="DFR">Department of Forestry (DFR)</option>
-                                <option value="College of Arts and Sciences" data-code="CAS">College of Arts and Sciences (CAS)</option>
-                                <option value="Department of Biology" data-code="DOB">Department of Biology (DOB)</option>
-                                <option value="Department of Development Communication" data-code="DDC">Department of Development Communication (DDC)</option>
-                                <option value="Department of English" data-code="DOE">Department of English (DOE)</option>
-                                <option value="Department of Mathematics" data-code="DOM">Department of Mathematics (DOM)</option>
-                                <option value="Department of Social Sciences" data-code="DSS">Department of Social Sciences (DSS)</option>
-                                <option value="College of Education" data-code="COE">College of Education (COE)</option>
-                                <option value="Department of Elementary Education" data-code="DEE">Department of Elementary Education (DEE)</option>
-                                <option value="Department of Physical Education" data-code="DPE">Department of Physical Education (DPE)</option>
-                                <option value="Department of Professional and General Education" data-code="DPG">Department of Professional and General Education (DPG)</option>
-                                <option value="Department of Secondary Education" data-code="DSE">Department of Secondary Education (DSE)</option>
-                                <option value="Department of Technology and Livelihood Education" data-code="DTL">Department of Technology and Livelihood Education (DTL)</option>
-                                <option value="College of Engineering and Computer Studies" data-code="CEC">College of Engineering and Computer Studies (CEC)</option>
-                                <option value="Department of Agricultural and Biosystems Engineering" data-code="DAB">Department of Agricultural and Biosystems Engineering (DAB)</option>
-                                <option value="Department of Civil Engineering" data-code="DCI">Department of Civil Engineering (DCI)</option>
-                                <option value="Department of Computer Engineering" data-code="DCP">Department of Computer Engineering (DCP)</option>
-                                <option value="Department of Computer Studies" data-code="DCS">Department of Computer Studies (DCS)</option>
-                                <option value="Department of Geodetic Engineering" data-code="DGE">Department of Geodetic Engineering (DGE)</option>
-                                <option value="College of Business, Economics and Entrepreneurship" data-code="CBE">College of Business, Economics and Entrepreneurship (CBE)</option>
-                                <option value="Department of Agricultural Business" data-code="DAG">Department of Agricultural Business (DAG)</option>
-                                <option value="Department of Agricultural Economics" data-code="DAE">Department of Agricultural Economics (DAE)</option>
-                                <option value="Department of Entrepreneurship" data-code="DEN">Department of Entrepreneurship (DEN)</option>
-                                <option value="Department of Hospitality Management" data-code="DHM">Department of Hospitality Management (DHM)</option>
-                                <option value="College of Veterinary Medicine" data-code="CVM">College of Veterinary Medicine (CVM)</option>
-                                <option value="Department of Veterinary Basic Sciences" data-code="DVB">Department of Veterinary Basic Sciences (DVB)</option>
-                                <option value="Graduate School" data-code="GRS">Graduate School (GRS)</option>
-                                <option value="Office of Admissions and Registration" data-code="OAR">Office of Admissions and Registration (OAR)</option>
-                                <option value="Registration Unit" data-code="RGU">Registration Unit (RGU)</option>
-                                <option value="Office of Alumni Relations and Placement" data-code="OAP">Office of Alumni Relations and Placement (OAP)</option>
-                                <option value="Office of Cultural and Performing Arts" data-code="OCP">Office of Cultural and Performing Arts (OCP)</option>
-                                <option value="Office of Guidance and Testing" data-code="OGT">Office of Guidance and Testing (OGT)</option>
-                                <option value="Office of Library Services and Museum" data-code="OLM">Office of Library Services and Museum (OLM)</option>
-                                <option value="Office of Sports Development" data-code="OSD">Office of Sports Development (OSD)</option>
-                                <option value="Office of Student Affairs and Services" data-code="OSS">Office of Student Affairs and Services (OSS)</option>
-                                <option value="National Service Training Program Unit" data-code="NSU">National Service Training Program Unit (NSU)</option>
-                                <option value="Special Academic Programs and Services Unit" data-code="SAU">Special Academic Programs and Services Unit (SAU)</option>
-                            </optgroup>
-                            <optgroup label="Administration and Finance Cluster">
-                                <option value="Office of the Vice President for Administration and Finance" data-code="VAF">Office of the Vice President for Administration and Finance (VAF)</option>
-                                <option value="Office of Administrative Services" data-code="OAS">Office of Administrative Services (OAS)</option>
-                                <option value="Cash Unit" data-code="CSU">Cash Unit (CSU)</option>
-                                <option value="Human Resource Management Unit" data-code="HRU">Human Resource Management Unit (HRU)</option>
-                                <option value="Procurement Unit" data-code="PRU">Procurement Unit (PRU)</option>
-                                <option value="Records Unit" data-code="RCU">Records Unit (RCU)</option>
-                                <option value="Supply and Property Management Unit" data-code="SPU">Supply and Property Management Unit (SPU)</option>
-                                <option value="Office of Financial Services" data-code="OFS">Office of Financial Services (OFS)</option>
-                                <option value="Accounting Unit" data-code="ACU">Accounting Unit (ACU)</option>
-                                <option value="Budget Unit" data-code="BDU">Budget Unit (BDU)</option>
-                                <option value="Office of General and Auxiliary Services" data-code="OGA">Office of General and Auxiliary Services (OGA)</option>
-                                <option value="Faculty, Staff and Student Housing Unit" data-code="FSU">Faculty, Staff and Student Housing Unit (FSU)</option>
-                                <option value="Ground and Physical Plant Improvement Unit" data-code="GPU">Ground and Physical Plant Improvement Unit (GPU)</option>
-                                <option value="Health Unit" data-code="HEU">Health Unit (HEU)</option>
-                                <option value="Motorpool and Agri-Machinery Unit" data-code="MAU">Motorpool and Agri-Machinery Unit (MAU)</option>
-                            </optgroup>
-                            <optgroup label="Research, Innovation, Extension and Training Cluster">
-                                <option value="Office of the Vice President for Research, Innovation, Extension and Training" data-code="VRE">Office of the Vice President for Research, Innovation, Extension and Training (VRE)</option>
-                                <option value="Office of Extension and Training" data-code="OET">Office of Extension and Training (OET)</option>
-                                <option value="Community Radio Station" data-code="CRS">Community Radio Station (CRS)</option>
-                                <option value="Satellite Cattle Breeding Center" data-code="SCC">Satellite Cattle Breeding Center (SCC)</option>
-                                <option value="Technical Vocational Education and Training Center" data-code="TVC">Technical Vocational Education and Training Center (TVC)</option>
-                                <option value="Office of Innovation" data-code="OOI">Office of Innovation (OOI)</option>
-                                <option value="Intellectual Property and Technology Business Management Unit" data-code="ITU">Intellectual Property and Technology Business Management Unit (ITU)</option>
-                                <option value="Technology Business Incubation Unit" data-code="TBU">Technology Business Incubation Unit (TBU)</option>
-                                <option value="Office of Research and Development" data-code="ORD">Office of Research and Development (ORD)</option>
-                                <option value="Alternative Low-Input Agricultural System RDE Center" data-code="ARC">Alternative Low-Input Agricultural System RDE Center (ARC)</option>
-                                <option value="Bamboo & Rattan RDE Center" data-code="BRC">Bamboo & Rattan RDE Center (BRC)</option>
-                                <option value="Tamarind RDE Center" data-code="TRC">Tamarind RDE Center (TRC)</option>
-                            </optgroup>
-                            <optgroup label="Planning and Resource Generation Cluster">
-                                <option value="Office of the Vice President for Planning and Resource Generation" data-code="VPR">Office of the Vice President for Planning and Resource Generation (VPR)</option>
-                                <option value="Office of Business Affairs" data-code="OBA">Office of Business Affairs (OBA)</option>
-                                <option value="Agribusiness Unit" data-code="ABU">Agribusiness Unit (ABU)</option>
-                                <option value="Non-Agribusiness Unit" data-code="NAU">Non-Agribusiness Unit (NAU)</option>
-                                <option value="Marketing Unit" data-code="MRU">Marketing Unit (MRU)</option>
-                                <option value="Office of Planning, Project Development and Monitoring" data-code="OPP">Office of Planning, Project Development and Monitoring (OPP)</option>
-                                <option value="Disaster Risk Reduction and Management Unit" data-code="DRU">Disaster Risk Reduction and Management Unit (DRU)</option>
-                                <option value="Land and Agroecological Resource Management Unit" data-code="LAU">Land and Agroecological Resource Management Unit (LAU)</option>
-                                <option value="Management Information System Unit" data-code="MIU">Management Information System Unit (MIU)</option>
-                                <option value="Planning Unit" data-code="PLU">Planning Unit (PLU)</option>
-                                <option value="Project Development, Management and Monitoring Unit" data-code="PMU">Project Development, Management and Monitoring Unit (PMU)</option>
-                            </optgroup>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Uri ng transaksyon o serbisyo</label>
-                    <div class="radio-group">
-                        <label class="radio-option">
-                            <input type="radio" name="uri_transaksyon" value="Facilitation of the Control of Documented Information" required>
-                            <span class="radio-label">Facilitation of the Control of Documented Information</span>
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="uri_transaksyon" value="Others">
-                            <span class="radio-label">Others</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="form-group" id="othersGroup" style="display:none;">
-                    <label for="others_specify">Please specify</label>
-                    <input type="text" id="others_specify" name="others_specify" placeholder="Specify other transaction/service">
-                </div>
-
-                <!-- Citizen's Charter Section -->
-                <div class="section-title"><i class="fas fa-landmark"></i> Citizen's Charter (CC)</div>
-                
-                <div class="sqd-instruction">
-                    PANUTO: Lagyan ng tsek (✔) ang iyong sagot sa mga sumusunod na katanungan tungkol sa Citizen's Charter (CC). 
-                    Ito ay isang opisyal na dokumento na naglalaman ng mga serbisyo sa isang ahensya/opisina ng gobyerno, 
-                    makikita rito ang mga kailangan na dokumento, kaukulang bayarin at pagkabuuang oras ng proseso.
-                </div>
-
-                <!-- CC1 -->
-                <div class="sqd-item">
-                    <div class="sqd-label"><strong>CC1</strong> — Alin sa mga sumusunod ang naglalarawan sa iyong kaalaman sa CC?</div>
-                    <div class="sqd-options" style="flex-direction: column;">
-                        <label class="check-option">
-                            <input type="radio" name="cc1" value="1" required>
-                            <span class="check-label">Alam ko ang CC at nakita ko ito sa napuntahang opisina</span>
-                        </label>
-                        <label class="check-option">
-                            <input type="radio" name="cc1" value="2">
-                            <span class="check-label">Alam ko ang CC pero hindi ko ito nakita sa napuntahang opisina</span>
-                        </label>
-                        <label class="check-option">
-                            <input type="radio" name="cc1" value="3">
-                            <span class="check-label">Nalaman ko ang CC nang makita ko ito sa napuntahang opisina</span>
-                        </label>
-                        <label class="check-option">
-                            <input type="radio" name="cc1" value="4">
-                            <span class="check-label">Hindi ko alam kung ano ang CC at wala akong nakita sa napuntahang opisina</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- CC2 -->
-                <div class="sqd-item" id="cc2Container">
-                    <div class="sqd-label"><strong>CC2</strong> — Kung alam ang CC (nag-tsek sa opsyon 1-3 sa CC1), masasabi mo ba na ang CC nang napuntahang opisina ay...?</div>
-                    <div class="sqd-options" style="flex-direction: column;">
-                        <label class="check-option"><input type="radio" name="cc2" value="1"><span class="check-label">Madaling makita</span></label>
-                        <label class="check-option"><input type="radio" name="cc2" value="2"><span class="check-label">Medyo madaling makita</span></label>
-                        <label class="check-option"><input type="radio" name="cc2" value="3"><span class="check-label">Mahirap makita</span></label>
-                        <label class="check-option"><input type="radio" name="cc2" value="4"><span class="check-label">Hindi makita</span></label>
-                        <label class="check-option"><input type="radio" name="cc2" value="N/A"><span class="check-label">N/A</span></label>
-                    </div>
-                </div>
-
-                <!-- CC3 -->
-                <div class="sqd-item" id="cc3Container">
-                    <div class="sqd-label"><strong>CC3</strong> — Kung alam ang CC (nag-tsek sa opsyon 1-3 sa CC1), gaano nakatulong ang CC sa transaksyon mo?</div>
-                    <div class="sqd-options" style="flex-direction: column;">
-                        <label class="check-option"><input type="radio" name="cc3" value="1"><span class="check-label">Sobrang nakatulong</span></label>
-                        <label class="check-option"><input type="radio" name="cc3" value="2"><span class="check-label">Nakatulong naman</span></label>
-                        <label class="check-option"><input type="radio" name="cc3" value="3"><span class="check-label">Hindi nakatulong</span></label>
-                        <label class="check-option"><input type="radio" name="cc3" value="N/A"><span class="check-label">N/A</span></label>
-                    </div>
-                </div>
-
-                <!-- SQD Section -->
-                <div class="section-title"><i class="fas fa-chart-bar"></i> Service Quality Dimensions (SQD 0-8)</div>
-                
-                <div class="sqd-instruction">
-                    PANUTO: Para sa SQD 0-8, lagyan ng tsek (✔) ang hanay na pinakaangkop sa iyong sagot.
-                </div>
-
-                <% 
-                const sqdItems = [
-                    { id: 'sqd0', label: 'SQD0. Nasiyahan ako sa serbisyo na aking natanggap sa napuntahan na tanggapan.' },
-                    { id: 'sqd1', label: 'SQD1. Makatawiran ang oras na aking ginugol para sa pagproseso ng aking transaksyon.' },
-                    { id: 'sqd2', label: 'SQD2. Ang opisina ay sumusunod sa mga kinakailangang dokumento at mga hakbang batay sa impormasyong ibinigay.' },
-                    { id: 'sqd3', label: 'SQD3. Ang mga hakbang sa pagproseso, kasama na ang pagbayad ay madali at simple lamang.' },
-                    { id: 'sqd4', label: 'SQD4. Mabilis at madali akong nakahanap ng impormasyon tungkol sa aking transaksyon mula sa opisina o sa website nito.' },
-                    { id: 'sqd5', label: 'SQD5. Nagbayad ako ng makatwirang halaga para sa aking transaksyon. (Kung ang serbisyo ay ibinigay ng libre, maglagay ng tsek sa hanay ng N/A).' },
-                    { id: 'sqd6', label: 'SQD6. Pakiramdam ko ay patas ang opisina sa lahat, o "walang palakasan".' },
-                    { id: 'sqd7', label: 'SQD7. Magalang akong tinrato ng mga tauhan, at (kung sakali ako ay humingi ng tulong) alam ko na sila ay handang tumulong sa akin.' },
-                    { id: 'sqd8', label: 'SQD8. Nakuha ko ang kinakailangan ko mula sa tanggapan ng gobyerno, kung tinanggihan man, ito ay sapat na ipinaliwanag sa akin.' }
-                ];
-                
-                const ratingLabels = [
-                    { value: '1', emoji: '😡', text: 'Lubos na hindi sumasang-ayon' },
-                    { value: '2', emoji: '🙁', text: 'Hindi sumasang-ayon' },
-                    { value: '3', emoji: '😐', text: 'Walang kinikilingan' },
-                    { value: '4', emoji: '🙂', text: 'Sumasang-ayon' },
-                    { value: '5', emoji: '😍', text: 'Lubos na sumasang-ayon' },
-                    { value: 'N/A', emoji: '🚫', text: 'N/A' }
-                ];
-                %>
-
-                <% sqdItems.forEach(function(item) { %>
-                <div class="sqd-item">
-                    <div class="sqd-label"><strong><%= item.label.split('.')[0] %></strong>.<%= item.label.split('.').slice(1).join('.') %></div>
-                    <div class="emoji-grid">
-                        <% ratingLabels.forEach(function(rating) { %>
-                        <label class="emoji-card">
-                            <input type="radio" name="<%= item.id %>" value="<%= rating.value %>" required>
-                            <div class="emoji-card-content">
-                                <span class="emoji-face"><%= rating.emoji %></span>
-                                <span class="emoji-label"><%= rating.text %></span>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Uri ng Kliyente</label>
+                            <div class="radio-group">
+                                <label class="radio-option">
+                                    <input type="radio" name="uri_kliyente" value="Mamamayan" required>
+                                    <span class="radio-label">Mamamayan</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="uri_kliyente" value="Negosyo">
+                                    <span class="radio-label">Negosyo</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="uri_kliyente" value="Gobyerno">
+                                    <span class="radio-label">Gobyerno (Empleyado o Ahensya)</span>
+                                </label>
                             </div>
-                        </label>
-                        <% }); %>
+                        </div>
                     </div>
-                </div>
-                <% }); %>
 
-                <!-- Suggestions & Email -->
-                <div class="section-title"><i class="fas fa-comment-dots"></i> Karagdagang Feedback</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="petsa">Petsa</label>
+                            <input type="date" id="petsa" name="petsa" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Kasarian</label>
+                            <div class="radio-group">
+                                <label class="radio-option">
+                                    <input type="radio" name="kasarian" value="Lalaki" required>
+                                    <span class="radio-label">Lalaki</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="kasarian" value="Babae">
+                                    <span class="radio-label">Babae</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="form-group full-width">
-                    <label for="suggestions">Mga suhestiyon kung paano pa mapapabuti ang aming mga serbisyo (opsyonal)</label>
-                    <textarea id="suggestions" name="suggestions" placeholder="Isulat dito ang iyong suhestiyon..." rows="4"></textarea>
-                </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edad">Edad</label>
+                            <input type="number" id="edad" name="edad" placeholder="Edad" min="1" max="120" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="rehiyon">Rehiyon</label>
+                            <select id="rehiyon" name="rehiyon" required>
+                                <option value="" disabled selected>Rehiyon</option>
+                                <option value="Region I">Region I</option>
+                                <option value="Region II">Region II</option>
+                                <option value="Region III">Region III</option>
+                                <option value="Region IV-A">Region IV-A</option>
+                                <option value="Region IV-B">Region IV-B</option>
+                                <option value="NCR">NCR</option>
+                            </select>
+                        </div>
+                    </div>
 
-                <div class="form-group full-width">
-                    <label for="email">Email address (opsyonal)</label>
-                    <input type="email" id="email" name="email" placeholder="iyong.email@example.com">
-                </div>
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="tanggapan">Tanggapan na binisita</label>
+                            <select id="tanggapan" name="tanggapan" required>
+                                <option value="" disabled>Pumili ng tanggapan...</option>
+                                <optgroup label="President Cluster">
+                                    <option value="Office of the President" data-code="OPR">Office of the President
+                                        (OPR)</option>
+                                    <option value="Internal Audit Unit" data-code="IAU">Internal Audit Unit (IAU)
+                                    </option>
+                                    <option value="Legal Unit" data-code="LEU">Legal Unit (LEU)</option>
+                                    <option value="Security Unit" data-code="SEU">Security Unit (SEU)</option>
+                                    <option value="Office of the Board Secretary" data-code="OBS">Office of the Board
+                                        Secretary (OBS)</option>
+                                    <option value="Office of Gender and Development" data-code="OGD">Office of Gender
+                                        and Development (OGD)</option>
+                                    <option value="Office of Institutional Quality Assurance" data-code="OQA" selected>
+                                        Office of Institutional Quality Assurance (OQA)</option>
+                                    <option
+                                        value="Government-Initiated Accreditation and International Assessments Unit"
+                                        data-code="GIU">Government-Initiated Accreditation and International Assessments
+                                        Unit (GIU)</option>
+                                    <option value="Institutional and Program Accreditation Unit" data-code="IPU">
+                                        Institutional and Program Accreditation Unit (IPU)</option>
+                                    <option value="Monitoring and Quality Analytics Unit" data-code="MQU">Monitoring and
+                                        Quality Analytics Unit (MQU)</option>
+                                    <option value="Quality Management System Unit" data-code="QMS">Quality Management
+                                        System Unit (QMS)</option>
+                                    <option value="Office of Public Affairs and International Linkages" data-code="OPI">
+                                        Office of Public Affairs and International Linkages (OPI)</option>
+                                    <option value="External Affairs Unit" data-code="EAU">External Affairs Unit (EAU)
+                                    </option>
+                                    <option value="Information Unit" data-code="IFU">Information Unit (IFU)</option>
+                                    <option value="International Affairs Unit" data-code="INU">International Affairs
+                                        Unit (INU)</option>
+                                    <option value="Strategic Communication Unit" data-code="SCU">Strategic Communication
+                                        Unit (SCU)</option>
+                                    <option value="Bids and Awards Committee" data-code="BAC">Bids and Awards Committee
+                                        (BAC)</option>
+                                </optgroup>
+                                <optgroup label="Academic Affairs Cluster">
+                                    <option value="Office of the Vice President for Academic Affairs" data-code="VAA">
+                                        Office of the Vice President for Academic Affairs (VAA)</option>
+                                    <option value="College of Agriculture Systems and Technology" data-code="CAT">
+                                        College of Agriculture Systems and Technology (CAT)</option>
+                                    <option value="Department of Animal Science" data-code="DAS">Department of Animal
+                                        Science (DAS)</option>
+                                    <option value="Department of Crop Science" data-code="DCR">Department of Crop
+                                        Science (DCR)</option>
+                                    <option value="Department of Fisheries" data-code="DOF">Department of Fisheries
+                                        (DOF)</option>
+                                    <option value="Department of Food Technology" data-code="DFT">Department of Food
+                                        Technology (DFT)</option>
+                                    <option value="College of Forestry and Agroforestry" data-code="CFA">College of
+                                        Forestry and Agroforestry (CFA)</option>
+                                    <option value="Department of Agroforestry" data-code="DAF">Department of
+                                        Agroforestry (DAF)</option>
+                                    <option value="Department of Forestry" data-code="DFR">Department of Forestry (DFR)
+                                    </option>
+                                    <option value="College of Arts and Sciences" data-code="CAS">College of Arts and
+                                        Sciences (CAS)</option>
+                                    <option value="Department of Biology" data-code="DOB">Department of Biology (DOB)
+                                    </option>
+                                    <option value="Department of Development Communication" data-code="DDC">Department
+                                        of Development Communication (DDC)</option>
+                                    <option value="Department of English" data-code="DOE">Department of English (DOE)
+                                    </option>
+                                    <option value="Department of Mathematics" data-code="DOM">Department of Mathematics
+                                        (DOM)</option>
+                                    <option value="Department of Social Sciences" data-code="DSS">Department of Social
+                                        Sciences (DSS)</option>
+                                    <option value="College of Education" data-code="COE">College of Education (COE)
+                                    </option>
+                                    <option value="Department of Elementary Education" data-code="DEE">Department of
+                                        Elementary Education (DEE)</option>
+                                    <option value="Department of Physical Education" data-code="DPE">Department of
+                                        Physical Education (DPE)</option>
+                                    <option value="Department of Professional and General Education" data-code="DPG">
+                                        Department of Professional and General Education (DPG)</option>
+                                    <option value="Department of Secondary Education" data-code="DSE">Department of
+                                        Secondary Education (DSE)</option>
+                                    <option value="Department of Technology and Livelihood Education" data-code="DTL">
+                                        Department of Technology and Livelihood Education (DTL)</option>
+                                    <option value="College of Engineering and Computer Studies" data-code="CEC">College
+                                        of Engineering and Computer Studies (CEC)</option>
+                                    <option value="Department of Agricultural and Biosystems Engineering"
+                                        data-code="DAB">Department of Agricultural and Biosystems Engineering (DAB)
+                                    </option>
+                                    <option value="Department of Civil Engineering" data-code="DCI">Department of Civil
+                                        Engineering (DCI)</option>
+                                    <option value="Department of Computer Engineering" data-code="DCP">Department of
+                                        Computer Engineering (DCP)</option>
+                                    <option value="Department of Computer Studies" data-code="DCS">Department of
+                                        Computer Studies (DCS)</option>
+                                    <option value="Department of Geodetic Engineering" data-code="DGE">Department of
+                                        Geodetic Engineering (DGE)</option>
+                                    <option value="College of Business, Economics and Entrepreneurship" data-code="CBE">
+                                        College of Business, Economics and Entrepreneurship (CBE)</option>
+                                    <option value="Department of Agricultural Business" data-code="DAG">Department of
+                                        Agricultural Business (DAG)</option>
+                                    <option value="Department of Agricultural Economics" data-code="DAE">Department of
+                                        Agricultural Economics (DAE)</option>
+                                    <option value="Department of Entrepreneurship" data-code="DEN">Department of
+                                        Entrepreneurship (DEN)</option>
+                                    <option value="Department of Hospitality Management" data-code="DHM">Department of
+                                        Hospitality Management (DHM)</option>
+                                    <option value="College of Veterinary Medicine" data-code="CVM">College of Veterinary
+                                        Medicine (CVM)</option>
+                                    <option value="Department of Veterinary Basic Sciences" data-code="DVB">Department
+                                        of Veterinary Basic Sciences (DVB)</option>
+                                    <option value="Graduate School" data-code="GRS">Graduate School (GRS)</option>
+                                    <option value="Office of Admissions and Registration" data-code="OAR">Office of
+                                        Admissions and Registration (OAR)</option>
+                                    <option value="Registration Unit" data-code="RGU">Registration Unit (RGU)</option>
+                                    <option value="Office of Alumni Relations and Placement" data-code="OAP">Office of
+                                        Alumni Relations and Placement (OAP)</option>
+                                    <option value="Office of Cultural and Performing Arts" data-code="OCP">Office of
+                                        Cultural and Performing Arts (OCP)</option>
+                                    <option value="Office of Guidance and Testing" data-code="OGT">Office of Guidance
+                                        and Testing (OGT)</option>
+                                    <option value="Office of Library Services and Museum" data-code="OLM">Office of
+                                        Library Services and Museum (OLM)</option>
+                                    <option value="Office of Sports Development" data-code="OSD">Office of Sports
+                                        Development (OSD)</option>
+                                    <option value="Office of Student Affairs and Services" data-code="OSS">Office of
+                                        Student Affairs and Services (OSS)</option>
+                                    <option value="National Service Training Program Unit" data-code="NSU">National
+                                        Service Training Program Unit (NSU)</option>
+                                    <option value="Special Academic Programs and Services Unit" data-code="SAU">Special
+                                        Academic Programs and Services Unit (SAU)</option>
+                                </optgroup>
+                                <optgroup label="Administration and Finance Cluster">
+                                    <option value="Office of the Vice President for Administration and Finance"
+                                        data-code="VAF">Office of the Vice President for Administration and Finance
+                                        (VAF)</option>
+                                    <option value="Office of Administrative Services" data-code="OAS">Office of
+                                        Administrative Services (OAS)</option>
+                                    <option value="Cash Unit" data-code="CSU">Cash Unit (CSU)</option>
+                                    <option value="Human Resource Management Unit" data-code="HRU">Human Resource
+                                        Management Unit (HRU)</option>
+                                    <option value="Procurement Unit" data-code="PRU">Procurement Unit (PRU)</option>
+                                    <option value="Records Unit" data-code="RCU">Records Unit (RCU)</option>
+                                    <option value="Supply and Property Management Unit" data-code="SPU">Supply and
+                                        Property Management Unit (SPU)</option>
+                                    <option value="Office of Financial Services" data-code="OFS">Office of Financial
+                                        Services (OFS)</option>
+                                    <option value="Accounting Unit" data-code="ACU">Accounting Unit (ACU)</option>
+                                    <option value="Budget Unit" data-code="BDU">Budget Unit (BDU)</option>
+                                    <option value="Office of General and Auxiliary Services" data-code="OGA">Office of
+                                        General and Auxiliary Services (OGA)</option>
+                                    <option value="Faculty, Staff and Student Housing Unit" data-code="FSU">Faculty,
+                                        Staff and Student Housing Unit (FSU)</option>
+                                    <option value="Ground and Physical Plant Improvement Unit" data-code="GPU">Ground
+                                        and Physical Plant Improvement Unit (GPU)</option>
+                                    <option value="Health Unit" data-code="HEU">Health Unit (HEU)</option>
+                                    <option value="Motorpool and Agri-Machinery Unit" data-code="MAU">Motorpool and
+                                        Agri-Machinery Unit (MAU)</option>
+                                </optgroup>
+                                <optgroup label="Research, Innovation, Extension and Training Cluster">
+                                    <option
+                                        value="Office of the Vice President for Research, Innovation, Extension and Training"
+                                        data-code="VRE">Office of the Vice President for Research, Innovation, Extension
+                                        and Training (VRE)</option>
+                                    <option value="Office of Extension and Training" data-code="OET">Office of Extension
+                                        and Training (OET)</option>
+                                    <option value="Community Radio Station" data-code="CRS">Community Radio Station
+                                        (CRS)</option>
+                                    <option value="Satellite Cattle Breeding Center" data-code="SCC">Satellite Cattle
+                                        Breeding Center (SCC)</option>
+                                    <option value="Technical Vocational Education and Training Center" data-code="TVC">
+                                        Technical Vocational Education and Training Center (TVC)</option>
+                                    <option value="Office of Innovation" data-code="OOI">Office of Innovation (OOI)
+                                    </option>
+                                    <option value="Intellectual Property and Technology Business Management Unit"
+                                        data-code="ITU">Intellectual Property and Technology Business Management Unit
+                                        (ITU)</option>
+                                    <option value="Technology Business Incubation Unit" data-code="TBU">Technology
+                                        Business Incubation Unit (TBU)</option>
+                                    <option value="Office of Research and Development" data-code="ORD">Office of
+                                        Research and Development (ORD)</option>
+                                    <option value="Alternative Low-Input Agricultural System RDE Center"
+                                        data-code="ARC">Alternative Low-Input Agricultural System RDE Center (ARC)
+                                    </option>
+                                    <option value="Bamboo & Rattan RDE Center" data-code="BRC">Bamboo & Rattan RDE
+                                        Center (BRC)</option>
+                                    <option value="Tamarind RDE Center" data-code="TRC">Tamarind RDE Center (TRC)
+                                    </option>
+                                </optgroup>
+                                <optgroup label="Planning and Resource Generation Cluster">
+                                    <option value="Office of the Vice President for Planning and Resource Generation"
+                                        data-code="VPR">Office of the Vice President for Planning and Resource
+                                        Generation (VPR)</option>
+                                    <option value="Office of Business Affairs" data-code="OBA">Office of Business
+                                        Affairs (OBA)</option>
+                                    <option value="Agribusiness Unit" data-code="ABU">Agribusiness Unit (ABU)</option>
+                                    <option value="Non-Agribusiness Unit" data-code="NAU">Non-Agribusiness Unit (NAU)
+                                    </option>
+                                    <option value="Marketing Unit" data-code="MRU">Marketing Unit (MRU)</option>
+                                    <option value="Office of Planning, Project Development and Monitoring"
+                                        data-code="OPP">Office of Planning, Project Development and Monitoring (OPP)
+                                    </option>
+                                    <option value="Disaster Risk Reduction and Management Unit" data-code="DRU">Disaster
+                                        Risk Reduction and Management Unit (DRU)</option>
+                                    <option value="Land and Agroecological Resource Management Unit" data-code="LAU">
+                                        Land and Agroecological Resource Management Unit (LAU)</option>
+                                    <option value="Management Information System Unit" data-code="MIU">Management
+                                        Information System Unit (MIU)</option>
+                                    <option value="Planning Unit" data-code="PLU">Planning Unit (PLU)</option>
+                                    <option value="Project Development, Management and Monitoring Unit" data-code="PMU">
+                                        Project Development, Management and Monitoring Unit (PMU)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
 
-                <!-- Submit -->
-                <div class="submit-section">
-                    <button type="submit" class="btn-submit" id="submitBtn">
-                        <i class="fas fa-paper-plane"></i> Isumite ang Feedback
-                    </button>
+                    <div class="form-group">
+                        <label for="uri_transaksyon">Uri ng transaksyon o serbisyo</label>
+                        <input type="text" id="uri_transaksyon" name="uri_transaksyon"
+                            placeholder="I-type ang transaksyon o serbisyo" maxlength="200" required>
+                    </div>
+
+                    <!-- Citizen's Charter Section -->
+                    <div class="section-title"><i class="fas fa-landmark"></i> Citizen's Charter (CC)</div>
+
+                    <div class="sqd-instruction">
+                        PANUTO: Lagyan ng tsek (✔) ang iyong sagot sa mga sumusunod na katanungan tungkol sa Citizen's
+                        Charter (CC).
+                        Ito ay isang opisyal na dokumento na naglalaman ng mga serbisyo sa isang ahensya/opisina ng
+                        gobyerno,
+                        makikita rito ang mga kailangan na dokumento, kaukulang bayarin at pagkabuuang oras ng proseso.
+                    </div>
+
+                    <!-- CC1 -->
+                    <div class="sqd-item">
+                        <div class="sqd-label"><strong>CC1</strong> — Alin sa mga sumusunod ang naglalarawan sa iyong
+                            kaalaman sa CC?</div>
+                        <div class="sqd-options" style="flex-direction: column;">
+                            <label class="check-option">
+                                <input type="radio" name="cc1" value="1" required>
+                                <span class="check-label">Alam ko ang CC at nakita ko ito sa napuntahang opisina</span>
+                            </label>
+                            <label class="check-option">
+                                <input type="radio" name="cc1" value="2">
+                                <span class="check-label">Alam ko ang CC pero hindi ko ito nakita sa napuntahang
+                                    opisina</span>
+                            </label>
+                            <label class="check-option">
+                                <input type="radio" name="cc1" value="3">
+                                <span class="check-label">Nalaman ko ang CC nang makita ko ito sa napuntahang
+                                    opisina</span>
+                            </label>
+                            <label class="check-option">
+                                <input type="radio" name="cc1" value="4">
+                                <span class="check-label">Hindi ko alam kung ano ang CC at wala akong nakita sa
+                                    napuntahang opisina</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- CC2 -->
+                    <div class="sqd-item" id="cc2Container">
+                        <div class="sqd-label"><strong>CC2</strong> — Kung alam ang CC (nag-tsek sa opsyon 1-3 sa CC1),
+                            masasabi mo ba na ang CC nang napuntahang opisina ay...?</div>
+                        <div class="sqd-options" style="flex-direction: column;">
+                            <label class="check-option"><input type="radio" name="cc2" value="1"><span
+                                    class="check-label">Madaling makita</span></label>
+                            <label class="check-option"><input type="radio" name="cc2" value="2"><span
+                                    class="check-label">Medyo madaling makita</span></label>
+                            <label class="check-option"><input type="radio" name="cc2" value="3"><span
+                                    class="check-label">Mahirap makita</span></label>
+                            <label class="check-option"><input type="radio" name="cc2" value="4"><span
+                                    class="check-label">Hindi makita</span></label>
+                            <label class="check-option"><input type="radio" name="cc2" value="N/A"><span
+                                    class="check-label">N/A</span></label>
+                        </div>
+                    </div>
+
+                    <!-- CC3 -->
+                    <div class="sqd-item" id="cc3Container">
+                        <div class="sqd-label"><strong>CC3</strong> — Kung alam ang CC (nag-tsek sa opsyon 1-3 sa CC1),
+                            gaano nakatulong ang CC sa transaksyon mo?</div>
+                        <div class="sqd-options" style="flex-direction: column;">
+                            <label class="check-option"><input type="radio" name="cc3" value="1"><span
+                                    class="check-label">Sobrang nakatulong</span></label>
+                            <label class="check-option"><input type="radio" name="cc3" value="2"><span
+                                    class="check-label">Nakatulong naman</span></label>
+                            <label class="check-option"><input type="radio" name="cc3" value="3"><span
+                                    class="check-label">Hindi nakatulong</span></label>
+                            <label class="check-option"><input type="radio" name="cc3" value="N/A"><span
+                                    class="check-label">N/A</span></label>
+                        </div>
+                    </div>
+
+                    <!-- SQD Section -->
+                    <div class="section-title"><i class="fas fa-chart-bar"></i> Service Quality Dimensions (SQD 0-8)
+                    </div>
+
+                    <div class="sqd-instruction">
+                        PANUTO: Para sa SQD 0-8, lagyan ng tsek (✔) ang hanay na pinakaangkop sa iyong sagot.
+                    </div>
+
+                    <% const sqdItems=[ { id: 'sqd0' ,
+                        label: 'SQD0. Nasiyahan ako sa serbisyo na aking natanggap sa napuntahan na tanggapan.' }, {
+                        id: 'sqd1' ,
+                        label: 'SQD1. Makatawiran ang oras na aking ginugol para sa pagproseso ng aking transaksyon.' },
+                        { id: 'sqd2' ,
+                        label: 'SQD2. Ang opisina ay sumusunod sa mga kinakailangang dokumento at mga hakbang batay sa impormasyong ibinigay.'
+                        }, { id: 'sqd3' ,
+                        label: 'SQD3. Ang mga hakbang sa pagproseso, kasama na ang pagbayad ay madali at simple lamang.'
+                        }, { id: 'sqd4' ,
+                        label: 'SQD4. Mabilis at madali akong nakahanap ng impormasyon tungkol sa aking transaksyon mula sa opisina o sa website nito.'
+                        }, { id: 'sqd5' ,
+                        label: 'SQD5. Nagbayad ako ng makatwirang halaga para sa aking transaksyon. (Kung ang serbisyo ay ibinigay ng libre, maglagay ng tsek sa hanay ng N/A).'
+                        }, { id: 'sqd6' ,
+                        label: 'SQD6. Pakiramdam ko ay patas ang opisina sa lahat, o "walang palakasan".' }, {
+                        id: 'sqd7' ,
+                        label: 'SQD7. Magalang akong tinrato ng mga tauhan, at (kung sakali ako ay humingi ng tulong) alam ko na sila ay handang tumulong sa akin.'
+                        }, { id: 'sqd8' ,
+                        label: 'SQD8. Nakuha ko ang kinakailangan ko mula sa tanggapan ng gobyerno, kung tinanggihan man, ito ay sapat na ipinaliwanag sa akin.'
+                        } ]; const ratingLabels=[ { value: '1' , emoji: '😡' , text: 'Lubos na hindi sumasang-ayon' }, {
+                        value: '2' , emoji: '🙁' , text: 'Hindi sumasang-ayon' }, { value: '3' , emoji: '😐' ,
+                        text: 'Walang kinikilingan' }, { value: '4' , emoji: '🙂' , text: 'Sumasang-ayon' }, {
+                        value: '5' , emoji: '😍' , text: 'Lubos na sumasang-ayon' }, { value: 'N/A' , emoji: '🚫' ,
+                        text: 'N/A' } ]; %>
+
+                        <% sqdItems.forEach(function(item, idx) { %>
+                            <div class="sqd-item" data-sqd="<%= item.id %>">
+                                <div class="sqd-label"><strong>
+                                        <%= item.label.split('.')[0] %>
+                                    </strong>.<%= item.label.split('.').slice(1).join('.') %>
+                                </div>
+                                <div class="emoji-grid">
+                                    <% ratingLabels.forEach(function(rating, rIdx) { %>
+                                        <label class="emoji-card">
+                                            <input type="radio" name="<%= item.id %>" value="<%= rating.value %>"
+                                                <%=rIdx===0 ? 'required' : '' %>>
+                                            <div class="emoji-card-content">
+                                                <span class="emoji-face">
+                                                    <%= rating.emoji %>
+                                                </span>
+                                                <span class="emoji-label">
+                                                    <%= rating.text %>
+                                                </span>
+                                            </div>
+                                        </label>
+                                        <% }); %>
+                                </div>
+                            </div>
+                            <% }); %>
+
+                                <!-- Suggestions & Email -->
+                                <div class="section-title"><i class="fas fa-comment-dots"></i> Karagdagang Feedback
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label for="suggestions">Mga suhestiyon kung paano pa mapapabuti ang aming mga
+                                        serbisyo (opsyonal)</label>
+                                    <textarea id="suggestions" name="suggestions"
+                                        placeholder="Isulat dito ang iyong suhestiyon..." rows="4"></textarea>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label for="email">Email address (opsyonal)</label>
+                                    <input type="email" id="email" name="email" placeholder="iyong.email@example.com">
+                                </div>
+
+                                <!-- Submit -->
+                                <div class="submit-section">
+                                    <button type="submit" class="btn-submit" id="submitBtn">
+                                        <i class="fas fa-paper-plane"></i> Isumite ang Feedback
+                                    </button>
+                                </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
 
-<script>
-    // Auto-fill today's date
-    document.getElementById('petsa').value = new Date().toISOString().split('T')[0];
+    <script>
+        // Auto-fill today's date
+        document.getElementById('petsa').value = new Date().toISOString().split('T')[0];
 
-    // Show/hide "Others" input
-    document.querySelectorAll('input[name="uri_transaksyon"]').forEach(r => {
-        r.addEventListener('change', function() {
-            document.getElementById('othersGroup').style.display = this.value === 'Others' ? 'block' : 'none';
+        // Enter key advances focus to the next field; submit button submits as usual
+        (function () {
+            var form = document.getElementById('feedbackForm');
+            if (!form) return;
+            form.addEventListener('keydown', function (e) {
+                if (e.key !== 'Enter') return;
+                var t = e.target;
+                if (!t || t.tagName === 'TEXTAREA') return;
+                if (t.tagName === 'BUTTON') return;
+                e.preventDefault();
+                var nodes = form.querySelectorAll('input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button[type=submit]');
+                var list = Array.prototype.slice.call(nodes).filter(function (el) { return el.offsetParent !== null; });
+                var idx = list.indexOf(t);
+                if (t.type === 'radio') {
+                    for (var i = idx + 1; i < list.length; i++) {
+                        if (list[i].type === 'radio' && list[i].name === t.name) continue;
+                        idx = i - 1; break;
+                    }
+                }
+                for (var j = idx + 1; j < list.length; j++) {
+                    var el = list[j];
+                    if (el.type === 'radio' && t.type === 'radio' && el.name === t.name) continue;
+                    el.focus();
+                    if (el.tagName === 'SELECT') el.dispatchEvent(new Event('change'));
+                    return;
+                }
+                var submit = form.querySelector('button[type=submit]');
+                if (submit) submit.focus();
+            });
+        })();
+
+        // CC1 logic: auto-select N/A for CC2 and CC3 when option 4 is selected
+        document.querySelectorAll('input[name="cc1"]').forEach(r => {
+            r.addEventListener('change', function () {
+                if (this.value === '4') {
+                    document.querySelector('input[name="cc2"][value="N/A"]').checked = true;
+                    document.querySelector('input[name="cc3"][value="N/A"]').checked = true;
+                }
+            });
         });
-    });
 
-    // CC1 logic: auto-select N/A for CC2 and CC3 when option 4 is selected
-    document.querySelectorAll('input[name="cc1"]').forEach(r => {
-        r.addEventListener('change', function() {
-            if (this.value === '4') {
-                document.querySelector('input[name="cc2"][value="N/A"]').checked = true;
-                document.querySelector('input[name="cc3"][value="N/A"]').checked = true;
+        // Update office code in header
+        document.getElementById('tanggapan').addEventListener('change', function () {
+            const selectedOption = this.options[this.selectedIndex];
+            const code = selectedOption.getAttribute('data-code');
+            if (code) {
+                document.getElementById('headerOfficeCode').textContent = code;
             }
         });
-    });
 
-    // Update office code in header
-    document.getElementById('tanggapan').addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const code = selectedOption.getAttribute('data-code');
-        if (code) {
-            document.getElementById('headerOfficeCode').textContent = code;
-        }
-    });
-
-    // Auto-select office from URL query parameter (e.g. ?office=OQA)
-    const urlParams = new URLSearchParams(window.location.search);
-    const officeParam = urlParams.get('office');
-    if (officeParam) {
-        const selectEl = document.getElementById('tanggapan');
-        const paramLower = officeParam.toLowerCase().trim();
-        for (let i = 0; i < selectEl.options.length; i++) {
-            const opt = selectEl.options[i];
-            const optVal = opt.value.toLowerCase().trim();
-            const optCode = (opt.getAttribute('data-code') || '').toLowerCase().trim();
-            if (optCode === paramLower || optVal === paramLower) {
-                selectEl.selectedIndex = i;
-                // Trigger change event to update the header code
-                selectEl.dispatchEvent(new Event('change'));
-                break;
+        // Auto-select office from URL query parameter (e.g. ?office=OQA)
+        const urlParams = new URLSearchParams(window.location.search);
+        const officeParam = urlParams.get('office');
+        if (officeParam) {
+            const selectEl = document.getElementById('tanggapan');
+            const paramLower = officeParam.toLowerCase().trim();
+            for (let i = 0; i < selectEl.options.length; i++) {
+                const opt = selectEl.options[i];
+                const optVal = opt.value.toLowerCase().trim();
+                const optCode = (opt.getAttribute('data-code') || '').toLowerCase().trim();
+                if (optCode === paramLower || optVal === paramLower) {
+                    selectEl.selectedIndex = i;
+                    // Trigger change event to update the header code
+                    selectEl.dispatchEvent(new Event('change'));
+                    break;
+                }
             }
         }
-    }
 
-    // Form submission with loading state
-    document.getElementById('feedbackForm').addEventListener('submit', function() {
-        const btn = document.getElementById('submitBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Nagsusumite...';
-    });
-</script>
+        // Form submission — unified fetch + offline fallback + precise missing-field surfacing
+        document.getElementById('feedbackForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const form = this;
 
-<%- include('partials/footer') %>
+            // Clear previous message
+            let msg = document.getElementById('formValidationMsg');
+            if (!msg) {
+                msg = document.createElement('div');
+                msg.id = 'formValidationMsg';
+                msg.style.cssText = 'margin:0.75rem auto 0 auto; max-width:720px; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; padding:0.7rem 0.9rem; border-radius:8px; font-size:0.85rem; font-weight:600; text-align:center; display:none;';
+                btn.parentElement.insertBefore(msg, btn);
+            }
+            msg.style.display = 'none';
+            // Remove prior outlines
+            form.querySelectorAll('.sqd-item, .form-group').forEach(el => { el.style.outline = ''; });
+
+            // Build explicit missing list (covers hidden radios which :invalid alone can miss)
+            const missing = [];
+            const addMissing = (label, ok) => { if (!ok) missing.push(label); };
+            addMissing('Pangalan', document.getElementById('pangalan').value.trim());
+            addMissing('Uri ng Kliyente', form.querySelector('input[name="uri_kliyente"]:checked'));
+            addMissing('Petsa', document.getElementById('petsa').value);
+            addMissing('Kasarian', form.querySelector('input[name="kasarian"]:checked'));
+            addMissing('Edad', document.getElementById('edad').value);
+            addMissing('Rehiyon', document.getElementById('rehiyon').value);
+            addMissing('Tanggapan na binisita', document.getElementById('tanggapan').value);
+            addMissing('Uri ng transaksyon', document.getElementById('uri_transaksyon').value.trim());
+            addMissing('CC1', form.querySelector('input[name="cc1"]:checked'));
+            for (let i = 0; i <= 8; i++) addMissing('SQD' + i, form.querySelector(`input[name="sqd${i}"]:checked`));
+            // Email format is optional but must be valid if filled
+            const emailEl = document.getElementById('email');
+            if (emailEl && emailEl.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value.trim())) missing.push('Email (invalid format)');
+
+            // Also use browser's checkValidity for any other constraints (number range etc.)
+            const browserValid = form.checkValidity();
+            if (missing.length || !browserValid) {
+                // Find first missing group to scroll to
+                let firstTarget = null;
+                if (!form.querySelector('input[name="uri_kliyente"]:checked')) firstTarget = document.querySelector('.form-group:has(input[name="uri_kliyente"])') || form.querySelector('input[name="uri_kliyente"]')?.closest('.sqd-item, .form-group');
+                else if (!document.getElementById('pangalan').value.trim()) firstTarget = document.getElementById('pangalan').closest('.form-group');
+                else if (!form.querySelector('input[name="kasarian"]:checked')) firstTarget = document.querySelector('input[name="kasarian"]')?.closest('.form-group');
+                else if (!document.getElementById('edad').value) firstTarget = document.getElementById('edad').closest('.form-group');
+                else if (!document.getElementById('rehiyon').value) firstTarget = document.getElementById('rehiyon').closest('.form-group');
+                else if (!form.querySelector('input[name="cc1"]:checked')) firstTarget = document.querySelector('input[name="cc1"]')?.closest('.sqd-item');
+                else {
+                    for (let i = 0; i <= 8; i++) if (!form.querySelector(`input[name="sqd${i}"]:checked`)) { firstTarget = document.querySelector(`[data-sqd="sqd${i}"]`); break; }
+                }
+                if (!firstTarget) {
+                    const inv = form.querySelector(':invalid');
+                    if (inv) firstTarget = inv.closest('.sqd-item') || inv.closest('.form-group') || inv;
+                }
+                if (firstTarget) {
+                    firstTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstTarget.style.outline = '2px solid #dc2626';
+                    firstTarget.style.borderRadius = '8px';
+                    setTimeout(() => { firstTarget.style.outline = ''; }, 3000);
+                }
+                // Highlight all missing SQD items
+                for (let i = 0; i <= 8; i++) if (!form.querySelector(`input[name="sqd${i}"]:checked`)) {
+                    const el = document.querySelector(`[data-sqd="sqd${i}"]`);
+                    if (el) { el.style.outline = '2px solid #dc2626'; el.style.borderRadius = '8px'; setTimeout(() => el.style.outline = '', 3000); }
+                }
+                msg.textContent = 'Kumpletuhin muna: ' + (missing.length ? missing.join(', ') : 'may kulang — paki-check ang pula') + '. Lahat ng SQD 0-8 ay required.';
+                msg.style.display = 'block';
+                console.warn('Form blocked — missing:', missing, 'browserValid:', browserValid, 'invalid:', form.querySelectorAll(':invalid'));
+                return;
+            }
+
+            // Offline → save to IndexedDB — timer instead of spinner
+            if (!navigator.onLine) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="psau-timer small" aria-hidden="true"><span class="psau-timer-hand"></span><span class="psau-timer-center"></span></span> Ipinapasa sa Offline Storage...';
+                const formData = new FormData(form);
+                const dataObj = {};
+                formData.forEach((v, k) => dataObj[k] = v);
+                try {
+                    if (window.offlineStorage) await window.offlineStorage.saveFeedback(dataObj);
+                    window.location.href = '/thank-you?offline=1';
+                } catch (err) {
+                    console.error('Offline save error:', err);
+                    msg.textContent = 'Offline save failed: ' + (err.message || 'unknown');
+                    msg.style.display = 'block';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Isumite ang Feedback';
+                }
+                return;
+            }
+
+            // Online → submit via fetch — timer instead of spinner
+            btn.disabled = true;
+            btn.innerHTML = '<span class="psau-timer small" aria-hidden="true"><span class="psau-timer-hand"></span><span class="psau-timer-center"></span></span> Nagsusumite...';
+            const formData = new FormData(form);
+            try {
+                const resp = await fetch(form.action, {
+                    method: 'POST',
+                    body: new URLSearchParams(formData),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                const ct = resp.headers.get('content-type') || '';
+                let data = {};
+                if (ct.includes('application/json')) data = await resp.json().catch(() => ({}));
+                else data = { success: resp.ok, message: await resp.text().catch(() => '') };
+                if (resp.ok && (data.success === true || data.success === undefined)) {
+                    // Duplicate is also treated as success
+                    window.location.href = '/thank-you' + (data.duplicate ? '?duplicate=1' : '');
+                } else {
+                    const errMsg = (data && (data.error || data.message)) || `Server rejected (${resp.status}). Try refreshing to get a fresh CSRF token.`;
+                    msg.textContent = errMsg;
+                    msg.style.display = 'block';
+                    // If CSRF, suggest refresh
+                    if (resp.status === 403 && /CSRF/i.test(errMsg)) msg.textContent += ' — i-refresh ang page at subukang muli.';
+                    console.error('Submit failed', resp.status, data);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Isumite ang Feedback';
+                    // Do not scroll to top — keep message visible near button
+                    msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } catch (err) {
+                console.error('Submit network error:', err);
+                msg.textContent = 'Network error: ' + (err.message || 'hindi maabot ang server') + ' — susubukan ang offline save.';
+                msg.style.display = 'block';
+                // Fallback to offline save
+                try {
+                    const fd2 = new FormData(form);
+                    const obj2 = {}; fd2.forEach((v, k) => obj2[k] = v);
+                    if (window.offlineStorage) await window.offlineStorage.saveFeedback(obj2);
+                    setTimeout(() => window.location.href = '/thank-you?offline=1', 800);
+                } catch (_) { }
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Isumite ang Feedback';
+            }
+        });
+    </script>
+
+    <%- include('partials/footer') %>

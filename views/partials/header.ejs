@@ -1,25 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= typeof pageTitle !== 'undefined' ? pageTitle : 'PSAU Customer Feedback System' %></title>
-    <meta name="description" content="Customer Feedback Form for Pampanga State Agricultural University - Quality Management System">
-    
+    <title>
+        <%= typeof pageTitle !=='undefined' ? pageTitle : 'PSAU Customer Feedback System' %>
+    </title>
+    <meta name="description"
+        content="Customer Feedback Form for Pampanga State Agricultural University - Quality Management System">
+    <link rel="icon" type="image/png" href="/images/logo.png">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
     <!-- Chart.js -->
-    <% if (typeof useCharts !== 'undefined' && useCharts) { %>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <% } %>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/css/style.css">
+    <% if (typeof useCharts !=='undefined' && useCharts) { %>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        <% } %>
+
+            <!-- Font Awesome -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+            <!-- PWA & Offline Support -->
+            <link rel="manifest" href="/manifest.json">
+            <meta name="theme-color" content="#1b5e20">
+            <meta name="mobile-web-app-capable" content="yes">
+            <meta name="apple-mobile-web-app-capable" content="yes">
+            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+            <!-- Prevent caching of admin pages so back-button never shows stale dashboard -->
+            <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, private">
+            <meta http-equiv="Pragma" content="no-cache">
+            <meta http-equiv="Expires" content="0">
+            <script>
+              // Fix back-button after logout: bfcache restore must revalidate with server
+              window.addEventListener('pageshow', function (event) {
+                if (event.persisted) {
+                  // Safari/Firefox bfcache — force server round-trip
+                  window.location.reload();
+                }
+              });
+              // Extra safety: if browser restored page from history without pageshow persisted flag (Chrome)
+              // detect back navigation and force reload for admin routes
+              (function() {
+                try {
+                  var isAdminPage = window.location.pathname.startsWith('/admin');
+                  if (isAdminPage && window.performance && performance.getEntriesByType) {
+                    var nav = performance.getEntriesByType('navigation')[0];
+                    if (nav && nav.type === 'back_forward') {
+                      // Do a lightweight auth check — if session gone, redirect to login
+                      fetch(window.location.href, { method: 'HEAD', cache: 'no-store', credentials: 'same-origin' })
+                        .then(function(r){
+                          if (r.redirected && r.url.indexOf('/admin/login') !== -1) window.location.replace('/admin/login');
+                          else if (r.status === 401 || r.status === 302) window.location.replace('/admin/login');
+                        }).catch(function(){});
+                    }
+                  }
+                } catch(e){}
+              })();
+              // Global fetch interceptor: any 401 on admin routes => session expired, force login
+              (function(){
+                try {
+                  var origFetch = window.fetch;
+                  if (origFetch) {
+                    window.fetch = function(input, init){
+                      return origFetch.apply(this, arguments).then(function(res){
+                        if (res && res.status === 401 && window.location.pathname.startsWith('/admin')) {
+                          // Avoid redirect loop if already on login
+                          if (window.location.pathname !== '/admin/login') window.location.replace('/admin/login');
+                        }
+                        return res;
+                      });
+                    };
+                  }
+                } catch(e){}
+              })();
+            </script>
+            <script src="/js/offline-sync.js"></script>
+
+            <!-- Custom CSS -->
+            <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>

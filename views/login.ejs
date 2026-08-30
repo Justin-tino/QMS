@@ -1,62 +1,101 @@
-<%- include('partials/header', { pageTitle: 'Admin Login - PSAU Feedback' }) %>
+<%- include('partials/header', { pageTitle: 'System Login — PSAU Quality Management System' }) %>
 
-<div class="login-page">
-    <div class="login-bg-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-        <div class="shape shape-4"></div>
-    </div>
-    <div class="login-card">
-        <div class="login-header">
-            <div class="lock-icon">
-                <i class="fas fa-shield-halved"></i>
+    <div class="login-page">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo-wrap">
+                    <img src="/images/logo.png" alt="PSAU Logo" class="login-logo-img">
+                </div>
+                <h1>Quality Management System</h1>
+                <p>Pampanga State Agricultural University</p>
             </div>
-            <h1>Welcome Back</h1>
-            <p>Sign in to PSAU Feedback Dashboard</p>
-        </div>
-        <div class="login-body">
-            <% if (typeof error !== 'undefined' && error) { %>
-            <div class="error-msg"><i class="fas fa-exclamation-circle"></i> <%= error %></div>
-            <% } %>
-            <form action="/admin/login" method="POST">
-                <div class="input-group">
-                    <div class="input-icon"><i class="fas fa-envelope"></i></div>
-                    <input type="email" id="email" name="email" placeholder=" " required>
-                    <label for="email">Email</label>
-                </div>
-                <div class="input-group">
-                    <div class="input-icon"><i class="fas fa-lock"></i></div>
-                    <input type="password" id="password" name="password" placeholder=" " required>
-                    <label for="password">Password</label>
-                    <button type="button" class="toggle-pw" onclick="togglePassword()" tabindex="-1" aria-label="Toggle password visibility">
-                        <i class="fas fa-eye" id="pwIcon"></i>
-                    </button>
-                </div>
-                <button type="submit" class="btn-login">
-                    <span>Sign In</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </form>
-        </div>
-        <div class="login-footer">
-            <p>&copy; 2026 PSAU — Quality Management System</p>
+            <div class="login-body">
+                <% if (typeof error !=='undefined' && error) { %>
+                    <div class="error-msg">
+                        <%= error %>
+                    </div>
+                    <% } %>
+                        <form action="/admin/login" method="POST">
+                            <input type="hidden" name="_csrf"
+                                value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                            <div class="input-group">
+                                <input type="email" id="email" name="email" placeholder=" " required
+                                    value="<%= typeof presetEmail !== 'undefined' ? presetEmail : '' %>">
+                                <label for="email">Email Address</label>
+                            </div>
+                            <div class="input-group">
+                                <input type="password" id="password" name="password" placeholder=" " required>
+                                <label for="password">Password</label>
+                                <button type="button" class="toggle-pw" onclick="togglePassword()" tabindex="-1"
+                                    aria-label="Toggle password visibility">Show</button>
+                            </div>
+                            <input type="hidden" name="role" value="admin">
+                            <button type="submit" class="btn-login">
+                                <span>Sign In to System</span>
+                            </button>
+                        </form>
+            </div>
+            <div class="login-footer">
+                <p>&copy; <%= new Date().getFullYear() %> Pampanga State Agricultural University — QMS</p>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-function togglePassword() {
-    const pw = document.getElementById('password');
-    const icon = document.getElementById('pwIcon');
-    if (pw.type === 'password') {
-        pw.type = 'text';
-        icon.className = 'fas fa-eye-slash';
-    } else {
-        pw.type = 'password';
-        icon.className = 'fas fa-eye';
-    }
-}
-</script>
+    <script>
+        function togglePassword() {
+            const pw = document.getElementById('password');
+            const btn = document.querySelector('.toggle-pw');
+            if (pw.type === 'password') { pw.type = 'text'; btn.textContent = 'Hide'; }
+            else { pw.type = 'password'; btn.textContent = 'Show'; }
+        }
+        // Typo guard for login email (blocks gmai.com before submit)
+        (function(){
+            const form = document.querySelector('form[action="/admin/login"]');
+            const emailInput = document.getElementById('email');
+            if(!form || !emailInput) return;
+            // create hint element
+            const hint = document.createElement('div');
+            hint.id='loginTypoHint';
+            hint.style.cssText='display:none; margin-top:0.4rem; font-size:0.78rem; font-weight:600; color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; padding:0.45rem 0.6rem; border-radius:7px;';
+            emailInput.parentNode.appendChild(hint);
+            function getSug(em){
+                if(!em||!em.includes('@')) return null;
+                const d=em.trim().toLowerCase().split('@')[1]; if(!d) return null;
+                const map={'gmai.com':'gmail.com','gmial.com':'gmail.com','gmal.com':'gmail.com','gnail.com':'gmail.com','gmaiil.com':'gmail.com','gmail.con':'gmail.com','gmail.cm':'gmail.com','gmail.co':'gmail.com','hotmai.com':'hotmail.com','hotnail.com':'hotmail.com','yahooo.com':'yahoo.com','yaho.com':'yahoo.com','outlok.com':'outlook.com','icloude.com':'icloud.com'};
+                if(map[d]) return map[d];
+                const common=['gmail.com','yahoo.com','hotmail.com','outlook.com','icloud.com','psau.edu.ph'];
+                function lev(a,b){ const m=a.length,n=b.length; const dp=Array.from({length:m+1},()=>Array(n+1).fill(0)); for(let i=0;i<=m;i++) dp[i][0]=i; for(let j=0;j<=n;j++) dp[0][j]=j; for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); return dp[m][n]; }
+                for(const c of common){ if(d!==c && lev(d,c)===1) return c; }
+                return null;
+            }
+            emailInput.addEventListener('input', function(){
+                const sug=getSug(emailInput.value.trim());
+                if(sug){
+                    hint.style.display='block';
+                    hint.innerHTML='Did you mean <strong>'+sug+'</strong>? <span style="text-decoration:underline; cursor:pointer;" onclick="var e=document.getElementById(\'email\'); e.value=e.value.split(\'@\')[0]+\'@'+sug+'\'; document.getElementById(\'loginTypoHint\').style.display=\'none\';">Click to fix</span>';
+                    emailInput.style.borderColor='#f59e0b';
+                } else { hint.style.display='none'; emailInput.style.borderColor=''; }
+            });
+            form.addEventListener('submit', function(e){
+                const v=emailInput.value.trim();
+                const sug=getSug(v);
+                if(sug){
+                    e.preventDefault();
+                    hint.style.display='block';
+                    hint.textContent='Please fix email: did you mean '+sug+'? You typed "'+(v.split('@')[1]||'')+'".';
+                    emailInput.style.borderColor='#dc2626';
+                    emailInput.focus();
+                    return false;
+                }
+                // strict format check
+                if(!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,63}$/i.test(v) || v.includes('..')){
+                    e.preventDefault();
+                    hint.style.display='block';
+                    hint.textContent='Invalid email format. Use name@domain.com (e.g., name@gmail.com).';
+                    return false;
+                }
+            });
+        })();
+    </script>
 
-<%- include('partials/footer') %>
+    <%- include('partials/footer') %>

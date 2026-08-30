@@ -2,13 +2,25 @@
 
 <div class="thankyou-page">
     <div class="thankyou-card">
-        <div class="icon-circle">
-            <i class="fas fa-check"></i>
+        <div style="margin-bottom: 1.25rem;">
+            <img src="/images/logo.png" alt="PSAU Logo" style="height: 75px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));">
         </div>
+        <div class="icon-circle">
+            </div>
         <h1>Maraming Salamat!</h1>
-        <p>Ang iyong feedback ay matagumpay na naisumite. Ang iyong mga sagot ay makakatulong sa pagpapabuti ng aming mga serbisyo.</p>
-        <a href="/" class="btn-back"><i class="fas fa-arrow-left"></i> Bumalik sa Form</a>
+        <div id="offlineNotice" style="display:none; background: rgba(2, 136, 209, 0.12); border: 1px solid rgba(2, 136, 209, 0.3); color: #0288d1; padding: 0.65rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem;">
+            <strong>Offline Submission:</strong> Nai-save nang ligtas sa iyong device (IndexedDB). Awtomatikong maidi-distribute sa server kapag nagkaroon ng koneksyon sa internet.
+        </div>
+        <p id="standardNotice">Ang iyong feedback ay matagumpay na naisumite. Ang iyong mga sagot ay makakatulong sa pagpapabuti ng aming mga serbisyo.</p>
+        <a href="/" class="btn-back">Bumalik sa Form</a>
     </div>
 </div>
+
+<script>
+    if (new URLSearchParams(window.location.search).get('offline') === '1') {
+        document.getElementById('offlineNotice').style.display = 'block';
+        document.getElementById('standardNotice').textContent = 'Ang iyong sagot ay pansamantalang nai-save sa browser at awtomatikong isusumite sa PSAU system kapag nagkaroon ng koneksyon sa internet.';
+    }
+</script>
 
 <%- include('partials/footer') %>

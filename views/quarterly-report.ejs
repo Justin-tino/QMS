@@ -1,0 +1,1112 @@
+<%- include('partials/header', { pageTitle: 'Automated Quarterly Reports - PSAU QMS' }) %>
+  <script>
+    (function () { try { var t = localStorage.getItem('psau_theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) { } })();
+  </script>
+  <script src="/js/admin-ui.js"></script>
+
+  <style>
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg)
+      }
+
+      100% {
+        transform: rotate(360deg)
+      }
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 1.9rem;
+      height: 1.9rem;
+      border: 3px solid rgba(27, 94, 32, .12);
+      border-top-color: #1b5e20;
+      border-radius: 50%;
+      animation: spin .75s linear infinite
+    }
+
+    .psau-timer {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      border: 3px solid #e2e8f0;
+      border-radius: 50%;
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+      flex-shrink: 0
+    }
+
+    .psau-timer::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 5px;
+      background: #94a3b8;
+      border-radius: 2px 2px 0 0;
+      border: 1px solid #cbd5e1
+    }
+
+    .psau-timer-hand {
+      position: absolute;
+      width: 2.5px;
+      height: 15px;
+      background: #1b5e20;
+      border-radius: 2px;
+      top: 50%;
+      left: 50%;
+      transform-origin: 50% 100%;
+      transform: translate(-50%, -100%) rotate(0deg);
+      animation: psauTimerTick 1s linear infinite
+    }
+
+    .psau-timer-center {
+      width: 6px;
+      height: 6px;
+      background: #1b5e20;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+      box-shadow: 0 0 0 2px #fff
+    }
+
+    .psau-timer-text {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: #64748b;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 1px 6px;
+      border-radius: 10px;
+      white-space: nowrap;
+      letter-spacing: 0.2px;
+      font-variant-numeric: tabular-nums
+    }
+
+    @keyframes psauTimerTick {
+      from {
+        transform: translate(-50%, -100%) rotate(0deg)
+      }
+
+      to {
+        transform: translate(-50%, -100%) rotate(360deg)
+      }
+    }
+
+    .psau-timer.small {
+      width: 18px;
+      height: 18px;
+      border-width: 2px;
+      box-shadow: none
+    }
+
+    .psau-timer.small::before {
+      width: 6px;
+      height: 3px;
+      top: -3px
+    }
+
+    .psau-timer.small .psau-timer-hand {
+      height: 7px;
+      width: 2px
+    }
+
+    .psau-timer.small .psau-timer-center {
+      width: 3px;
+      height: 3px
+    }
+
+    .psau-timer.small .psau-timer-text {
+      display: none
+    }
+
+    .psau-global-timer {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.48);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 4000;
+      flex-direction: column;
+      gap: 0.9rem;
+      padding: 1rem
+    }
+
+    .psau-global-timer.open {
+      display: flex
+    }
+
+    .psau-global-timer-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 1.4rem 1.6rem;
+      min-width: 280px;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.28);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.7rem
+    }
+
+    .psau-global-timer-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #0f172a
+    }
+
+    .psau-global-timer-sub {
+      font-size: 0.76rem;
+      font-weight: 500;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.4
+    }
+
+    .psau-dialog-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+      padding: 1rem
+    }
+
+    .psau-dialog-overlay.open {
+      display: flex
+    }
+
+    .psau-dialog-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 1.5rem;
+      min-width: 320px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.28)
+    }
+
+    .psau-dialog-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 0.9rem auto;
+      font-size: 1.35rem
+    }
+
+    .psau-dialog-icon.variant-warning {
+      background: #fffbeb;
+      color: #d97706;
+      border: 1px solid #fde68a
+    }
+
+    .psau-dialog-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.02rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 0.4rem 0
+    }
+
+    .psau-dialog-message {
+      font-size: 0.84rem;
+      color: #475569;
+      line-height: 1.5;
+      margin: 0 0 1.2rem 0
+    }
+
+    .psau-dialog-actions {
+      display: flex;
+      gap: 0.6rem;
+      justify-content: center
+    }
+
+    .psau-btn-primary,
+    .psau-btn-secondary {
+      padding: 0.55rem 1.1rem;
+      border-radius: 9px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      min-width: 90px
+    }
+
+    .psau-btn-primary {
+      background: #0f172a;
+      color: #fff;
+      border-color: #0f172a
+    }
+
+    .psau-btn-primary:hover {
+      background: #1e293b
+    }
+
+    .psau-btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      border-color: #e2e8f0
+    }
+
+    .psau-btn-secondary:hover {
+      background: #e2e8f0
+    }
+
+    .q-pill {
+      padding: 0.38rem 0.9rem;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-decoration: none;
+      border: 1px solid #e2e8f0;
+      transition: all .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem
+    }
+
+    .q-pill.active {
+      background: #1b5e20;
+      color: #fff;
+      border-color: #1b5e20
+    }
+
+    .q-pill:not(.active) {
+      background: #fff;
+      color: #475569
+    }
+
+    .q-pill:not(.active):hover {
+      border-color: #1b5e20;
+      color: #1b5e20
+    }
+
+    .q-kpi {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      border: 1px solid #e2e8f0;
+      background: rgba(255, 255, 255, .74);
+      backdrop-filter: blur(12px)
+    }
+
+    .q-kpi .qk-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      flex-shrink: 0
+    }
+
+    .q-kpi .qk-value {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.05
+    }
+
+    .q-kpi .qk-label {
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.45px
+    }
+
+    @media print {
+
+      .sidebar,
+      .mobile-tabs,
+      .q-filter,
+      .q-no-print {
+        display: none !important
+      }
+
+      body {
+        background: #fff !important
+      }
+
+      .admin-main {
+        padding: 0 !important
+      }
+
+      .glass {
+        box-shadow: none !important;
+        break-inside: avoid
+      }
+    }
+  </style>
+
+  <div class="admin-shell">
+    <aside class="sidebar fade-up">
+      <div class="side-brand">
+        <img src="/images/logo.png" alt="PSAU Logo">
+        <div>
+          <div class="sb-name">PSAU - QMS</div>
+        </div>
+      </div>
+      <nav class="side-nav">
+        <a href="/admin/dashboard" onclick="sessionStorage.setItem('psauTab','dashboard')" class="side-link"><i
+            class="fas fa-grip"></i> <span data-i18n="nav.dashboard">Dashboard</span></a>
+        <a href="/admin/dashboard" onclick="sessionStorage.setItem('psauTab','feedback')" class="side-link"><i
+            class="fas fa-comment-dots"></i> <span data-i18n="nav.feedback">Feedback</span></a>
+        <a href="/admin/dashboard" onclick="sessionStorage.setItem('psauTab','qr')" class="side-link"><i
+            class="fas fa-qrcode"></i> <span data-i18n="nav.qr">QR Codes</span></a>
+        <a href="/admin/quarterly-reports" class="side-link active"><i class="fas fa-wand-magic-sparkles"></i> <span>AI
+            Assistant</span></a>
+        <% if (typeof userRole !=='undefined' && userRole==='admin' ) { %>
+          <a href="/admin/dashboard" onclick="sessionStorage.setItem('psauTab','users')" class="side-link"><i
+              class="fas fa-user"></i> <span data-i18n="nav.users">Users</span></a>
+          <a href="/admin/dashboard" onclick="sessionStorage.setItem('psauTab','settings')" class="side-link"><i
+              class="fas fa-gear"></i> <span data-i18n="nav.settings">Settings</span></a>
+          <% } %>
+      </nav>
+      <div class="side-bottom">
+        <div class="side-user-card">
+          <div class="su-avatar"><i class="fas fa-user"></i></div>
+          <div class="su-info">
+            <div class="su-name">
+              <%= typeof adminUser !=='undefined' && adminUser ? adminUser : (typeof userRole !=='undefined' &&
+                userRole==='staff' ? 'Staff User' : 'Admin User' ) %>
+            </div>
+            <div class="su-mail">
+              <%= typeof userRole !=='undefined' && userRole==='staff' ? 'Staff' : 'Administrator' %>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="side-theme-card" onclick="PSAU_UI.toggleTheme()" title="Toggle dark / light mode">
+          <span class="st-left"><i class="fas fa-sun" data-theme-icon></i> <span data-theme-label>Light
+              Mode</span></span>
+        </button>
+        <a href="/admin/logout" onclick="return confirmLogoutQ(event)" class="side-logout-red"><i
+            class="fas fa-arrow-right-from-bracket"></i> <span>Log Out</span></a>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <div class="dash-header fade-up" style="margin-bottom:1rem;">
+        <div class="dash-header-left">
+          <h1 style="display:flex; align-items:center; gap:0.6rem;"><span data-i18n="q.title">Automated Quarterly
+              Customer Feedback Report</span></h1>
+        </div>
+        <div class="dash-header-right" style="display:flex; gap:0.5rem; align-items:center; position:relative;">
+          <select id="quarterOfficeFilter" onchange="applyQuarterOfficeFilter(this.value)"
+            style="cursor:pointer; border:1px solid #e2e8f0; background:#fff; border-radius:20px; padding:0.35rem 0.75rem; font-size:0.78rem; font-weight:600; color:#334155;">
+            <option value="all" <%=typeof selectedOffice !=='undefined' && selectedOffice==='all' ? 'selected' : '' %>
+              >All Offices / Departments</option>
+            <% if (typeof availableOffices !=='undefined' && availableOffices.length) { %>
+              <% availableOffices.forEach(function(off) { %>
+                <option value="<%= off %>" <%=typeof selectedOffice !=='undefined' && selectedOffice===off ? 'selected'
+                  : '' %>><%= off %>
+                </option>
+                <% }); %>
+                  <% } %>
+          </select>
+          <button type="button" id="quarterDateBadge" class="dash-date-badge" onclick="toggleQuarterDatePicker()"
+            title="Click to filter by any date/year/day"
+            style="cursor:pointer; border:1px solid #e2e8f0; background:#fff; border-radius:20px; padding:0.35rem 0.7rem; font-size:0.78rem; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; color:#334155;">
+            <i class="fas fa-calendar" style="color:#1b5e20;"></i>
+            <%= new Date().toLocaleDateString('en-PH', { year: 'numeric' , month: 'long' , day: 'numeric' }) %>
+          </button>
+          <div id="quarterDatePopover"
+            style="display:none; position:absolute; top:calc(100% + 0.5rem); right:0; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:0.9rem; box-shadow:0 12px 24px rgba(15,23,42,0.12); z-index:60; min-width:268px;">
+            <label for="quarterDatePickerInput"
+              style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Jump
+              to specific day / year</label>
+            <input type="date" id="quarterDatePickerInput"
+              style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem;">
+            <div style="display:flex; gap:0.4rem; margin-top:0.6rem;">
+              <button type="button" onclick="shiftQuarterDate(-1)"
+                style="flex:1; padding:0.4rem; border:1px solid #e2e8f0; background:#f8fafc; border-radius:7px; font-size:0.7rem; font-weight:600; cursor:pointer;">←
+                Prev day</button>
+              <button type="button" onclick="shiftQuarterDate(1)"
+                style="flex:1; padding:0.4rem; border:1px solid #e2e8f0; background:#f8fafc; border-radius:7px; font-size:0.7rem; font-weight:600; cursor:pointer;">Next
+                day →</button>
+            </div>
+            <div style="display:flex; gap:0.4rem; margin-top:0.4rem;">
+              <button type="button" onclick="applyQuarterDate()"
+                style="flex:1; background:#1b5e20; color:#fff; border:none; padding:0.5rem; border-radius:7px; font-weight:700; font-size:0.78rem; cursor:pointer;">Apply
+                to quarterly</button>
+              <button type="button" onclick="clearQuarterDate()"
+                style="padding:0.5rem 0.7rem; background:#fff; border:1px solid #e2e8f0; border-radius:7px; font-size:0.78rem; cursor:pointer;">Clear</button>
+            </div>
+            <div style="font-size:0.65rem; color:#94a3b8; margin-top:0.5rem; text-align:center;">Admin & employee —
+              jumps to year/quarter of chosen date</div>
+          </div>
+          <a href="/admin/report?filterType=range&office=<%= typeof selectedOffice !== 'undefined' ? encodeURIComponent(selectedOffice) : 'all' %>&dateFrom=<%= activeQuarter==='Q1' ? selectedYear+'-01-01' : activeQuarter==='Q2' ? selectedYear+'-04-01' : activeQuarter==='Q3' ? selectedYear+'-07-01' : selectedYear+'-10-01' %>&dateTo=<%= activeQuarter==='Q1' ? selectedYear+'-03-31' : activeQuarter==='Q2' ? selectedYear+'-06-30' : activeQuarter==='Q3' ? selectedYear+'-09-30' : selectedYear+'-12-31' %>"
+            target="_blank" class="btn-submit"
+            style="padding:0.5rem 0.9rem; font-size:0.78rem; border-radius:8px; background:#0f172a; color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:0.35rem; white-space:nowrap;"><i
+              class="fas fa-file-lines"></i> Generate Report</a>
+        </div>
+      </div>
+
+      <!-- 2. AI Suggestions Section — Matches Reference UI focused on SQD & Feedback Analysis -->
+      <div class="glass fade-up d2"
+        style="margin-bottom:1.5rem; background:#ffffff; border-radius:20px; border:1px solid #e2e8f0; padding:1.5rem 1.75rem; box-shadow:0 10px 30px rgba(15,23,42,0.04);">
+
+
+        <!-- Dual Column Grid -->
+        <div style="display:grid; grid-template-columns:1fr 1.35fr; gap:1.5rem;" class="ai-suggestions-grid">
+
+          <!-- Left Column: Generator Panel -->
+          <div
+            style="border:1px solid #e2e8f0; border-radius:16px; background:#ffffff; padding:2rem 1.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; min-height:480px; position:relative;">
+
+            <!-- Outer Sparkle Ring Visual -->
+            <div
+              style="position:relative; width:150px; height:150px; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:center;">
+              <!-- Decorative Sparkles -->
+              <span style="position:absolute; top:8px; right:20px; color:#4ade80; font-size:1rem;">✦</span>
+              <span style="position:absolute; bottom:12px; left:16px; color:#86efac; font-size:0.8rem;">✦</span>
+              <span style="position:absolute; top:28px; left:10px; color:#4ade80; font-size:0.75rem;">✦</span>
+              <span style="position:absolute; bottom:8px; right:28px; color:#86efac; font-size:0.85rem;">✦</span>
+
+              <!-- Soft Green Outer Aura Ring -->
+              <div
+                style="width:138px; height:138px; border-radius:50%; background:#f0fdf4; border:1px solid #dcfce7; display:flex; align-items:center; justify-content:center; box-shadow:0 0 25px rgba(34,197,94,0.14);">
+                <!-- Inner Light Green Circle -->
+                <div
+                  style="width:90px; height:90px; border-radius:50%; background:#dcfce7; border:1px solid #bbf7d0; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 2px 6px rgba(22,163,74,0.18);">
+                  <!-- Green Magic Wand Icon -->
+                  <i class="fas fa-magic"
+                    style="font-size:2.2rem; color:#16a34a; transform:rotate(-15deg); filter:drop-shadow(0 3px 6px rgba(22,163,74,0.3));"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main Generate Button -->
+            <button type="button" onclick="generateAISuggestions()" id="aiSuggestBtn"
+              style="background:linear-gradient(135deg, #16a34a 0%, #15803d 100%); color:#ffffff; border:none; border-radius:9999px; padding:0.9rem 2.8rem; font-weight:700; font-size:1rem; cursor:pointer; display:inline-flex; align-items:center; gap:0.6rem; box-shadow:0 4px 16px rgba(22, 163, 74, 0.3); transition:all 0.2s ease;">
+              <i class="fas fa-wand-magic-sparkles"></i> Generate
+            </button>
+            <div style="font-size:0.82rem; color:#64748b; margin-top:0.75rem;">Click to get AI suggestions</div>
+
+            <!-- Hidden input box for backend query parameter passing (preserves SQD & feedback analysis focus) -->
+            <input type="hidden" id="aiSuggestInput"
+              value="Provide 5 actionable SQD and feedback analysis suggestions for <%= activeQuarter %> <%= selectedYear %>">
+          </div>
+
+          <!-- Right Column: AI Suggestions Output Panel -->
+          <div
+            style="border:1px solid #e2e8f0; border-radius:16px; background:#ffffff; padding:1.25rem 1.5rem; display:flex; flex-direction:column; justify-content:space-between; min-height:480px;">
+            <div>
+              <!-- Header Bar -->
+              <div
+                style="display:flex; align-items:center; margin-bottom:1.1rem; padding-bottom:0.75rem; border-bottom:1px solid #f1f5f9;">
+                <div style="display:flex; align-items:center; gap:0.55rem;">
+                  <span style="font-weight:700; color:#15803d; font-size:0.98rem;">AI Suggestions</span>
+                </div>
+              </div>
+
+              <!-- Suggestions Cards List -->
+              <div id="aiSuggestReply">
+                <!-- Item 1: Encourage Active Participation -->
+                <div class="ai-suggestion-card"
+                  style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
+                  <div
+                    style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
+                    <i class="fas fa-comment-dots"></i>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
+                      <span
+                        style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">1</span>
+                      <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Encourage Active Feedback
+                        Participation</span>
+                    </div>
+                    <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Ask
+                      open-ended questions and invite students and clients to share thoughts through digital QR feedback
+                      cards.</div>
+                    <div
+                      style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
+                      <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i>
+                        Strategy:</strong> Deploy QR code standees at all service counters, train desk personnel to
+                      prompt feedback completion, and audit comment themes weekly.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Item 2: Set Clear Goals -->
+                <div class="ai-suggestion-card"
+                  style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
+                  <div
+                    style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
+                    <i class="fas fa-calendar-check"></i>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
+                      <span
+                        style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">2</span>
+                      <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Set Clear SQD Service Goals &amp;
+                        SLAs</span>
+                    </div>
+                    <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Define clear
+                      transaction benchmarks and display estimated processing times for each university service.</div>
+                    <div
+                      style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
+                      <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i>
+                        Strategy:</strong> Post Citizen's Charter checklists at office entryways, enforce maximum
+                      turnaround time SLAs, and monitor waiting time compliance.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Item 3: Personalize Support -->
+                <div class="ai-suggestion-card"
+                  style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
+                  <div
+                    style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
+                    <i class="fas fa-users"></i>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
+                      <span
+                        style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">3</span>
+                      <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Personalize Client Support &amp;
+                        Frontline Care</span>
+                    </div>
+                    <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Adapt
+                      frontline assistance to individual client requirements and transaction types to maintain high
+                      staff courtesy (SQD7).</div>
+                    <div
+                      style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
+                      <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i>
+                        Strategy:</strong> Conduct quarterly customer service orientation for staff, establish dedicated
+                      help desks for complex inquiries, and implement polite greeting protocols.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Item 4: Recognize Positive Performance -->
+                <div class="ai-suggestion-card"
+                  style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
+                  <div
+                    style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
+                    <i class="fas fa-trophy"></i>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
+                      <span
+                        style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">4</span>
+                      <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Recognize Positive Performance
+                        &amp; Effort</span>
+                    </div>
+                    <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Recognize
+                      frontline effort and positive sentiment in feedback to motivate staff and sustain high overall
+                      service ratings (SQD0).</div>
+                    <div
+                      style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
+                      <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i>
+                        Strategy:</strong> Launch a quarterly 'QMS Service Excellence Award' using sentiment tracking
+                      scores to publicly commend top-rated departments and personnel.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Item 5: Use Interactive Tools -->
+                <div class="ai-suggestion-card"
+                  style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
+                  <div
+                    style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
+                    <i class="fas fa-chart-column"></i>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
+                      <span
+                        style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">5</span>
+                      <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Use Interactive SQD Analytics
+                        Tools</span>
+                    </div>
+                    <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Incorporate
+                      quarterly SQD trend reports, Naïve Bayes sentiment tracking, and visual analytics to optimize
+                      university services.</div>
+                    <div
+                      style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
+                      <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i>
+                        Strategy:</strong> Schedule quarterly administrative quality reviews to analyze low-performing
+                      SQD areas, remove workflow bottlenecks, and iterate service processes.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Footer Bar -->
+            <div
+              style="display:flex; justify-content:space-between; align-items:center; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:0.5rem;">
+              <div style="display:flex; gap:0.85rem;">
+                <button type="button" onclick="copyAISuggestions()"
+                  style="background:none; border:none; color:#64748b; font-size:0.9rem; font-weight:600; cursor:pointer;"
+                  title="Copy suggestions">
+                  <i class="far fa-copy"></i>
+                </button>
+                <button type="button" onclick="downloadAISuggestions()"
+                  style="background:none; border:none; color:#64748b; font-size:0.9rem; font-weight:600; cursor:pointer;"
+                  title="Download suggestions">
+                  <i class="fas fa-download"></i>
+                </button>
+                <button type="button" onclick="shareAISuggestions()"
+                  style="background:none; border:none; color:#64748b; font-size:0.9rem; font-weight:600; cursor:pointer;"
+                  title="Share suggestions">
+                  <i class="fas fa-share-nodes"></i>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+        <style>
+          @media (max-width: 860px) {
+            .ai-suggestions-grid {
+              grid-template-columns: 1fr !important;
+            }
+          }
+
+          .ai-suggestion-card:hover {
+            border-color: #bbf7d0 !important;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.06);
+          }
+        </style>
+      </div>
+
+    </main>
+  </div>
+  <!-- PSAU Global Timer — timer instead of circle for all async -->
+  <div id="psauGlobalTimer" class="psau-global-timer" style="display:none;" aria-live="polite" aria-busy="true">
+    <div class="psau-global-timer-card">
+      <div class="psau-timer" style="width:52px; height:52px; border-width:3px; margin-bottom:0.2rem;">
+        <div class="psau-timer-hand" style="height:18px;"></div>
+        <div class="psau-timer-center"></div>
+      </div>
+      <div id="psauGlobalTimerTitle" class="psau-global-timer-title">Loading...</div>
+      <div id="psauGlobalTimerSub" class="psau-global-timer-sub">Please wait <span id="psauGlobalTimerElapsed"
+          style="font-weight:800; color:#1b5e20;">0.0s</span></div>
+    </div>
+  </div>
+
+  <div id="psauDialog" class="psau-dialog-overlay" style="display:none;" role="dialog" aria-modal="true"
+    aria-labelledby="psauDialogTitle" aria-describedby="psauDialogMessage">
+    <div class="psau-dialog-card">
+      <div id="psauDialogIcon" class="psau-dialog-icon variant-warning"><i class="fas fa-right-from-bracket"></i></div>
+      <h3 id="psauDialogTitle" class="psau-dialog-title">Proceed to logout?</h3>
+      <p id="psauDialogMessage" class="psau-dialog-message">You will be signed out and need to sign in again.</p>
+      <div class="psau-dialog-actions">
+        <button type="button" id="psauDialogCancel" class="psau-btn-secondary">No</button>
+        <button type="button" id="psauDialogConfirm" class="psau-btn-primary">Yes</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Logout confirm — uses designed dialog, fallback to native
+    function confirmLogoutQ(e) {
+      if (e) e.preventDefault();
+      var go = function () { window.location.href = '/admin/logout'; };
+      var ov = document.getElementById('psauDialog');
+      if (ov && document.getElementById('psauDialogConfirm')) {
+        // set text securely
+        document.getElementById('psauDialogTitle').textContent = 'Proceed to logout?';
+        document.getElementById('psauDialogMessage').textContent = 'You will be signed out of your account.';
+        document.getElementById('psauDialogCancel').textContent = 'No';
+        document.getElementById('psauDialogConfirm').textContent = 'Yes';
+        ov.style.display = 'flex'; ov.classList.add('open'); document.body.style.overflow = 'hidden';
+        var c = document.getElementById('psauDialogConfirm'), x = document.getElementById('psauDialogCancel');
+        var close = function (ok) {
+          ov.style.display = 'none'; ov.classList.remove('open'); document.body.style.overflow = '';
+          c.onclick = null; x.onclick = null; ov.onclick = null;
+          if (ok) go();
+        };
+        c.onclick = function () { close(true); };
+        x.onclick = function () { close(false); };
+        ov.onclick = function (ev) { if (ev.target === ov) close(false); };
+        return false;
+      }
+      if (confirm('Proceed to logout?')) go();
+      return false;
+    }
+    // Global timer helper for quarterly (timer instead of spinner)
+    let _qGlobalInt = null, _qGlobalStart = 0;
+    function showGlobalTimer(t, s) {
+      var ov = document.getElementById('psauGlobalTimer');
+      var tt = document.getElementById('psauGlobalTimerTitle');
+      var ss = document.getElementById('psauGlobalTimerSub');
+      if (!ov) return;
+      if (tt) tt.textContent = String(t || 'Loading...');
+      if (ss) ss.innerHTML = 'Please wait <span id="psauGlobalTimerElapsed" style="font-weight:800; color:#1b5e20;">0.0s</span>';
+      ov.style.display = 'flex'; ov.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      _qGlobalStart = Date.now();
+      if (_qGlobalInt) clearInterval(_qGlobalInt);
+      _qGlobalInt = setInterval(function () { var el = document.getElementById('psauGlobalTimerElapsed'); if (el) el.textContent = ((Date.now() - _qGlobalStart) / 1000).toFixed(1) + 's'; }, 100);
+    }
+    function hideGlobalTimer() {
+      var ov = document.getElementById('psauGlobalTimer');
+      if (ov) { ov.style.display = 'none'; ov.classList.remove('open'); }
+      document.body.style.overflow = '';
+      if (_qGlobalInt) { clearInterval(_qGlobalInt); _qGlobalInt = null; }
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.q-pill').forEach(function (a) {
+        a.addEventListener('click', function () { showGlobalTimer('Switching quarter...', ''); });
+      });
+      var sel = document.querySelector('select[onchange*="quarterly-reports"]');
+      if (sel) sel.addEventListener('change', function () { showGlobalTimer('Loading year...', ''); });
+    });
+    // Clickable date badge — quarterly, admin & employee, any previous date/year/day (same stack)
+    function toggleQuarterDatePicker() {
+      var pop = document.getElementById('quarterDatePopover');
+      var inp = document.getElementById('quarterDatePickerInput');
+      if (!pop) return;
+      var show = pop.style.display === 'none' || !pop.style.display;
+      pop.style.display = show ? 'block' : 'none';
+      if (show && inp) { inp.valueAsDate = new Date(); inp.focus(); }
+    }
+    function isValidYMDQ(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime()); }
+    function shiftQuarterDate(dir) {
+      var inp = document.getElementById('quarterDatePickerInput');
+      if (!inp) return;
+      if (!inp.value) { var t = new Date(); t.setDate(t.getDate() + dir); inp.value = t.toISOString().split('T')[0]; return; }
+      if (!isValidYMDQ(inp.value)) return;
+      var d = new Date(inp.value); d.setDate(d.getDate() + dir);
+      var iso = d.toISOString().split('T')[0];
+      if (isValidYMDQ(iso)) inp.value = iso;
+    }
+    function getQuarterFromMD(m) { // 0-indexed month
+      if (m <= 2) return 'Q1'; if (m <= 5) return 'Q2'; if (m <= 8) return 'Q3'; return 'Q4';
+    }
+    function applyQuarterDate() {
+      var inp = document.getElementById('quarterDatePickerInput');
+      var v = inp ? String(inp.value || '').trim() : '';
+      if (!v) { clearQuarterDate(); return; }
+      if (!isValidYMDQ(v)) { alert('Please pick a valid date (YYYY-MM-DD).'); return; }
+      var d = new Date(v);
+      var y = d.getFullYear(); var q = getQuarterFromMD(d.getMonth());
+      // sanitize year 2000-2100
+      y = Math.max(2000, Math.min(2100, y));
+      document.getElementById('quarterDatePopover').style.display = 'none';
+      showGlobalTimer('Loading ' + q + ' ' + y + '...', '');
+      var url = new URL(window.location.href);
+      url.searchParams.set('year', y);
+      url.searchParams.set('quarter', q);
+      window.location.href = url.toString();
+    }
+    function applyQuarterOfficeFilter(val) {
+      showGlobalTimer('Filtering by office...', '');
+      var url = new URL(window.location.href);
+      if (val && val !== 'all') {
+        url.searchParams.set('office', val);
+      } else {
+        url.searchParams.delete('office');
+      }
+      window.location.href = url.toString();
+    }
+    function clearQuarterDate() {
+      var pop = document.getElementById('quarterDatePopover');
+      if (pop) pop.style.display = 'none';
+      window.location.href = '/admin/quarterly-reports';
+    }
+    document.addEventListener('click', function (e) {
+      var pop = document.getElementById('quarterDatePopover');
+      var badge = document.getElementById('quarterDateBadge');
+      if (!pop || pop.style.display === 'none') return;
+      if (pop.contains(e.target) || (badge && badge.contains(e.target))) return;
+      pop.style.display = 'none';
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { var pop = document.getElementById('quarterDatePopover'); if (pop) pop.style.display = 'none'; } });
+    function printAIReport() {
+      const activeOffice = (document.getElementById('quarterOfficeFilter') && document.getElementById('quarterOfficeFilter').value) ? document.getElementById('quarterOfficeFilter').value : '<%= typeof selectedOffice !== "undefined" ? selectedOffice : "all" %>';
+      const p = new URLSearchParams({ quarter: '<%= activeQuarter %>', year: '<%= selectedYear %>', office: activeOffice }); window.open('/admin/print-ai-report?' + p.toString(), '_blank');
+    }
+    async function triggerAIAnalysis(forceRefresh) {
+      const activeOffice = (document.getElementById('quarterOfficeFilter') && document.getElementById('quarterOfficeFilter').value) ? document.getElementById('quarterOfficeFilter').value : '<%= typeof selectedOffice !== "undefined" ? selectedOffice : "all" %>';
+      const c = document.getElementById('aiAnalysisContainer'), r = document.getElementById('btnRefreshAI'), p = document.getElementById('btnPrintAI');
+      c.innerHTML = '<div style="text-align:center;padding:1.4rem 1rem;"><div class="psau-timer" style="margin:0 auto 0.9rem auto;"><div class="psau-timer-hand"></div><div class="psau-timer-center"></div></div><div style="font-weight:700;color:#0f172a;font-size:0.85rem;">Analyzing quarterly data...</div><div style="font-size:0.78rem;color:#64748b;margin-top:0.2rem;">Trilingual Naive Bayes &bull; K-Means &bull; Q1-Q4</div><div id="qTimerElapsed" style="margin-top:0.55rem; font-size:0.72rem; font-weight:700; color:#1b5e20; font-variant-numeric:tabular-nums;">0.0s</div></div>';
+      let qStart = Date.now(); let qInt = setInterval(function () { var el = document.getElementById('qTimerElapsed'); if (el) el.textContent = ((Date.now() - qStart) / 1000).toFixed(1) + 's'; }, 100);
+      if (r) r.style.display = 'none'; if (p) p.style.display = 'none';
+      try {
+        const pa = new URLSearchParams({ quarter: '<%= activeQuarter %>', year: '<%= selectedYear %>', office: activeOffice }); if (forceRefresh) pa.append('refresh', 'true');
+        const res = await fetch('/admin/generate-ai-report?' + pa.toString()); const j = await res.json();
+        clearInterval(qInt);
+        if (j.success) { c.innerHTML = '<div class="ai-analysis-content">' + j.aiAnalysis + '</div>'; if (r) { r.style.display = 'inline-flex'; } if (p) { p.style.display = 'inline-flex'; } }
+        else { c.innerHTML = '<div style="text-align:center;padding:1rem 1rem;border:1px dashed #fecaca;border-radius:10px;background:#fef2f2;"><div style="color:#dc2626;font-weight:800;font-size:0.9rem;"><i class="fas fa-triangle-exclamation"></i> Failed</div><div style="font-size:0.78rem;color:#64748b;margin:0.3rem auto 0.7rem auto;max-width:420px;">' + (j.error || 'Unknown error') + '</div><button onclick="triggerAIAnalysis(false)" style="background:#dc2626;color:#fff;border:none;padding:0.45rem 0.8rem;border-radius:7px;font-weight:700;cursor:pointer;">Try Again</button></div>'; }
+      } catch (e) { clearInterval(qInt); console.error(e); c.innerHTML = '<div style="text-align:center;padding:1rem;border:1px dashed #fecaca;border-radius:10px;background:#fef2f2;"><div style="color:#dc2626;font-weight:800;">Network Error</div><div style="font-size:0.78rem;color:#64748b;margin-top:0.2rem;">Check connection and try again.</div><button onclick="triggerAIAnalysis(false)" style="margin-top:0.6rem;background:#dc2626;color:#fff;border:none;padding:0.45rem 0.8rem;border-radius:7px;font-weight:700;cursor:pointer;">Retry</button></div>'; }
+    }
+
+    // --- New AI Suggestions (suggestions-only, secure, quality) — Image 2 ---
+    (function () {
+      const ta = document.getElementById('aiSuggestInput');
+      const cnt = document.getElementById('aiSuggestCount');
+      if (ta && cnt) {
+        const upd = function () { cnt.textContent = String(ta.value.length); ta.style.borderColor = ta.value.length === 500 ? '#f59e0b' : '#86efac'; };
+        ta.addEventListener('input', upd);
+        ta.addEventListener('change', upd);
+        upd();
+      }
+    })();
+    async function generateAISuggestions() {
+      const input = document.getElementById('aiSuggestInput');
+      const btn = document.getElementById('aiSuggestBtn');
+      const reply = document.getElementById('aiSuggestReply');
+      const status = document.getElementById('aiSuggestStatus');
+      const meta = document.getElementById('aiSuggestMeta');
+      const raw = input ? String(input.value || '').trim() : '';
+      if (!raw || raw.length < 3) { alert('Please enter your request (at least 3 characters).'); if (input) input.focus(); return; }
+      if (raw.length > 500) { alert('Request too long (max 500).'); return; }
+      const prevHtml = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.7'; btn.innerHTML = '<span style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.6);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 0.7s linear infinite;"></span> Generating...'; }
+      const activeOffice = (document.getElementById('quarterOfficeFilter') && document.getElementById('quarterOfficeFilter').value) ? document.getElementById('quarterOfficeFilter').value : '<%= typeof selectedOffice !== "undefined" ? selectedOffice : "all" %>';
+      const scopeText = (activeOffice && activeOffice !== 'all') ? activeOffice : 'University-Wide';
+      if (reply) {
+        reply.innerHTML = '<div style="text-align:center;padding:2rem 1rem;"><div class="psau-timer" style="margin:0 auto 0.9rem auto;"><div class="psau-timer-hand"></div><div class="psau-timer-center"></div></div><div style="font-weight:700;color:#0f172a;font-size:0.85rem;">Generating suggestions...</div><div style="font-size:0.76rem;color:#64748b;margin-top:0.2rem;">Gemini AI • suggestions only • ' + scopeText + ' • <%= activeQuarter %> <%= selectedYear %></div><div id="aiSuggestTimer" style="margin-top:0.5rem;font-size:0.72rem;font-weight:700;color:#16a34a;">0.0s</div></div>';
+        const start = Date.now();
+        const int = setInterval(function () { var el = document.getElementById('aiSuggestTimer'); if (el) el.textContent = ((Date.now() - start) / 1000).toFixed(1) + 's'; }, 100);
+        reply._aiInt = int;
+      }
+      try {
+        const payload = { quarter: '<%= activeQuarter %>', year: '<%= selectedYear %>', office: activeOffice, userRequest: raw };
+        let data;
+        try {
+          const res = await fetch('/admin/ai-suggestions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload)
+          });
+          const text = await res.text();
+          try { data = JSON.parse(text); } catch (parseErr) {
+            console.warn('AI suggestions: server returned non-JSON (maybe 404). Using local SQD+Form fallback.', text.substring(0, 200));
+            throw new Error('Server not ready — showing local SQD + Form suggestions.');
+          }
+          if (!res.ok || !data.success) throw new Error((data && data.error) || 'Failed (' + res.status + ')');
+        } catch (fetchErr) {
+          // Local fallback — ACCURACY: never show N/A/5.00 findings when no data exists.
+          console.warn('AI fetch failed, local fallback:', fetchErr.message);
+          if (reply && reply._aiInt) { clearInterval(reply._aiInt); reply._aiInt = null; }
+          // Injected count for the selected quarter/scope — server-rendered accurate flag
+          const _fallbackHasData = <%= (typeof activeReport !== 'undefined' && activeReport && activeReport.items && activeReport.items.length > 0) ? 'true' : 'false' %>;
+          if (!_fallbackHasData) {
+            const _scopeEsc = String(scopeText || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const _noDataHtml = `
+<div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:12px; padding:0.95rem 1.1rem; margin-bottom:0.85rem; display:flex; gap:0.85rem; align-items:flex-start;">
+  <div style="width:42px; height:42px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0; border:1px solid #fde68a;"><i class="fas fa-inbox"></i></div>
+  <div style="flex:1;">
+    <div style="font-weight:800; color:#92400e; font-size:0.90rem; line-height:1.3;">No Feedback Data Available — `+_scopeEsc+` (0 respondents)</div>
+    <div style="font-size:0.82rem; color:#78350f; margin-top:0.30rem; line-height:1.5;">Offline fallback cannot compute SQD averages — averages are <strong>N/A</strong>. Collect at least 5–10 responses first.</div>
+    <div style="font-size:0.74rem; color:#a16207; margin-top:0.45rem; background:#ffffff; border:1px dashed #fcd34d; padding:0.45rem 0.65rem; border-radius:8px;">Showing <strong>setup guidance</strong> (not data-driven findings). Reconnect and click Generate again once data exists.</div>
+  </div>
+</div>
+<div class="ai-suggestion-card" style="background:#ffffff; border:1px dashed #fcd34d; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem;">
+  <div style="width:40px; height:40px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #fde68a;"><i class="fas fa-qrcode"></i></div>
+  <div style="flex:1;"><div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;"><span style="width:20px; height:20px; border-radius:50%; background:#f59e0b; color:#fff; font-weight:700; font-size:0.68rem; display:inline-flex; align-items:center; justify-content:center;">1</span><span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Deploy QR Codes & Invite Responses</span><span style="font-size:0.66rem; font-weight:700; color:#d97706; background:#fffbeb; border:1px solid #fde68a; padding:0.12rem 0.45rem; border-radius:20px; margin-left:0.3rem;">SETUP</span></div><div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">No data for <strong>`+_scopeEsc+`</strong> — make the form discoverable at every service point.</div><div style="background:#fffbeb; border-left:3px solid #f59e0b; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;"><strong style="color:#92400e;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i> Strategy:</strong> Print QR codes on transaction slips, desk standees, and waiting-area posters. Aim for ≥10 responses before analysis.</div></div>
+</div>
+<div class="ai-suggestion-card" style="background:#ffffff; border:1px dashed #fcd34d; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem;">
+  <div style="width:40px; height:40px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #fde68a;"><i class="fas fa-chart-line"></i></div>
+  <div style="flex:1;"><div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;"><span style="width:20px; height:20px; border-radius:50%; background:#f59e0b; color:#fff; font-weight:700; font-size:0.68rem; display:inline-flex; align-items:center; justify-content:center;">2</span><span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Verify Collection, Then Re-Run</span><span style="font-size:0.66rem; font-weight:700; color:#d97706; background:#fffbeb; border:1px solid #fde68a; padding:0.12rem 0.45rem; border-radius:20px; margin-left:0.3rem;">NEXT STEP</span></div><div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Once feedback accumulates, Generate will show <strong>SQD-specific scores</strong> and Naïve Bayes sentiment, not generic setup tips.</div><div style="background:#fffbeb; border-left:3px solid #f59e0b; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;"><strong style="color:#92400e;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i> Strategy:</strong> Check Dashboard after 5–10 submissions, then click Generate again for data-driven priorities.</div></div>
+</div>`;
+            if (reply) {
+              reply.innerHTML = _noDataHtml;
+              const st = document.getElementById('aiSuggestStatus');
+              if (st) { st.style.display = 'inline-flex'; st.innerHTML = '<span style="color:#d97706;">&#9888;</span> No data — setup guidance shown'; }
+            }
+            return;
+          }
+          const fallbackHtml = (function () {
+            const safeReq = String(raw).replace(/</g, '&lt;').substring(0, 120);
+            const pool = [
+              {
+                title: "Streamline Transaction & Processing Speed (SQD1)",
+                detail: "Address processing delays and long queues identified in quarterly client feedback logs.",
+                strategy: "Establish express transaction lanes, digitize document queuing, and set target processing SLAs (max 15 mins per transaction).",
+                icon: "fas fa-comment-dots"
+              },
+              {
+                title: "Enhance Requirements Clarity & Guidance (SQD2)",
+                detail: "Reduce client confusion regarding documentary requirements before reaching frontline windows.",
+                strategy: "Publish step-by-step infographic checklists at office entrances and post downloadable requirement PDFs on the university portal.",
+                icon: "fas fa-calendar-check"
+              },
+              {
+                title: "Simplify Office Approval Workflows (SQD3)",
+                detail: "Minimize redundant signatories and inter-office routing reported in quarterly feedback.",
+                strategy: "Consolidate approval forms into single-window digital routing and train staff on cross-department document verification.",
+                icon: "fas fa-users"
+              },
+              {
+                title: "Improve Information Transparency & Status Tracking (SQD4)",
+                detail: "Ensure clear communication of service timelines, Citizen's Charter standards, and document status.",
+                strategy: "Install digital status monitors in waiting areas and launch real-time online tracking for student requests.",
+                icon: "fas fa-trophy"
+              },
+              {
+                title: "Maintain Clear Payment Channels & Transparency (SQD5)",
+                detail: "Ensure transparency in official fee assessments and prevent cashier bottlenecking during enrollment.",
+                strategy: "Integrate online e-payment gateways (GCash/PayMaya/Bank) and display official receipt breakdown signs at counters.",
+                icon: "fas fa-chart-column"
+              },
+              {
+                title: "Upgrade Waiting Area Comfort & Facility Hygiene (SQD6)",
+                detail: "Improve physical waiting spaces, seating capacity, and ventilation based on visitor feedback.",
+                strategy: "Implement bi-hourly sanitization logs, expand shaded outdoor waiting benches, and install free drinking water stations.",
+                icon: "fas fa-couch"
+              },
+              {
+                title: "Elevate Frontline Staff Courtesy & Client Care (SQD7)",
+                detail: "Reinforce positive client engagement and active listening across all administrative service desks.",
+                strategy: "Conduct mandatory quarterly customer service orientation for staff, establish help desks for complex inquiries, and enforce polite greeting protocols.",
+                icon: "fas fa-hands-helping"
+              },
+              {
+                title: "Establish Rapid Helpdesk & Problem Resolution (SQD8)",
+                detail: "Ensure unhandled client inquiries or complaints receive prompt resolution within 24 hours.",
+                strategy: "Deploy a dedicated QMS helpdesk desk officer and track complaint resolution SLAs in weekly administrative reviews.",
+                icon: "fas fa-headset"
+              }
+            ];
+
+            // Dynamic offset seed based on prompt & timestamp so every regenerate gives new strategies
+            const seed = (safeReq.length + Date.now()) % pool.length;
+            const picked = [];
+            for (let i = 0; i < 5; i++) {
+              picked.push(pool[(seed + i * 2) % pool.length]);
+            }
+
+            return picked.map((card, i) => `
+            <div class="ai-suggestion-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
+              <div style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
+                <i class="${card.icon}"></i>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
+                  <span style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">${i + 1}</span>
+                  <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">${card.title}</span>
+                </div>
+                <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">${card.detail}</div>
+                <div style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
+                  <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i> Strategy:</strong> ${card.strategy}
+                </div>
+              </div>
+            </div>
+          `).join('');
+          })();
+          if (reply) {
+            reply.innerHTML = fallbackHtml;
+            const st = document.getElementById('aiSuggestStatus');
+            if (st) { st.style.display = 'inline-flex'; st.innerHTML = '<span style="color:#16a34a;">&#10003;</span> Generated'; }
+            const mt = document.getElementById('aiSuggestMeta');
+            if (mt) mt.textContent = 'SQD + Form suggestions • ' + new Date().toLocaleString('en-PH');
+          }
+          return;
+        }
+        if (reply && reply._aiInt) { clearInterval(reply._aiInt); reply._aiInt = null; }
+        if (!data.success) { throw new Error(data.error || 'Failed'); }
+        if (reply) {
+          reply.innerHTML = data.html;
+          if (status) { status.style.display = 'inline-flex'; }
+          if (meta) { meta.textContent = 'Generated for <%= activeQuarter %> <%= selectedYear %> • ' + new Date().toLocaleString('en-PH'); }
+          // ensure status visible
+          if (status) status.style.display = 'inline-flex';
+        }
+      } catch (e) {
+        if (reply && reply._aiInt) { clearInterval(reply._aiInt); reply._aiInt = null; }
+        if (reply) {
+          reply.innerHTML = '<div style="text-align:center;padding:1rem;border:1px dashed #fecaca;background:#fef2f2;border-radius:8px;"><div style="color:#dc2626;font-weight:800;">Failed to generate</div><div style="font-size:0.78rem;color:#64748b;margin-top:0.3rem;">' + (e.message || 'Unknown error').replace(/</g, '&lt;') + '</div><button onclick="generateAISuggestions()" style="margin-top:0.6rem;background:#dc2626;color:#fff;border:none;padding:0.45rem 0.8rem;border-radius:7px;font-weight:700;cursor:pointer;">Retry</button></div>';
+        }
+        console.error(e);
+      } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = prevHtml || '<span>&#10022;</span> Generate'; }
+      }
+    }
+    function clearAISuggestions() {
+      const input = document.getElementById('aiSuggestInput');
+      const reply = document.getElementById('aiSuggestReply');
+      const status = document.getElementById('aiSuggestStatus');
+      const cnt = document.getElementById('aiSuggestCount');
+      if (input) { input.value = ''; if (cnt) cnt.textContent = '0'; input.style.borderColor = '#86efac'; }
+      if (reply) {
+        reply.innerHTML = '<div id="aiSuggestPlaceholder" style="color:#94a3b8; text-align:center; padding:2rem 1rem;"><div style="width:48px; height:48px; border-radius:50%; background:#f0fdf4; border:1px solid #dcfce7; display:flex; align-items:center; justify-content:center; margin:0 auto 0.7rem auto; color:#16a34a; font-size:1.1rem;">&#128172;</div><div style="font-weight:600; color:#475569;">No suggestions yet</div><div style="font-size:0.76rem; margin-top:0.2rem;">Your AI-powered suggestions will appear here after you generate.</div></div><div id="aiSuggestMeta" style="margin-top:0.6rem; font-size:0.68rem; color:#64748b;"></div>';
+      }
+      if (status) status.style.display = 'none';
+    }
+    async function copyAISuggestions() {
+      const reply = document.getElementById('aiSuggestReply');
+      if (!reply) return;
+      const text = (reply.innerText || '').trim();
+      if (!text) { alert('Nothing to copy'); return; }
+      try {
+        if (navigator.clipboard) await navigator.clipboard.writeText(text);
+        else { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+        const btn = document.querySelector('button[onclick="copyAISuggestions()"]');
+        if (btn) { const orig = btn.innerHTML; btn.innerHTML = '<span>&#10003;</span> Copied'; setTimeout(function () { btn.innerHTML = orig; }, 1500); }
+      } catch (e) { alert('Copy failed'); }
+    }
+
+    function shareAISuggestions() {
+      const reply = document.getElementById('aiSuggestReply');
+      if (!reply) return;
+      const text = (reply.innerText || '').trim();
+      if (!text) { alert('Nothing to share'); return; }
+      if (navigator.share) {
+        navigator.share({ title: 'PSAU AI Suggestions - SQD Analysis', text: text }).catch(function () { });
+      } else {
+        copyAISuggestions();
+      }
+    }
+
+    function downloadAISuggestions() {
+      const reply = document.getElementById('aiSuggestReply');
+      if (!reply) return;
+      const text = (reply.innerText || '').trim();
+      if (!text) { alert('Nothing to download'); return; }
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'PSAU_AI_Suggestions_<%= activeQuarter %>_<%= selectedYear %>.txt'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
+    }
+    function rateAISuggestions(dir) {
+      const msg = dir === 'up' ? 'Thanks for your feedback!' : 'Thanks — we will improve.';
+      let toast = document.getElementById('aiRateToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'aiRateToast';
+        toast.style.cssText = 'position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:0.5rem 0.9rem;border-radius:8px;font-size:0.78rem;font-weight:600;z-index:4000;box-shadow:0 8px 20px rgba(15,23,42,0.2);';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      setTimeout(function () { toast.style.display = 'none'; }, 1800);
+    }
+  </script>
+
+  <%- include('partials/footer') %>

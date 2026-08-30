@@ -1,0 +1,481 @@
+
+			
+Title of the Project
+Development and Implementation of a Machine Learning-Driven Feedback Sentiment Analysis System for Pampanga State Agricultural University
+Proponents
+	Timothy P. Bonus
+	Dane M. Sicat
+	Jandel J. Duya	
+Adviser
+Agustin Edmin S. Yuzon
+Rationale
+Service quality is important in shaping customer satisfaction because it affects how customers view their interactions with an organization (Ashikuzzaman, 2024). Since services are usually intangible and personal, the level of satisfaction often depends on the quality of service provided. Customer satisfaction refers to how well a product or service fulfills the needs and expectations of customers (JETIR, 2021).
+In higher education, evaluating service quality is necessary to ensure effective educational planning and service implementation (Fuchs & Fangpong, 2021). Student satisfaction reflects how well universities meet students’ academic and service-related needs (Dela Cruz et al., 2024). Utilizing student feedback can also enhance teaching performance and promote a more student-centered approach within institutions (Paran, 2023).
+Paper-based feedback systems have long been used by educational institutions. These methods have limitations that affect the accuracy and efficiency and of feedback analysis it's also lack of real-data processing As a result, these limitations delay decision making and reduce the effectives of the feedback (Srinivasan & Suresh, 2022).
+Customer feedback plays a crucial role in assessing service performance and pinpointing opportunities for enhancement. Historically, companies relied on paper-based surveys, suggestion boxes, and handwritten notes to gather input. While these approaches provided some value, they were often labor-intensive and time-consuming to manage and evaluate. Analyzing responses by hand increased the risk of mistakes and made it challenging to detect trends quickly, especially when dealing with large volumes of feedback. The rise of digital tools has streamlined this process, enabling individuals to complete surveys online via smartphones, tablets, or computers, with answers automatically stored in digital systems. The use of QR codes has further improved accessibility, allowing users to reach surveys instantly through a simple scan—reducing barriers to participation and boosting response rates (Snyder et al., 2018).
+Beyond improving data collection, machine learning (ML) has significantly advanced how organizations interpret feedback. ML algorithms can rapidly process vast amounts of textual input using techniques like sentiment analysis, which categorizes comments as positive, neutral, or negative (Iqbal et al., 2022; Shin et al., 2025). These tools also uncover underlying patterns and emerging trends that might go unnoticed in manual reviews, offering deeper insights into customer behavior and service effectiveness (Jain & Pamula, 2020). Additionally, machine learning and deep learning models are capable of examining structured survey data, such as ratings tied to Service Quality Dimensions (SQD), to highlight specific service areas needing attention (Ashbaugh & Zhang, 2024; Hossain et al., 2020). By integrating digital feedback mechanisms with machine learning analysis, organizations can gather information more efficiently and derive actionable insights that support informed decision-making and continuous service improvement.
+Although digital feedback systems and machine learning techniques are widely used, many existing systems focus only on either feedback collection or basic data presentation. Few systems combine QR-based access, automated sentiment analysis, and rating-based analytics in a single platform. As a result, administrators still face difficulty in quickly identifying service issues and making data-driven decisions.
+To address this problems, this study proposes the development and implementation of a machine learning-driven fedback sentiment analysis system / QR Code-Based Mobile Customer Feedback Collection System with a Web-Based Analytics Dashboard and Machine Learning Support. The system will allow clients or users to easily access the feedback form by scanning a QR code assigned to a specific department using their mobile phones. After submitting the feedback, the responses will be automatically stored in a centralized database. The system will also use machine learning to analyze the comments and ratings given by the users to determine the level of satisfaction and identify possible service issues. In addition, the system will generate graphs, reports, and analytics that can help administrators quickly understand the feedback results. Through this system, the university will be able to collect feedback more efficiently, reduce manual work, and support better decision-making for improving the quality of services provided to students, clients, and visitors.
+Objectives
+General Objective
+To design, develop, implement, and evaluate a machine learning-driven feedback sentiment analysis system that automatically collects, processes, and classifies feedback to support data-driven decision-making at Pampanga State Agricultural University.
+Specific Objectives
+To design and implement a web-based feedback form accessible through mobile devices.
+To develop a QR-based feedback system with both online and offline submission capability.
+To integrate Naïve Bayes and K – Means Clustering machine learning techniques for sentiment analysis of feedback comments and rating pattern analysis.
+To implement multilingual sentiment analysis (English, Tagalog, Kapampangan).
+To design a system that follows QMS code-controlled feedback procedures.
+To ensure data validity through required user identification fields.
+To generate  Customer Feedback Report in quarterly basis which can help for decision making of service areas requiring improvement.
+Review of Related Literatures and Studies
+Review of Related Literatures and Studies
+Customer Feedback Systems in Service Institutions
+Customer feedback systems are widely used by organizations to understand how customers evaluate the services they receive. Through surveys and evaluation forms, institutions can collect opinions and experiences from their clients. These feedback systems help organizations measure customer satisfaction and determine whether their services meet customer expectations. Studies show that service quality and customer satisfaction are closely related, and improving service quality can lead to better customer experiences and stronger organizational performance (Nguyen et al., 2022).
+Customer satisfaction measurement is an important part of service management. Organizations often use feedback surveys to evaluate the effectiveness of their services and identify areas that require improvement. According to research on service quality and customer satisfaction, collecting feedback allows managers to analyze customer perceptions and determine how well services are delivered. By examining feedback results, institutions can identify weaknesses in their service processes and develop strategies to improve customer satisfaction (Ali et al., 2017).
+In service institutions such as universities and government offices, feedback systems are commonly used to monitor service performance and improve organizational decision-making. Feedback data helps administrators evaluate service quality, understand customer needs, and implement improvements to enhance user experience. Organizations that regularly analyze customer feedback are more capable of improving service delivery and maintaining higher levels of customer satisfaction (Hassan et al., 2023).
+ Digital Feedback Collection Systems
+Digital feedback collection systems allow organizations to collect responses electronically through websites, mobile applications, or online survey platforms. These systems help institutions gather feedback quickly and store responses automatically in databases. Compared to traditional paper forms, digital surveys make the process of collecting and managing feedback more efficient and organized (Wright, 2005).
+Online survey platforms also allow organizations to collect large amounts of feedback from users in a short period of time. Since responses are submitted directly through the internet, the data can be processed immediately and used for analysis. Researchers explain that online surveys allow faster data collection and easier management of responses compared to traditional methods (Wright, 2005).
+Another advantage of digital feedback systems is their ability to automatically analyze and visualize data. Many online survey tools provide built-in analytics features that generate graphs, charts, and reports. These features allow organizations to easily understand customer satisfaction and make data-driven decisions to improve their services (UMA Technology, 2024).
+QR Code Technology in Information Systems
+Quick Response (QR) codes are two-dimensional barcodes designed to store information that can be quickly accessed using a smartphone camera. QR codes are widely used in modern information systems because they allow fast data access and automatic information retrieval. This technology enables users to open websites, digital forms, or system links simply by scanning the code, which improves efficiency and convenience in accessing digital services (Okubo et al., 2024).
+QR code technology has become increasingly popular in many sectors including education, business, and government services. Organizations use QR codes to provide easy access to online platforms such as payment systems, information portals, and registration systems. Because users only need to scan the code using their mobile devices, QR codes simplify the process of accessing digital services and reduce the need for manual input of web addresses (Yamin & Abdalatif, 2024).
+QR codes are also commonly used in survey and feedback systems because they allow respondents to quickly access online questionnaires. Research has shown that scanning QR codes to access surveys through smartphones is easy and efficient for users. This technology helps reduce the effort required to open survey links and encourages higher participation in digital feedback collection (Rivas et al., 2024).
+Web-Based Feedback Management Systems
+Nowadays, operation management performed by electronic systems in different life sectors is distributed and expanded swiftly due to several advantages that can be achieved, such as time reduction process, simplicity, and high accuracy of running operations. In the educational sector, performing student feedback electrolytically (using PC, Tablet, or Mobile) rather than the ordinary paper-based methods saves staff and students' time and makes managing the data easier (Malallah et al., 2020).
+Web-based information systems are widely used by organizations to collect, manage, and analyze feedback from users through online platforms. These systems allow respondents to submit survey responses through web forms, while the collected data is automatically stored in databases for easier management. According to Oloyede et al. (2020), web-based feedback systems allow institutions to gather feedback efficiently and evaluate service performance through an online platform. The study explains that these systems help administrators monitor responses and generate reports that support organizational improvement.
+Another important feature of web-based feedback systems is the use of administrative dashboards. Dashboards allow administrators to view feedback results through visual representations such as charts, graphs, and summaries. These visual tools help organizations quickly understand feedback data and identify areas that require improvement. Research shows that web dashboards can present data insights and support decision-making by transforming raw feedback data into meaningful visual information that administrators can easily interpret (Khanbhai et al., 2022).
+Data Analytics and Visualization for Service Evaluation
+Data analytics and visualization play an important role in helping organizations understand and interpret large datasets. Visualization techniques such as charts, graphs, and dashboards allow administrators to quickly identify patterns and trends in collected data. Instead of manually reviewing individual responses, visual representations help decision-makers interpret information more efficiently and understand overall service performance. According to Al-Mogren et al. (2020), data visualization tools transform complex datasets into graphical formats that make information easier to analyze and interpret.
+Data visualization techniques such as bar charts, pie charts, and line graphs are commonly used in evaluation systems to present feedback results. These graphical representations allow administrators to easily compare ratings and analyze overall performance without reviewing each individual response. Research shows that visualization methods help users detect patterns in data more effectively and support better interpretation of analytical results (Al-Mogren et al., 2020).
+Analytics dashboards integrate multiple visualization tools into a single interface where administrators can monitor and analyze organizational data. These dashboards present summarized information through visual elements such as graphs, charts, and performance indicators, which allow decision-makers to quickly understand evaluation results. According to Bach et al. (2020), visual dashboards help users interpret analytical data efficiently and support better decision-making by presenting complex information in an easily understandable format.
+ Machine Learning in Sentiment Analysis
+Machine learning techniques are widely used to analyze textual feedback and automatically determine the sentiment expressed in written comments. Sentiment analysis, also known as opinion mining, identifies whether a text contains a positive, negative, or neutral opinion. This technique helps organizations process large volumes of textual feedback without requiring manual analysis. According to Hamed, Ezzat, and Hefny (2020), sentiment analysis applies machine learning methods to classify opinions and emotions expressed in textual data, allowing organizations to better understand customer perceptions and experiences.
+Sentiment analysis is widely used in many applications such as customer feedback analysis, social media monitoring, and product review evaluation. Organizations analyze customer comments using machine learning techniques to understand how users feel about their services or products. Research shows that sentiment analysis allows organizations to extract useful insights from large volumes of user-generated text, helping them identify satisfaction levels and service issues more effectively (Jain & Pamula, 2020).
+Machine learning algorithms such as Naïve Bayes, Support Vector Machines (SVM), and neural network models are commonly used for sentiment classification tasks. These algorithms learn patterns from labeled training data and use the learned patterns to classify new textual inputs automatically. Studies show that machine learning-based sentiment analysis systems can efficiently analyze large datasets and improve the accuracy of opinion classification in feedback systems (Rudzevych, 2020).
+Machine Learning for Customer Satisfaction Analysis
+Machine learning techniques can also be used to analyze structured survey data such as customer satisfaction ratings. These systems process numerical feedback scores to identify patterns and trends that reflect service performance. By analyzing satisfaction data, machine learning models can detect relationships within the dataset and help organizations understand factors that influence customer satisfaction. According to Hossain, Muhammad, and Alamri (2020), machine learning methods can analyze customer satisfaction data to identify patterns and improve service evaluation processes.
+Machine learning models can also identify trends in satisfaction ratings by analyzing large datasets collected from surveys or feedback systems. These algorithms can detect patterns that indicate whether customers are satisfied or dissatisfied with specific services. By identifying these patterns, organizations can recognize which service areas require improvement and which services perform well. Research shows that machine learning techniques can effectively analyze satisfaction data and support organizations in understanding user experiences (Rane, 2021).
+Automated satisfaction analysis systems use machine learning algorithms to evaluate survey ratings and generate insights that help administrators monitor service performance. These systems can highlight departments or service areas that consistently receive low ratings and require improvement. By analyzing rating patterns automatically, machine learning systems reduce manual evaluation and provide faster insights that support decision-making processes (Khan et al., 2022).
+Decision Support Systems in Organizational Management
+Decision Support Systems (DSS) are computer-based systems designed to assist managers in making better decisions by analyzing large amounts of data. These systems combine data processing, analytical models, and information systems to support decision-making in organizations. DSS helps managers interpret complex information and evaluate different alternatives when solving organizational problems. Studies show that DSS improves organizational performance by providing accurate and timely information that supports managerial decisions (Omondi, 2021).
+Decision Support Systems are commonly used in organizations to analyze operational data and support strategic planning. These systems allow administrators to process organizational data, evaluate performance indicators, and identify areas that require improvement. Research shows that DSS improves organizational efficiency by providing managers with analytical tools that support informed decision-making processes (Kariuki & Gichoya, 2020).
+Modern Decision Support Systems are often integrated with advanced technologies such as data analytics and artificial intelligence to improve organizational decision-making. These systems analyze collected data and generate insights that help administrators evaluate performance and plan improvements. DSS can also support management by transforming raw organizational data into meaningful information that guides decision-making processes (Alam & Rahman, 2022).
+Decision Support Systems are increasingly integrated with modern technologies such as analytics and artificial intelligence to improve organizational decision-making. These systems analyze collected organizational data and transform it into useful information that supports administrators in evaluating performance and planning improvements. Studies show that DSS helps organizations process large amounts of data efficiently and supports managers in making faster and more accurate decisions based on reliable information (Zhang & Goyal, 2024).
+Research Gaps and Justification of the Present Study
+Although many studies discuss digital feedback systems, data visualization dashboards, and machine learning for sentiment analysis, several limitations still exist. Many feedback systems only collect and store responses without automatically analyzing the data to identify service performance issues. As a result, administrators still need to manually review feedback results before making decisions. In addition, some systems focus only on analyzing textual comments using sentiment analysis, while others only display numerical ratings through graphs and reports. Few systems combine both comment analysis and rating evaluation to provide a clearer understanding of customer satisfaction and service quality.
+Because of these limitations, there is a need for a system that can automatically collect, analyze, and present feedback data in a more organized and meaningful way. Integrating QR-based feedback collection, machine learning sentiment analysis, and data visualization dashboards can help administrators easily monitor service performance and identify areas that need improvement. Therefore, this study proposes the development of a Mobile Customer Feedback Collection System with a Web-Based Analytics Dashboard that can collect feedback through QR codes, analyze customer comments using machine learning, evaluate service ratings through graphical dashboards, and support administrators in making better decisions for service improvement.
+Methodology
+	1. Research Design
+	This study will use a quantitative and developmental type of research, which focuses on the development of a system and the measurement of its performance using numerical data. The developmental approach will be used to design, build, and implement the QR-Based Customer Feedback System with Machine Learning-Driven Sentiment Analysis and Decision Support System, while the quantitative approach will be applied to evaluate the system based on measurable criteria.
+	The purpose of the quantitative research is to collect, analyze, and interpret numerical data obtained from respondents through structured questionnaires. This will allow the researchers to assess the system in terms of ISO 25010 quality standards such as functional suitability, performance efficiency, compatibility, usability, reliability, security, maintainability, and portability.
+	The developmental aspect of the study will involve the systematic process of planning, designing, prototyping, testing, and refining the system. Data that will be used to obtain results in this study include questionnaires, system-generated data, and user interaction logs.
+	The system will adopt an offline-first architecture, allowing users to access and complete the feedback form even without internet connectivity. Responses will be temporarily stored on the user’s device and automatically synchronized with the central database once an internet connection becomes available. This ensures continuous data collection and prevents data loss in areas with unstable or no internet access.
+	1.1 Data Collection Methods
+	The development and Implementation of the proposed of a Machine Learning-Driven Feedback Sentiment Analysis System for Pampanga State Agricultural University QR-Based Customer Feedback System with Machine Learning-Driven Sentiment Analysis and Decision Support System will involve document analysis, questionnaires, and literature reviews. The proponents will gather sample datasets, existing feedback forms, and related studies to guide the design of the system interface, database structure, and machine learning model.
+	Questionnaires will be used as the primary data collection instrument to obtain user feedback and evaluate system performance. The system will be assessed based on the ISO 25010 quality standards, including functional suitability, performance efficiency, compatibility, usability, reliability, security, maintainability, and portability. ICT experts, administrators, and selected users will participate in evaluating the developed system.
+	The system will support both online and offline data collection. In cases where internet connectivity is unavailable, feedback responses will be temporarily stored on the user’s device and automatically transmitted to the system database once a connection is established.
+	1.2 Data Analysis
+	The data collected will be collated and tabulated electronically to facilitate analysis. Descriptive statistical methods such as frequency count and arithmetic mean will be used to summarize the responses and interpret the results.
+	All synchronized data will be validated before processing to ensure completeness and authenticity. Duplicate and incomplete entries will be filtered to maintain data accuracy.
+	Frequency Count will be used to determine the number of responses for each item.
+	Arithmetic Mean will be used to compute the average rating of the system based on ISO 25010 criteria.
+	The formula is:
+	x̄ = Σfx / n
+	Where:x̄ = arithmetic meanf = frequencyx = responsesn = total number of responses
+	Likert Scale.
+	A Likert scale will be used to measure respondents’ level of agreement with each statement. The scale will follow a five-point format to interpret the results of the evaluation.
+	
+Table 1. Likert Scale
+	Limit of Index
+	Rating
+	Verbal Description
+	3.25 – 4.00
+	4
+	Very Great Extent
+	2.50 – 3.24
+	3
+	Great Extent
+	1.75 – 2.49
+	2
+	Moderate
+	1.00 – 1.74
+	1
+	Limited
+	
+	1.3 Respondents of the Study
+	The researchers will use Purposive Sampling to select respondents for both alpha and beta testing. This method allows the selection of participants based on specific characteristics relevant to the study.
+	The alpha testing will be conducted with ICT experts to evaluate the system’s functionality, detect errors, and ensure that it meets technical requirements.
+	The beta testing will involve selected users such as students, staff, or customers who will assess the usability and acceptability of the system. Respondents will be chosen based on their familiarity with feedback systems and willingness to participate.
+	Questionnaires will be distributed after system demonstration and actual usage to gather reliable evaluation data.
+	To ensure the validity of responses, required fields such as the respondent’s name will be enforced before submission. Anonymous or incomplete submissions will not be accepted by the system.
+	1.4 Instrumentation
+	The primary research instrument used in this study is a structured questionnaire based on the ISO 25010 software quality model. The questionnaire will evaluate the system in terms of functional suitability, performance efficiency, compatibility, usability, reliability, security, maintainability, and portability.
+	The evaluation will be conducted through the system interface, allowing respondents to directly interact with the developed application before answering the questionnaire.
+	The questionnaire will be integrated into a web-based and offline-capable interface, allowing respondents to directly input their responses through mobile devices with automatic data handling.
+	2. System Development
+	The system workflow will follow the existing QMS procedure including code-controlled forms, feedback collection, consolidation, report generation, and corrective action processes to ensure compliance with institutional standards.
+	The system will be developed using an offline-first approach. This includes implementing client-side storage for temporary data saving and a synchronization mechanism that automatically submits stored feedback once internet connectivity becomes available. This ensures that the system remains functional even in environments with unstable network access.
+	The Agile Development Methodology will be used in this study. This approach focuses on iterative development, continuous feedback, and flexibility in responding to changes throughout the project. The system will be developed in small increments, allowing the proponents to design, test, and improve features step-by-step.
+	The Agile method enables close collaboration with stakeholders, ensuring that the system meets user requirements and expectations. Regular evaluation and feedback will be incorporated into each stage of development to enhance system quality, usability, and performance.
+	2.1 Agile Development Phases
+	Phase 1: Planning
+	Define the project scope, objectives, system requirements, and user needs. This includes identifying the features of the QR-based feedback system, machine learning components, and decision support functionalities
+	Phase 2: System Design
+	Develop the system architecture, database structure, and user interface design. This phase includes designing the QR code integration, feedback form layout, dashboard, and overall system workflow.
+	Phase 3: Development
+	Develop the system in iterative cycles or sprints, including both online and offline functionalities. Features such as QR code access, offline data storage, synchronization mechanism, and machine learning modules will be implemented progressively.
+	Phase 4: Testing
+	Testing will include both online and offline scenarios to ensure that data can be stored locally and successfully synchronized once connectivity is restored.
+	Phase 5: Deployment
+	Deploy the system. The system will be made accessible for real-time feedback collection and evaluation.
+	Phase 6: Evaluation
+	Gather feedback from users, ICT experts, and administrators using questionnaires based on ISO 25010 standards. Analyze the results to assess system performance and effectiveness.
+	Phase 7: Maintenance
+	Perform continuous system maintenance after deployment. This includes fixing errors, updating system features, improving machine learning accuracy, and ensuring long-term system reliability and performance. Maintenance will also include monitoring synchronization performance and ensuring consistency between offline and online data.
+	
+	
+	2.2 System Workflow
+	  User scans the QR code assigned to a department 
+	  Feedback form opens on the mobile device 
+	  User fills out required fields (including name) 
+	  Upon submission: 
+	If online → data is sent to server 
+	If offline → data is saved locally 
+	  System displays status (“Saved Offline” or “Submitted”) 
+	  Once internet is available → automatic synchronization occurs 
+	  Data is stored in Firestore database 
+	  Machine learning processes the data 
+	  Results are displayed in the dashboard 
+	  Quarterly reports are generated
+	
+	2.3 Development Tools & Technologies
+	The proposed system will be implemented using a web-based architecture that combines Node.js, , QR code technology, and machine learning libraries.
+	The Node.js framework will serve as the main backend system responsible for handling feedback form processing, QR code generation, data storage, email notification, analytics dashboard generation, and administrative management.
+	A Firebase/Firestore database will be used to store all collected feedback information including customer ratings, comments, department identification, and analysis results.
+	Each department will be assigned a unique QR code generated by the system. When users scan the QR code using a mobile device, they will be redirected to the web-based feedback form where they can submit their evaluation and comments.
+	The system will also include an administrative dashboard where administrators can monitor feedback results through charts, graphs, and reports.
+	QR-Based Feedback Access
+	The system will use QR code technology to simplify the feedback submission process. Each department will have a unique QR code generated by the system.
+	When a user scans the QR code using a smartphone camera, the device will automatically open the feedback form in a web browser. The QR code contains information that identifies the department associated with the feedback.
+	This approach eliminates the need for printed feedback forms and allows users to submit feedback quickly using their mobile devices.
+	Web-Based Feedback Application
+	The proposed system will function as a web application, meaning it does not require installation on the user’s device. Users can access the feedback form through a mobile browser after scanning the QR code.
+	The system will include the following features:
+	Feedback form for collecting customer ratings and comments
+	Automatic identification of department through QR code
+	Secure data storage using Firebase database
+	Email confirmation for submitted feedback
+	Administrative dashboard for data monitoring
+	Optionally, the system interface may also be wrapped inside a simple Android WebView application, which allows the website to appear as a mobile app without requiring full mobile development.
+	Feedback Data Collection
+	Feedback data will be collected from users who access the feedback form through the QR code system. The form will contain two main components:
+	Service Quality Dimension (SQD) Ratings – numerical ratings based on service performance indicators.
+	Customer Comments – text-based feedback where users can describe their experience.
+	Once the user submits the form, the feedback data will be automatically stored in the system database for further analysis.
+	Machine Learning Approach
+	The system will support multilingual sentiment analysis, allowing classification of feedback written in English, Tagalog, and Kapampangan.
+	Machine learning techniques will be used to analyze the collected feedback data. The system will apply two types of machine learning analysis:
+	Sentiment Analysis
+	Sentiment analysis will be applied to the text comments submitted by users. The system will classify comments into three categories:
+	Positive
+	Neutral
+	Negative
+	This process allows the system to automatically interpret customer opinions without manual analysis.
+	Pattern Analysis for SQD Ratings
+	Machine learning algorithms will also analyze numerical rating data to identify patterns in service performance. By analyzing rating trends, the system can determine which departments consistently receive high or low satisfaction scores.
+	For this study, machine learning algorithms such as Naive Bayes for text classification and K-Means clustering for rating pattern analysis are implemented using custom JavaScript algorithms executing server-side within the Node.js environment.
+	Decision Support System (DSS)
+	The system will include a Decision Support System (DSS) that assists administrators in interpreting feedback results.
+	The DSS will analyze the results of both rating scores and sentiment analysis. Based on the analysis, the system will generate insights such as identifying departments with low satisfaction ratings or negative feedback trends.
+	For example, if a department receives an average SQD rating below a defined threshold, the system dashboard may display an alert indicating that the department requires service improvement.
+	Email Notification System
+	After a user submits feedback, the system will automatically send a confirmation email to the user. At the same time, a copy of the feedback will also be sent to the system administrator.
+	This email functionality is implemented using SMTP (Simple Mail Transfer Protocol) integrated within the Node.js backend using Nodemailer.
+	Data Visualization and Analytics Dashboard
+	The system will provide a web-based analytics dashboard where administrators can monitor feedback results.
+	The dashboard will display information such as:
+	Average service ratings
+	Sentiment analysis results
+	Department performance rankings
+	Graphical visualization of SQD scores
+	Data visualization tools such as charts and graphs will help administrators quickly understand feedback trends and service performance.
+	System Evaluation
+	The effectiveness of the system will be evaluated using several performance indicators.
+	Evaluation metrics will include:
+	System Performance
+	Feedback submission success rate
+	QR code scanning accessibility
+	System response time
+	Machine Learning Performance
+	Accuracy
+	Precision
+	Recall
+	F1-score
+	Usability Evaluation
+	Ease of use
+	User satisfaction
+	System accessibility
+	These evaluation metrics will help determine whether the system successfully improves the feedback collection and analysis process.
+	Programming Languages & Frameworks:
+	Node.js & Express.js –  The primary backend runtime and web framework used to develop the web-based feedback system, handling HTTP routing, server logic, API endpoints, session management, and overall system logic.
+	JavaScript (Client side) –  Enhances interactivity on the frontend, particularly for dynamic form validation, real-time updates, chart rendering via Chart.js, QR code generation, and user interface responsiveness.
+	HTML & CSS – Used for structuring and styling the web application interface to ensure a responsive and user-friendly design. 
+	EJS –  The templating engine used to dynamically render HTML pages including the feedback form, admin dashboard, and printable reports with embedded server-side data.
+	Progressive Web Application (PWA) – Enables offline functionality 
+	Service Workers – Allows caching and offline access 
+	IndexedDB – Stores feedback data locally on the user’s device
+	Database Management:
+	Firebase Firestore (Cloud) –  A NoSQL cloud database used as the primary permanent storage for all feedback data, including customer ratings, comments, department identification, sentiment analysis results, and system-generated reports. Data is automatically synchronized and managed through the Firebase console.
+	In-Memory Mock Database – A JavaScript-based in-memory fallback database that activates automatically when Firebase connection is unavailable, allowing the system to continue functioning during development or network outages.
+	indexedDB (Client-side) – temporary offline storage 
+	Development Environment:
+	Visual Studio Code (VS Code) – The primary code editor used for developing and debugging JavaScript, and frontend components. 
+	Web Browser (Google Chrome) – Used for testing, debugging, and validating the web application’s interface and functionality.
+	Web Server:
+	Machine Learning Tools: 
+	Local Tirilingual Naïve Bayes Classifier –  A custom Multinomial Naïve Bayes text classification algorithm implemented in Node.js and backed by Firebase Firestore. It automatically analyzes and classifies customer comments into Positive, Negative, Neutral, or Mixed sentiments across English, Tagalog (Filipino), and Kapampangan, utilizing Laplace smoothing, bigram tokenization, and adaptive incremental learning.  
+	Custom K-Means Clustering –  A manually implemented K-Means clustering algorithm written in JavaScript that runs server-side to group departments/offices into performance segments (Outstanding, Satisfactory, Needs Attention) based on SQD rating patterns.
+	Security Framework:
+	User Authentication – Ensures that only authorized users (admin and system users) can access the system. 
+	Role-Based Access Control – Defines user roles (e.g., administrator, staff) with corresponding access privileges. 
+	Email Verification – Adds an additional security layer by requiring users to verify their email before accessing certain features.
+	Required Fields – The system will require mandatory fields such as name and transaction details to ensure the validity and authenticity of feedback responses.
+	Ethical Considerations
+	The study will ensure that all collected feedback data will be handled responsibly and used only for research and service improvement purposes. Personal information of users will be kept confidential, and the system will follow proper data privacy practices.
+	Scope and Limitations
+	Scope of the Study
+	This study focuses on the design, development, implementation, and evaluation of a QR Code-Based Mobile Customer Feedback Collection System with a Web-Based Analytics Dashboard and Machine Learning Support for Pampanga State Agricultural University. The system enables users such as students, staff, and clients to access a feedback form by scanning a QR code assigned to specific departments using their mobile devices.
+	The system collects both Service Quality Dimension (SQD) ratings and text-based feedback comments, which are stored in a centralized database. It includes features such as QR-based access, a web-based feedback form, offline data collection capability, automated data synchronization, sentiment analysis using machine learning, and a data visualization dashboard for administrators.
+	The study also covers the evaluation of the system using ISO 25010 software quality standards, including functional suitability, usability, performance efficiency, compatibility, reliability, security, maintainability, and portability. Respondents of the study include ICT experts for technical evaluation and selected users for usability testing through purposive sampling.
+	Additionally, the system supports offline-first functionality, allowing users to fill out and submit feedback even without internet connectivity. Responses are temporarily stored on the user’s device and automatically synchronized with the database once an internet connection becomes available.
+	
+	Limitations of the Study
+	Despite its capabilities, the study has several limitations. The system relies on internet connectivity for data synchronization, meaning that feedback submitted offline will only be reflected in the central database once the device reconnects to the internet. Delays in synchronization may affect real-time data availability.
+	The machine learning component of the system is limited to basic sentiment analysis using algorithms such as Naïve Bayes and clustering techniques. While the system supports multilingual input (e.g., English, Filipino, and Kapampangan), the accuracy of sentiment classification may vary depending on the quality and complexity of the text data.
+	The system requires users to provide mandatory information such as their name to ensure the validity of responses. However, the system cannot fully guarantee the authenticity or honesty of all submitted feedback.
+	The study is conducted within a limited timeframe of six months, including development and testing phases, which may restrict the extent of system enhancements and feature expansion. Additionally, the system is designed specifically for the processes and requirements of Pampanga State Agricultural University, and may require modifications before being implemented in other institutions or environments.
+	Lastly, the system depends on mobile device compatibility and user familiarity with QR code scanning, which may affect usability for some users.
+Expected Output (Proposed Features and Fucntionality of the product) 
+The expected output of this study is a QR-Based Mobile Customer Feedback Collection System with a Web-Based Analytics Dashboard designed to improve the process of collecting, analyzing, and managing customer feedback in service institutions. The system integrates QR code technology, a web-based application, machine learning algorithms, and data analytics to provide fast, accurate, and automated feedback processing.
+The proposed system is expected to exhibit the following key features and functionalities:
+8.1 QR-Based Feedback Access
+The system will generate a unique QR code for each department, allowing users to easily access the feedback form by scanning the code using their mobile devices. Once scanned, the QR code will redirect users to a web-based feedback form where they can submit their evaluation.
+This approach eliminates the need for paper-based forms and makes the feedback process faster, more accessible, and more convenient for users.
+8.2 Web-Based Feedback Collection System
+The system will function as a web application, allowing users to submit feedback through a mobile browser without installing any application. The system will collect both numerical ratings (SQD) and text-based comments, which will be automatically stored in a centralized database.
+This feature ensures organized data collection, reduces manual encoding, and improves the overall efficiency of feedback management.
+8.3 Automated Email Notification System
+After submitting feedback, the system will automatically send a confirmation email to the user. At the same time, a copy of the feedback will be sent to the administrator.
+This feature ensures transparency, proper documentation, and real-time notification of submitted feedback using SMTP-based email services.
+8.4 Machine Learning-Based Sentiment Analysis
+The system will use machine learning algorithms to analyze customer comments through sentiment analysis. The model will classify feedback into positive, neutral, or negative categories.
+This automated analysis reduces the need for manual review and allows administrators to quickly understand customer opinions and experiences.
+8.5 SQD Rating Analysis and Pattern Detection
+The system will analyze Service Quality Dimension (SQD) ratings using data analytics and machine learning techniques. It will identify patterns and trends in customer satisfaction scores across different departments.
+This feature helps in detecting departments with consistently low or high performance based on collected feedback data.
+8.6 Data Visualization and Analytics Dashboard
+The system will provide a web-based dashboard that displays feedback results using charts, graphs, and summary reports. Administrators can view:
+Average ratings per department
+Customer satisfaction trends
+Sentiment analysis results
+Performance comparisons
+This allows faster interpretation of data and supports better monitoring of service quality.
+8.7 Decision Support System (DSS)
+The system will include a Decision Support System (DSS) that interprets analyzed data and provides simple recommendations. For example, if a department receives low ratings, the system may indicate that service improvement is needed.
+This feature helps administrators make informed decisions based on real-time feedback data.
+8.8 Centralized Data Storage and Management
+All feedback data will be securely stored in a FIRESTORE database, managed through the Nodejs system. This ensures that data is organized, easily accessible, and protected.
+The centralized system also allows efficient data retrieval and long-term record keeping.
+8.9 Report generation
+The system will automatically generate quarterly customer feedback reports aligned with QMS reporting standards.
+These features position the proposed system as an efficient and modern alternative to traditional paper-based feedback methods. By integrating QR code access, machine learning analysis, and real-time analytics dashboards, the system provides a more accurate, faster, and data-driven approach to evaluating service quality and supporting decision-making in organizations.
+Sustainability plan
+
+To ensure the long-term usability and effectiveness of the proposed Mobile Customer Feedback Collection System with a Web-Based Analytics Dashboard, a comprehensive sustainability plan will be implemented. This plan focuses on system maintenance, continuous improvement, user adoption, data management, and scalability.
+1. Maintenance and Operational Continuity
+Routine System Monitoring: Regular system checks will be conducted to ensure that all components such as the web server, database, and QR code access are functioning properly. Any detected errors or system issues will be addressed immediately to avoid downtime.
+Software Maintenance: The Node.js-based system and integrated features such as the feedback form, dashboard, and email notification system will be regularly updated to fix bugs and improve performance.
+Database Management and Backup: All feedback data stored in the Firebase Firestore database will be continuously managed and backed up using Firebase cloud services to prevent data loss. Backup systems will ensure that important information such as ratings, comments, and reports are preserved and recoverable.
+2. Machine Learning Model and System Updates
+Continuous Model Improvement: The machine learning models used for sentiment analysis and pattern detection will be updated as more feedback data is collected. This will improve the accuracy of classification and analysis over time.
+Algorithm Enhancement: Algorithms such as Naive Bayes and clustering techniques may be refined or replaced with more efficient models when necessary to improve system performance.
+System Upgrades: Future updates may include additional features such as improved analytics, better visualization tools, and enhanced decision support functions.
+3. User Adoption and Training
+User Orientation: Basic guidance will be provided to users on how to scan QR codes and submit feedback using mobile devices.
+Administrator Training: System administrators will be trained on how to use the dashboard, interpret analytics results, and manage feedback data.
+Ease of Use: The system will be designed with a simple and user-friendly interface to encourage continuous usage and participation.
+4. Data Security and Privacy
+Data Protection: All collected data will be securely stored and protected against unauthorized access.
+Confidentiality: Personal information of users will be handled with strict confidentiality and will only be used for research and service improvement purposes.
+Secure Access Control: Only authorized administrators will have access to the system dashboard and database.
+5. Scalability and Future Expansion
+System Scalability: The system will be designed to support additional departments, users, and increased feedback data without affecting performance.
+Integration Capability: The system can be expanded to integrate with other platforms such as mobile applications or institutional systems in the future.
+Adaptability: The system can be applied to other organizations or sectors that require feedback collection and analysis.
+This sustainability plan ensures that the proposed feedback system remains functional, accurate, and adaptable over time. Through regular maintenance, continuous machine learning improvements, user training, and system scalability, the project is designed for long-term use and effectiveness. The system also supports digital transformation by replacing manual feedback processes with an efficient, data-driven solution that can be expanded for future applications.
+Project Workplan
+Pls. see attached form
+References
+Dovetail. (2023, April 16). How to Analyze Customer Feedback: Guide, examples + template. https://dovetail.com/customer-research/customer-feedback-analysis/
+Suresh, A. (2022). Automating Feedback to Improve Teachers’ Effective Use of Instructional Discourse in K-12 Mathematics Classrooms. Master’s Thesis, University of Colorado at Boulder.  https://www.scirp.org/reference/referencespapers?referenceid=3797868&utm_source=copilot.com
+Nasir, Dr. Mohammad & Basudeb, Mr. (2024). Navigating the Digital Age: The Role of Libraries in Promoting Information and Digital Literacy. https://www.researchgate.net/publication/386413678_Navigating_the_Digital_Age_The_Role_of_Libraries_in_Promoting_Information_and_Digital_Literacy  https://www.researchgate.net/publication/352849491_Using_the_SERVQUAL_Framework_to_Examine_the_Service_Quality_in_Higher_Education_in_Thailand
+Fuchs, K., & Fangpong, K. (2021). Using the SERVQUAL framework to examine the service quality in higher education in Thailand. Education Quarterly Reviews, 4. https://doi.org/10.31014/aior.1993.04.02.286
+Zygiaris, S., Hameed, Z., Alsubaie, M. A., & Rehman, S. U. (2022). Service quality and customer satisfaction in the post pandemic world: A study of Saudi auto care industry. Frontiers in Psychology, 13, 842141. https://doi.org/10.3389/fpsyg.2022.842141
+Aftab, J., Sarwar, H., Sultan, Q.-U.-A., & Qadeer, M. (2016). Importance of service quality in customer satisfaction: A study on fast food restaurants. Entrepreneurship and Innovation Management Journal, 4, 161–171. https://doi.org/10.1016/j.eimj.2016.04.001
+Ahmad, N. A. F. B., Zulkifli, M. A. B., Rawi, N. B. A., Fauzi, T. A. B. E., & Fauzi, E. M. F. B. E. (2024). Service quality and customer satisfaction: Empirical evidence and application of strategic tools. International Journal of Academic Research in Business and Social Sciences, 14(9), 1369–1395. https://doi.org/10.6007/IJARBSS/v14-i9/20012
+Wright, K. B. (2005). Researching internet-based populations: Advantages and disadvantages of online survey research, online questionnaire authoring software packages, and web survey services. Journal of Computer-Mediated Communication, 10(3). https://doi.org/10.1111/j.1083-6101.2005.tb00259.x
+UMA Technology. (2024, December 30). Online surveys advantages & disadvantages. UMA Technology. https://umatechnology.com/online-surveys-advantages-disadvantages
+Okubo, I., Ono, S., Kim, H.-W., Cho, M., & Lee, M.-C. (2024). A study on the simple encryption of QR codes using random numbers. Electronics, 13(15), 3003. https://doi.org/10.3390/electronics13153003
+Yamin, M. A. Y., & Abdalatif, O. A. A. (2024). Examining consumer behavior towards adoption of quick response code mobile payment systems: Transforming mobile payment in the fintech industry. Humanities and Social Sciences Communications, 11(1). https://doi.org/10.1057/s41599-024-00941-2
+US Census Bureau. (2024, August 15). Usability of quick response (QR) code as a method to access a survey using a smartphone. Census.gov. https://www.census.gov/qr-code-survey
+Snyder, M. J., Nguyen, D. R., Womack, J. J., Bunt, C. W., Westerfield, K. L., Bell, A. E., & Ledford, C. J. W. (2018). Testing quick response (QR) codes as an innovation to improve feedback among geographically-separated clerkship sites. Family Medicine, 50(3), 188–194. https://doi.org/10.22454/FamMed.2018.922292
+Iqbal, A., Amin, R., Iqbal, J., Alroobaea, R., Binmahfoudh, A., & Hussain, M. (2022). Sentiment analysis of consumer reviews using deep learning. Sustainability, 14(17), 10844. https://doi.org/10.3390/su141710844
+Shin, J., Rahman, W., Ahmed, T., Mazrur, B., Mia, M. M., Idress Ekfa, R., Rana, M. S., & Kim, P. (2025). Exploring the effectiveness of machine learning and deep learning algorithms for sentiment analysis: A systematic literature review. Computers, Materials & Continua, 84(3), 4105–4153. https://doi.org/10.32604/cmc.2025.02933
+Jain, P. K., & Pamula, R. (2020). A systematic literature review on machine learning applications for consumer sentiment analysis using online reviews. arXiv. https://arxiv.org/abs/2008.06515
+Ashbaugh, L., & Zhang, Y. (2024). A comparative study of sentiment analysis on customer reviews using machine learning and deep learning. Computers, 13(12), 340. https://doi.org/10.3390/computers13120340
+Hossain, E., Sharif, O., Hoque, M. M., & Sarker, I. H. (2020). SentiLSTM: A deep learning approach for sentiment analysis of restaurant reviews. arXiv. https://arxiv.org/abs/2004.05678
+Oloyede, M. O. (2020). Development of a web-based feedback system for academic staff assessment. IJERT. https://www.ijert.org/research/development-of-web-based-feedback-system-for-academic-staff-assessment-IJERTV9IS020067.pdf
+Khanbhai, M., Symons, J., Flott, K., Harrison-White, S., Spofforth, J., Klaber, R., Manton, D., Darzi, A., & Mayer, E. (2021). Enriching the value of patient experience feedback: Web-based dashboard development using co-design and heuristic evaluation. JMIR Human Factors, 9(1), e27887. https://doi.org/10.2196/27887
+Paredes-Páliz, D. F., Royo, G., Aznar, F., Aldea, C., & Celma, S. (2020). Radio over fiber: An alternative broadband network technology for IoT. Electronics, 9(11), 1785. https://doi.org/10.3390/electronics9111785
+IEEE Journals & Magazine. (2021, July 1). Watermarking neural networks with watermarked images. IEEE Xplore. https://ieeexplore.ieee.org/document/9463457
+Aftab, F., Bazai, S. U., Marjan, S., Baloch, L., Aslam, S., Amphawan, A., & Neo, T.-K. (2023). A comprehensive survey on sentiment analysis techniques. International Journal of Technology, 14(6), 1288–1298. https://doi.org/10.14716/ijtech.v14i6.6574
+Rudzevych, Y. (2020). Machine learning methods for sentiment analysis of textual data. Scientific Research of Information Technology, 3, 56–63. https://doi.org/10.13187/srit.2020.56
+Cao, C., Zhao, X., & Song, Z. (2020). Dynamic analysis of bolted cantilever beam with finite element method considering thread relation. Applied Sciences, 10(20), 7036. https://doi.org/10.3390/app10207036
+Tan, C. S., Van Bossuyt, D. L., & Hale, B. (2021). System analysis of counter-unmanned aerial systems kill chain in an operational environment. Systems, 9(4), 79. https://doi.org/10.3390/systems9040079
+Idakis, N., Petousis, M., Maniadi, A., & Arapis, E. (2022). Development and fabrication of an innovative smart tool to monitor the impact carving process on brittle stones and marble. Electronics, 11(1), 12. https://doi.org/10.3390/electronics11010012
+Clarke, A. (2025). Advancing organizational decision-making through decision support systems (DSS). https://www.researchgate.net/publication/367849621_Advancing_Organizational_Decision-Making_through_DSS
+Bestman, A. E., & Chinyere, J. O. (2021). Decision support systems and organizational efficiency of the deposit money banks in Port Harcourt, Rivers State. Strategic Journal of Business & Change Management, 8(1). https://doi.org/10.47522/sjbcm.2021.8.1.07
+Zhang, J., & Goyal, S. B. (2024). AI-driven decision support system innovations to empower higher education administration. Journal of Computers, Mechanical and Management, 3(2), 35–41. https://doi.org/10.5281/zenodo.12345678
+
+	
+	
+	
+	
+	
+	
+PROJECT WORKPLAN
+PROJECT OBJECTIVES
+TARGET ACTIVITIES
+OBJECTIVELY VERIFIABLE INDICATORS/TARGET ACCOMPLISHMENTS
+Month
+
+
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+Objective 1: Planning and Requirements
+
+• Identify project goals and system features• Gather user requirements• Prepare system flow and initial design
+• Project scope defined• Requirements completed• System design prepared
+
+
+
+
+
+
+
+
+
+Objective 2: System Design
+
+
+
+
+
+• Design system architecture and workflow• Create database structure• Design user interface (QR, form, dashboard
+• System design completed• Database structure prepared• Interface design finalized
+
+
+
+
+
+
+
+
+
+Objective 3: Development 
+
+
+• Develop QR-based access system• Build web-based feedback system• Implement database and admin pane
+• QR system working• Feedback system operational• Data stored successfully
+
+
+
+
+
+
+
+
+
+Objective 4: Machine Learning Integration
+
+
+
+• Prepare dataset for feedback• Train sentiment analysis model• Integrate ML into the system
+
+• Feedback classified (positive/neutral/negative)• Model performance recorded• ML integrated successfully
+
+
+
+
+
+
+
+
+
+Objective 5: Dashboard and Decision Support System
+
+
+
+• Develop dashboard interface• Implement charts and reports• Create decision support insights
+• Dashboard displays data• Charts and reports working• System provides insights
+
+
+
+
+
+
+
+
+
+Objective 6: Testing and Evaluation
+
+
+
+
+• Conduct system testing• Perform usability and performance evaluation• Collect and analyze user feedback
+• System tested and improved• Meets performance standards• Evaluation results gathered
+
+
+
+
+
+
+
+
+
+Objective 7: Deployment and Maintenance
+
+
+
+
+• Deploy the system• Prepare documentation• Maintain and update the system
+• System fully operational• Documentation completed• System maintained regularly
+
+
+
+
+
+
+
+
+
+
