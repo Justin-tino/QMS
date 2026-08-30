@@ -42,9 +42,15 @@ function sanitizeText(value, maxLen = 2000) {
   return str.substring(0, maxLen);
 }
 
-// Helper: validate ID format for Firestore docs
+// Helper: validate ID format for Firestore docs — permissive so mock_ and legacy N/A rows can be deleted
 function isValidId(id) {
-  return typeof id === 'string' && /^[A-Za-z0-9_-]{10,80}$/.test(id.trim());
+  if (typeof id !== 'string') return false;
+  const t = id.trim();
+  if (!t || t.length > 200) return false;
+  // block path traversal / whitespace
+  if (t.includes('/') || t.includes('\\') || /\s/.test(t)) return false;
+  // allow Firestore auto IDs, mock_*, and legacy short ids
+  return /^[A-Za-z0-9._\-]{1,200}$/.test(t);
 }
 
 // SECURITY FIX (#17): QMS audit trail — persisted to Firestore `audit_logs` (TIMO 8.8 centralized storage).

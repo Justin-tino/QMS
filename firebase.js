@@ -22,52 +22,57 @@ function failClosedOrMock(err) {
 
 let activeDb;
 let useFirebase = false;
-const mockFeedbacks = [];
+const mockStore = {}; // separate per collection: { feedbacks: [], users: [], sessions: [], ... }
+function getMockCollection(name) {
+    if (!mockStore[name]) mockStore[name] = [];
+    return mockStore[name];
+}
 
-// Define mock DB
+// Define mock DB — now properly isolated per collection so N/A user docs don't appear in feedbacks
 const mockDb = {
     collection: (name) => ({
         add: async (data) => {
+            const col = getMockCollection(name);
             const id = 'mock_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             const entry = { id, ...data, createdAt: new Date() };
-            if (mockFeedbacks.length >= 10000) mockFeedbacks.shift(); // Prevent unbounded growth
-            mockFeedbacks.push(entry);
+            if (col.length >= 10000) col.shift();
+            col.push(entry);
             return { id };
         },
         doc: (id) => ({
             get: async () => {
-                const found = mockFeedbacks.find(f => f.id === id);
+                const col = getMockCollection(name);
+                const found = col.find(f => f.id === id);
                 return { exists: !!found, data: () => found, id };
             },
             update: async (data) => {
-                const idx = mockFeedbacks.findIndex(f => f.id === id);
-                if (idx !== -1) mockFeedbacks[idx] = { ...mockFeedbacks[idx], ...data };
+                const col = getMockCollection(name);
+                const idx = col.findIndex(f => f.id === id);
+                if (idx !== -1) col[idx] = { ...col[idx], ...data };
             },
             set: async (data, options) => {
-                const idx = mockFeedbacks.findIndex(f => f.id === id);
+                const col = getMockCollection(name);
+                const idx = col.findIndex(f => f.id === id);
                 if (idx !== -1) {
-                    mockFeedbacks[idx] = options?.merge
-                        ? { ...mockFeedbacks[idx], ...data }
-                        : { id, ...data };
+                    col[idx] = options?.merge ? { ...col[idx], ...data } : { id, ...data };
                 } else {
-                    mockFeedbacks.push({ id, ...data });
+                    col.push({ id, ...data });
                 }
             },
             delete: async () => {
-                const idx = mockFeedbacks.findIndex(f => f.id === id);
-                if (idx !== -1) {
-                    mockFeedbacks.splice(idx, 1);
-                }
+                const col = getMockCollection(name);
+                const idx = col.findIndex(f => f.id === id);
+                if (idx !== -1) col.splice(idx, 1);
             }
         }),
-        get: async () => ({
-            docs: mockFeedbacks.map(f => ({
-                id: f.id,
-                data: () => f
-            })),
-            size: mockFeedbacks.length,
-            empty: mockFeedbacks.length === 0
-        }),
+        get: async () => {
+            const col = getMockCollection(name);
+            return {
+                docs: col.map(f => ({ id: f.id, data: () => f })),
+                size: col.length,
+                empty: col.length === 0
+            };
+        },
         orderBy: function () { return this; },
         limit: function () { return this; },
         where: function () { return this; }
