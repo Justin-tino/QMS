@@ -111,11 +111,25 @@ class EmailService {
 
         if (host && user && pass) {
             try {
+                // Railway often blocks 587 greeting — use timeouts + IPv4 + TLS tweaks for Gmail
                 this.transporter = nodemailer.createTransport({
                     host,
                     port,
                     secure: port === 465,
-                    auth: { user, pass }
+                    auth: { user, pass },
+                    family: 4,
+                    connectionTimeout: 10000,
+                    greetingTimeout: 10000,
+                    socketTimeout: 15000,
+                    requireTLS: port === 587,
+                    tls: { ciphers: 'SSLv3', rejectUnauthorized: false },
+                    logger: false,
+                    debug: false
+                });
+                // Verify in background — if it fails we log but keep transporter for retry
+                this.transporter.verify((err) => {
+                    if (err) console.warn(' SMTP verify failed (will retry on send):', err.message, '— check SMTP_HOST/PORT/USER/PASS and Gmail App Password');
+                    else console.log(` Nodemailer SMTP verified successfully (${host}:${port}).`);
                 });
                 console.log(` Nodemailer SMTP initialized successfully (${host}:${port}).`);
             } catch (err) {
