@@ -1,4 +1,4 @@
-const CACHE_NAME = 'psau-feedback-v5';
+const CACHE_NAME = 'psau-feedback-v6';
 
 // Core local assets that MUST be cached for offline fallback
 const CORE_ASSETS = [
@@ -74,6 +74,9 @@ self.addEventListener('fetch', (event) => {
 
     // Skip chrome-extension, non-http(s) requests
     if (!url.protocol.startsWith('http')) return;
+
+    // Never intercept admin pages — they require auth and must always hit server fresh
+    if (url.pathname.startsWith('/admin')) return;
 
     // Network-First for HTML page navigations
     if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
