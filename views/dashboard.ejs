@@ -1826,15 +1826,16 @@ function toggleDeptRankings(){
             <tbody id="usersTableBody">
               <% if (_userList.length) { %>
                 <% _userList.forEach(function(u){ 
-                     var initial = (u.displayName || u.email || 'S').charAt(0).toUpperCase();
-                     var displayName = u.displayName || u.email.split('@')[0];
+                     var safeEmail = (u && u.email) ? String(u.email) : '';
+                     var initial = (u.displayName || safeEmail || 'S').charAt(0).toUpperCase();
+                     var displayName = u.displayName || (safeEmail ? safeEmail.split('@')[0] : 'Staff');
                 %>
-                  <tr class="um-user-row" data-search="<%= (u.email + ' ' + displayName).toLowerCase() %>" style="<%= u.disabled ? 'opacity:0.65;' : '' %>">
+                  <tr class="um-user-row" data-search="<%= (safeEmail + ' ' + displayName).toLowerCase() %>" style="<%= u.disabled ? 'opacity:0.65;' : '' %>">
                     <td>
                       <div class="um-user-cell">
                         <div>
                           <div class="um-user-name"><%= displayName %></div>
-                          <div class="um-user-email"><%= u.email %></div>
+                          <div class="um-user-email"><%= safeEmail || '—' %></div>
                         </div>
                       </div>
                     </td>
@@ -1865,7 +1866,7 @@ function toggleDeptRankings(){
                       <% } %>
                     </td>
                     <td style="text-align:center;">
-                      <button type="button" onclick="openEditUser('<%= u.id %>','<%= u.email %>','<%= (u.displayName||'').replace(/'/g,'\\\'') %>', <%= !!u.disabled %>)" class="um-btn-manage">
+                      <button type="button" onclick="openEditUser('<%= u.id %>','<%= safeEmail %>','<%= (u.displayName||'').replace(/'/g,'\\\'') %>', <%= !!u.disabled %>)" class="um-btn-manage">
                         Edit
                       </button>
                     </td>

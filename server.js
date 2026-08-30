@@ -1481,12 +1481,12 @@ app.get('/admin/dashboard', requireAuth, async (req, res) => {
     const scopeLabel = filterParams.selectedOffice !== 'all' ? filterParams.selectedOffice : null;
     const localAnalysis = generateLocalReport(feedbacks, scopeLabel || filterParams.periodLabel);
     const mlMetrics = naiveBayes.evaluateModel();
-    // Load managed employee accounts for admin (Firestore centralized per paper 8.8)
+    // Load managed employee accounts for admin (Firestore centralized per paper 8.8) — filter out non-user docs (e.g., mock collision)
     let managedUsers = [];
     if (req.session.isAdmin) {
       try {
         const uSnap = await db.collection('users').get();
-        managedUsers = uSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        managedUsers = uSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => u && u.email && typeof u.email === 'string' && u.email.includes('@')).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       } catch (e) { console.warn('Failed to load users:', e.message); }
     }
     // one-time welcome animation: show only on first render after login, never on reload
@@ -1554,11 +1554,11 @@ app.post('/admin/feedback/delete', requireAuth, requireAdmin, validateCsrf, asyn
 });
 
 // ========== ADMIN USER MANAGEMENT (Paper: RBAC & Centralized Firestore) ==========
-// List staff users (admin only)
+// List staff users (admin only) — filter out non-user docs in mock mode
 app.get('/admin/api/users', requireAuth, requireAdmin, async (req, res) => {
   try {
     const snap = await db.collection('users').get();
-    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const users = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => u && u.email && typeof u.email === 'string' && u.email.includes('@'));
     // Sort newest first
     users.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     res.json({ success: true, users });
