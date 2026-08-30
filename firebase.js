@@ -79,6 +79,10 @@ const envServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
 if (envServiceAccount) {
     try {
         serviceAccount = JSON.parse(envServiceAccount);
+        // Railway env var stores private_key with literal \n — convert to real newlines for admin.cert
+        if (serviceAccount && serviceAccount.private_key) {
+            serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+        }
     } catch (e) {
         console.log(' Failed to parse FIREBASE_SERVICE_ACCOUNT env var:', e.message);
     }
