@@ -104,6 +104,35 @@ class EmailService {
     }
 
     initTransporter() {
+        // Priority 0: Firebase Gmail OAuth2 (most reliable on Railway, no App Password)
+        if (process.env.GMAIL_OAUTH_CLIENT_ID && process.env.GMAIL_OAUTH_CLIENT_SECRET && process.env.GMAIL_OAUTH_REFRESH_TOKEN) {
+            try {
+                const oauthUser = process.env.GMAIL_OAUTH_USER || process.env.SMTP_USER || 'bonustimoy@gmail.com';
+                this.transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                        type: 'OAuth2',
+                        user: oauthUser,
+                        clientId: process.env.GMAIL_OAUTH_CLIENT_ID,
+                        clientSecret: process.env.GMAIL_OAUTH_CLIENT_SECRET,
+                        refreshToken: process.env.GMAIL_OAUTH_REFRESH_TOKEN,
+                        accessToken: process.env.GMAIL_OAUTH_ACCESS_TOKEN || undefined
+                    },
+                    family: 4,
+                    connectionTimeout: 10000,
+                    greetingTimeout: 10000,
+                    socketTimeout: 15000
+                });
+                this.transporter.verify((err) => {
+                    if (err) console.warn(' Gmail OAuth verify failed:', err.message, '— check GMAIL_OAUTH_* vars');
+                    else console.log(` Gmail OAuth verified successfully for ${oauthUser}`);
+                });
+                console.log(` Nodemailer Gmail OAuth initialized for ${oauthUser}`);
+                return;
+            } catch (err) {
+                console.warn(' Gmail OAuth init error:', err.message);
+            }
+        }
         // Priority 1: HTTPS API providers (Resend / Brevo) — never blocked by Railway, no SMTP ports
         if (process.env.RESEND_API_KEY) {
             console.log(' Email provider: Resend API (HTTPS) — will use https://api.resend.com/emails');
