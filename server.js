@@ -164,6 +164,11 @@ async function getAllAdminEmails() {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+// Railway / production is behind a proxy (HTTPS terminated at proxy, forwarded as http)
+// Must trust proxy so secure cookies are set correctly
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 // ========== MIDDLEWARE ==========
 app.set('view engine', 'ejs');
@@ -277,9 +282,9 @@ app.use(session({
   }
 }));
 
-// Global no-cache for all /admin routes — fixes back-button showing cached dashboard after logout
+// Global no-cache for all /admin routes + public form — fixes back-button & stale CSRF token
 app.use((req, res, next) => {
-  if (req.path && req.path.startsWith('/admin')) {
+  if (req.path && (req.path.startsWith('/admin') || req.path === '/' || req.path === '/thank-you')) {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
