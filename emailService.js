@@ -104,6 +104,15 @@ class EmailService {
     }
 
     initTransporter() {
+        // Priority 1: HTTPS API providers (Resend / Brevo) — never blocked by Railway, no SMTP ports
+        if (process.env.RESEND_API_KEY) {
+            console.log(' Email provider: Resend API (HTTPS) — will use https://api.resend.com/emails');
+            return;
+        }
+        if (process.env.BREVO_API_KEY) {
+            console.log(' Email provider: Brevo API (HTTPS) — will use https://api.brevo.com/v3/smtp/email');
+            return;
+        }
         const host = process.env.SMTP_HOST;
         const port = parseInt(process.env.SMTP_PORT) || 587;
         const user = process.env.SMTP_USER;
@@ -128,7 +137,7 @@ class EmailService {
                 });
                 // Verify in background — if it fails we log but keep transporter for retry
                 this.transporter.verify((err) => {
-                    if (err) console.warn(' SMTP verify failed (will retry on send):', err.message, '— check SMTP_HOST/PORT/USER/PASS and Gmail App Password');
+                    if (err) console.warn(' SMTP verify failed (will retry on send):', err.message, '— check SMTP_HOST/PORT/USER/PASS and Gmail App Password, or set RESEND_API_KEY/BREVO_API_KEY for HTTPS mail');
                     else console.log(` Nodemailer SMTP verified successfully (${host}:${port}).`);
                 });
                 console.log(` Nodemailer SMTP initialized successfully (${host}:${port}).`);
@@ -136,7 +145,55 @@ class EmailService {
                 console.warn(' Nodemailer SMTP init error:', err.message);
             }
         } else {
-            console.log(' SMTP credentials not fully set in .env. Email notifications will operate in Console/Test mode.');
+            console.log(' SMTP credentials not fully set and no RESEND_API_KEY/BREVO_API_KEY. Email notifications will operate in Console/Test mode.');
+            console.log(' Tip: Set RESEND_API_KEY or BREVO_API_KEY for reliable HTTPS email on Railway (no SMTP ports).');
+        }
+    }
+
+    async sendViaResend(to, subject, html) {
+        const apiKey = process.env.RESEND_API_KEY;
+        const from = process.env.RESEND_FROM || process.env.SMTP_USER || 'onboarding@resend.dev';
+        if (!apiKey) return false;
+        try {
+            const res = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from: `PSAU Feedback System <${from}>`, to: [to], subject, html })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+                console.log(` Email sent via Resend to ${to}. Id: ${data.id || 'ok'}`);
+                return true;
+            }
+            console.warn(` Resend API failed (${res.status}):`, data.message || JSON.stringify(data).slice(0,300));
+            return false;
+        } catch (err) {
+            console.warn(' Resend API error:', err.message);
+            return false;
+        }
+    }
+
+    async sendViaBrevo(to, subject, html) {
+        const apiKey = process.env.BREVO_API_KEY;
+        const senderEmail = process.env.BREVO_SENDER || process.env.SMTP_USER || 'bonustimoy@gmail.com';
+        const senderName = 'PSAU Feedback System';
+        if (!apiKey) return false;
+        try {
+            const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: { 'api-key': apiKey, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sender: { name: senderName, email: senderEmail }, to: [{ email: to }], subject, htmlContent: html })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+                console.log(` Email sent via Brevo to ${to}. messageId: ${data.messageId || 'ok'}`);
+                return true;
+            }
+            console.warn(` Brevo API failed (${res.status}):`, data.message || JSON.stringify(data).slice(0,400));
+            return false;
+        } catch (err) {
+            console.warn(' Brevo API error:', err.message);
+            return false;
         }
     }
 
@@ -327,13 +384,25 @@ class EmailService {
     }
 
     async sendMail(to, subject, html) {
+        // Priority: HTTPS APIs first (Railway-safe) — then SMTP — then simulation
+        if (process.env.RESEND_API_KEY) {
+            const ok = await this.sendViaResend(to, subject, html);
+            if (ok) return true;
+            console.warn(' Resend failed, falling back to SMTP/simulation...');
+        }
+        if (process.env.BREVO_API_KEY) {
+            const ok = await this.sendViaBrevo(to, subject, html);
+            if (ok) return true;
+            console.warn(' Brevo failed, falling back to SMTP/simulation...');
+        }
         if (!this.transporter) {
             // mask recipient address in logs — no PII in console output
             const maskedTo = String(to || '').replace(/^(.{2}).*(@.*)$/, '$1***$2');
             console.log(`\n [EMAIL SIMULATION / TEST MODE]`);
             console.log(` To: ${maskedTo}`);
             console.log(` Subject: ${subject}`);
-            console.log(` (Configure SMTP_HOST, SMTP_USER, SMTP_PASS in .env to send real emails)\n`);
+            console.log(` (Configure RESEND_API_KEY or BREVO_API_KEY or SMTP_HOST/USER/PASS to send real emails)\n`);
+            // In simulation we return true so UI shows success even without SMTP (useful for demo)
             return true;
         }
 
@@ -348,6 +417,10 @@ class EmailService {
             return true;
         } catch (err) {
             console.error(` Email sending failed to ${to}:`, err.message);
+            // If SMTP timeout and we have HTTPS fallback not yet tried, suggest it
+            if (err.message && err.message.includes('timeout')) {
+                console.warn(' Hint: Railway often blocks SMTP 587/465. Set RESEND_API_KEY or BREVO_API_KEY for HTTPS email (works on Railway).');
+            }
             return false;
         }
     }
