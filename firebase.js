@@ -80,8 +80,25 @@ const mockDb = {
 };
 
 let serviceAccount;
-const envServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+let envServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+// Railway Raw Editor wraps JSON in outer quotes — strip them before JSON.parse
 if (envServiceAccount) {
+    envServiceAccount = String(envServiceAccount).trim();
+    if ((envServiceAccount.startsWith('"') && envServiceAccount.endsWith('"')) || (envServiceAccount.startsWith("'") && envServiceAccount.endsWith("'"))) {
+        // Outer quotes present (from Raw Editor display) — remove and unescape inner \"
+        const inner = envServiceAccount.slice(1, -1).trim();
+        // If inner still looks like JSON with escaped quotes, keep as is; JSON.parse will handle \"
+        // If raw outer quotes were the only wrapper, inner is now valid JSON
+        // Try inner first, fallback to original
+        try {
+            serviceAccount = JSON.parse(inner);
+            envServiceAccount = inner;
+        } catch (_) {
+            // fallback: try original value (in case Railway already stripped outer quotes)
+        }
+    }
+}
+if (envServiceAccount && !serviceAccount) {
     try {
         serviceAccount = JSON.parse(envServiceAccount);
         // Railway env var stores private_key with literal \n — convert to real newlines for admin.cert
@@ -90,7 +107,12 @@ if (envServiceAccount) {
         }
     } catch (e) {
         console.log(' Failed to parse FIREBASE_SERVICE_ACCOUNT env var:', e.message);
+        // Extra debug: show first 80 chars to help Railway debugging (no private key)
+        console.log(' FIREBASE_SERVICE_ACCOUNT preview:', String(envServiceAccount).substring(0, 80) + '...');
     }
+} else if (serviceAccount && serviceAccount.private_key) {
+    // Already parsed via outer-quote path — still fix \n
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
 }
 let serviceAccountSource = 'env';
 if (!serviceAccount) {

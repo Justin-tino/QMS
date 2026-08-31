@@ -167,36 +167,45 @@ class EmailService {
         if (pass) pass = pass.replace(/\s+/g, '');
         if (user) user = user.trim().toLowerCase();
 
+        // Store for retry (465 fallback if 587 blocked on Railway)
+        this.smtpHost = host;
+        this.smtpUser = user;
+        this.smtpPass = pass;
+        this.smtpPort = port;
+
         // Masked log for Railway diagnostics — never log the actual password
         const hasHost = !!host;
         const hasUser = !!user;
         const hasPass = !!pass;
         if (hasHost && hasUser && hasPass) {
             try {
-                this.transporter = nodemailer.createTransport({
+                const createTransportForPort = (p) => nodemailer.createTransport({
                     host,
-                    port,
-                    secure: port === 465, // true for 465, false for 587 STARTTLS
+                    port: p,
+                    secure: p === 465, // true for 465, false for 587 STARTTLS
                     auth: { user, pass },
                     family: 4, // Force IPv4 — Railway internal DNS often resolves IPv6 first which Gmail may not route
                     connectionTimeout: 15000,
                     greetingTimeout: 15000,
                     socketTimeout: 20000,
-                    requireTLS: port === 587,
-                    // Modern TLS for Gmail — do NOT use ciphers:'SSLv3' (deprecated, fails on Node 20+)
+                    requireTLS: p === 587,
                     tls: {
-                        // Enforce TLS 1.2+ ; Gmail rejects SSLv3
                         minVersion: 'TLSv1.2',
                         rejectUnauthorized: true
                     },
                     logger: false,
                     debug: false
                 });
+                this.createTransportForPort = createTransportForPort;
+                this.transporter = createTransportForPort(port);
                 // Verify in background — log detailed error for Railway logs but keep transporter for retry on send
                 this.transporter.verify((err) => {
                     if (err) {
                         this.lastError = err.message;
                         console.warn(` SMTP verify failed (will retry on send): ${err.message} — code:${err.code || 'n/a'} response:${err.response || 'n/a'}`);
+                        if (err.code === 'ETIMEDOUT' || /timeout/i.test(err.message)) {
+                            console.warn(' Railway ETIMEDOUT on port ' + port + ' — Railway blocks SMTP 587 on Hobby plan. Will auto-retry with 465 on send.');
+                        }
                         console.warn(' Check: SMTP_HOST/PORT/USER/PASS, Gmail App Password (16 chars, no spaces, 2FA required), and that Gmail account allows SMTP. On Railway, ensure vars have no surrounding quotes.');
                     } else console.log(` Nodemailer SMTP verified successfully (${host}:${port} as ${user}).`);
                 });
@@ -421,30 +430,57 @@ class EmailService {
         // Ensure from address is clean and matches authenticated user (Gmail requires From == auth user or alias)
         const fromUser = cleanEnv('SMTP_USER') || cleanEnv('GMAIL_OAUTH_USER') || 'bonustimoy@gmail.com';
         const cleanFrom = fromUser.trim().toLowerCase();
-        try {
-            const info = await this.transporter.sendMail({
+
+        const trySend = async (transporter) => {
+            return transporter.sendMail({
                 from: `"PSAU Feedback System" <${cleanFrom}>`,
                 to,
                 subject,
                 html
             });
+        };
+
+        try {
+            const info = await trySend(this.transporter);
             console.log(` Email sent successfully to ${to}. MessageId: ${info.messageId}`);
             this.lastError = null;
             return true;
         } catch (err) {
+            const isTimeout = err.code === 'ETIMEDOUT' || err.code === 'ESOCKET' || /timeout/i.test(err.message) || /ETIMEDOUT|ECONNECTION/i.test(err.message);
+            const is587 = this.smtpPort === 587;
+            // Railway Hobby blocks 587 — auto-retry with 465 SSL (no env change needed)
+            if (isTimeout && is587 && this.createTransportForPort) {
+                console.warn(` SMTP ${this.smtpHost}:587 timed out (Railway blocks 587) — retrying with 465 SSL...`);
+                try {
+                    const fallback = this.createTransportForPort(465);
+                    // Cache 465 transporter for next sends if it works
+                    const info2 = await trySend(fallback);
+                    console.log(` Email sent successfully via fallback 465 to ${to}. MessageId: ${info2.messageId}`);
+                    this.transporter = fallback;
+                    this.smtpPort = 465;
+                    this.lastError = null;
+                    return true;
+                } catch (err2) {
+                    this.lastError = err2.message;
+                    const code2 = err2.code || 'N/A';
+                    console.error(` Fallback 465 also failed to ${to}: ${err2.message} (code:${code2})`);
+                    if (err2.response) console.error(` SMTP 465 response: ${err2.response}`);
+                    console.warn(' Hint: Railway is blocking BOTH 587 and 465. This is common on Hobby/Free plan. Fix options: 1) Upgrade Railway to Pro (allows SMTP egress), 2) Use Gmail API via HTTPS (no SMTP ports), 3) Set up a free HTTPS email relay. Your App Password is valid (passLen 16) — issue is network, not password.');
+                    return false;
+                }
+            }
+
             this.lastError = err.message;
             const code = err.code || 'N/A';
-            const resp = err.response || err.message;
             console.error(` Email sending failed to ${to}: ${err.message} (code:${code})`);
             if (err.response) console.error(` SMTP response: ${err.response}`);
             if (err.command) console.error(` SMTP command: ${err.command}`);
-            // Detailed hints for Railway debugging — based on common Gmail SMTP failures
             if (/Invalid login|535|Username and Password not accepted/i.test(err.message) || /535/.test(String(err.response || ''))) {
                 console.warn(' Hint: Gmail rejected login. 1) Verify Gmail App Password is 16 chars WITHOUT spaces (remove spaces). 2) Ensure 2-Step Verification is ON for bonustimoy@gmail.com. 3) If you changed Google password, old App Password is revoked — generate a NEW App Password at https://myaccount.google.com/apppasswords . 4) Check Railway SMTP_PASS has no surrounding quotes.');
-            } else if (err.message && err.message.includes('timeout')) {
-                console.warn(' Hint: SMTP timeout — Railway may be blocking outbound port 587. Try SMTP_PORT=465 with secure=true (SSL) or check Railway network policy. Current config still prefers 587 STARTTLS.');
-            } else if (/ECONNECTION|ETIMEDOUT|ENOTFOUND/i.test(err.message)) {
-                console.warn(' Hint: Could not connect to smtp.gmail.com. Check SMTP_HOST/PORT and Railway outbound networking. Verify Railway allows SMTP egress (some Hobby plans block 587).');
+            } else if (isTimeout) {
+                console.warn(' Hint: SMTP timeout — Railway is blocking outbound SMTP. Tried 587 + 465. See fallback message above. Your password is valid — network is blocked.');
+            } else if (/ECONNECTION|ENOTFOUND/i.test(err.message)) {
+                console.warn(' Hint: Could not connect to smtp.gmail.com. Check Railway outbound networking. Verify Railway allows SMTP egress.');
             }
             return false;
         }

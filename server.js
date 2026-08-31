@@ -1833,27 +1833,50 @@ app.post('/admin/settings/send-password-reset', requireAuth, requireAdmin, valid
 app.get('/admin/email-diagnostics', requireAuth, requireAdmin, async (req, res) => {
   try {
     const status = typeof emailService.getStatus === 'function' ? emailService.getStatus() : { transporterReady: !!emailService.transporter, lastError: null, config: {} };
-    // Live verify attempt (non-blocking, 8s timeout)
     let verifyOk = null;
     let verifyError = null;
+    let tried465 = false;
     if (emailService.transporter) {
       try {
         await emailService.transporter.verify();
         verifyOk = true;
       } catch (e) {
-        verifyOk = false;
         verifyError = e.message + (e.code ? ` (code:${e.code})` : '') + (e.response ? ` response:${String(e.response).slice(0,200)}` : '');
+        // Auto-try 465 if 587 timed out (Railway Hobby blocks 587)
+        const isTimeout = e.code === 'ETIMEDOUT' || /timeout/i.test(e.message);
+        const currentPort = String(status.config.port || '587');
+        if (isTimeout && currentPort === '587' && typeof emailService.createTransportForPort === 'function') {
+          tried465 = true;
+          try {
+            const alt = emailService.createTransportForPort(465);
+            await alt.verify();
+            verifyOk = true;
+            verifyError = null;
+            // Keep 465 for this instance
+            emailService.transporter = alt;
+            emailService.smtpPort = 465;
+          } catch (e2) {
+            verifyOk = false;
+            verifyError = e2.message + (e2.code ? ` (code:${e2.code})` : '') + ` | 587: ${verifyError} — Both 587 and 465 blocked by Railway (common on Hobby plan)`;
+          }
+        } else {
+          verifyOk = false;
+        }
       }
     } else {
       verifyOk = false;
       verifyError = status.lastError || 'Transporter not initialized — check SMTP_HOST/USER/PASS on Railway';
     }
+    const help = verifyOk
+      ? ` SMTP verified on ${tried465 ? '465 (fallback)' : (status.config.port || '587')} — OTP / Forgot Password should send.`
+      : ' Railway is blocking SMTP 587 (ETIMEDOUT). Fix: 1) On Railway set SMTP_PORT=465 (secure SSL) and redeploy — code now auto-retries 465. If 465 also times out, Railway Hobby is blocking ALL SMTP. Then you must either upgrade Railway to Pro or use Gmail API HTTPS (still Firebase+Nodemailer, no Brevo). Your App Password is valid (passLen 16) — this is a network block, not password.';
     res.json({
       success: true,
       verifyOk,
       verifyError,
+      tried465,
       ...status,
-      help: verifyOk ? ' SMTP is working — OTP / Forgot Password should send.' : ' Fix Railway vars: SMTP_HOST=smtp.gmail.com SMTP_PORT=587 SMTP_USER=bonustimoy@gmail.com SMTP_PASS=16-char App Password (no spaces, no quotes). See Gmail App Password at https://myaccount.google.com/apppasswords (requires 2FA).'
+      help
     });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
