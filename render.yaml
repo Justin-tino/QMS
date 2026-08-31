@@ -1,0 +1,43 @@
+# Render Blueprint — PSAU Quality Management System (QMS)
+# Docs: https://render.com/docs/blueprint-spec
+# This file lets you deploy via "New -> Blueprint" and auto-creates the service.
+# Alternatively, deploy manually via "New -> Web Service" and set the same values in the dashboard.
+
+services:
+  - type: web
+    name: psau-qms
+    runtime: node
+    plan: free            # change to starter/pro if you need more RAM or no spin-down
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true      # auto-deploy on git push to `main`
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000      # Render injects its own PORT; 10000 is sensible default
+      # --- Required secrets — set these in Render Dashboard -> Environment ---
+      # Generate SESSION_SECRET:  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      - key: SESSION_SECRET
+        sync: false
+      - key: FIREBASE_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 465         # Render: use 465 (SSL). 587 is often blocked on free tiers (ETIMEDOUT)
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      # JSON stringified serviceAccountKey.json — see notes below
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false

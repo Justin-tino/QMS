@@ -165,7 +165,7 @@ async function generateSuggestionsOnly(feedbacks, userRequest, periodLabel) {
   // "no data" state so Generate never shows N/A/5.00 as a finding.
   if (!hasData) {
     // Light sanitize for scope label fallback
-    const scopeEsc = String(safeLabel).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const scopeEsc = String(safeLabel).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     return `
 <div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:12px; padding:0.95rem 1.1rem; margin-bottom:0.85rem; display:flex; gap:0.85rem; align-items:flex-start;">
   <div style="width:42px; height:42px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0; border:1px solid #fde68a;"><i class="fas fa-inbox"></i></div>

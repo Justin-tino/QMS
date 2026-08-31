@@ -1136,6 +1136,11 @@ app.post('/submit-feedback', feedbackLimiter, validateCsrf, async (req, res) => 
   }
 });
 
+// Health check — Render (and any uptime monitor) hits this to verify the app is live
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
 // Public: Thank you page
 app.get('/thank-you', (req, res) => {
   res.render('thank-you');
@@ -2593,7 +2598,7 @@ app.get('/admin/export-docx', requireAuth, async (req, res) => {
 // ========== START SERVER ==========
 async function startServer() {
   await initMLModel();
-  const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n PSAU Feedback System running on http://localhost:${PORT}`);
     console.log(` Form: http://localhost:${PORT}/`);
     console.log(` Admin: http://localhost:${PORT}/admin/login`);
