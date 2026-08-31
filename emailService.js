@@ -6,6 +6,11 @@
 
 const nodemailer = require('nodemailer');
 const sanitizeHtml = require('sanitize-html');
+const dns = require('dns');
+
+// Force IPv4 DNS resolution — Railway containers cannot reach IPv6 endpoints
+// (fixes: connect ENETUNREACH 2607:f8b0:... when connecting to smtp.gmail.com)
+dns.setDefaultResultOrder('ipv4first');
 
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
