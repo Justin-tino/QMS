@@ -122,6 +122,16 @@ class EmailService {
     }
 
     initTransporter() {
+        // Priority -1: Brevo HTTPS API (works on Railway/Render Free where SMTP 587/465 is blocked)
+        // Uses port 443 (HTTPS), never blocked. If BREVO_API_KEY is set, sendMail() will try Brevo first before SMTP.
+        this.brevoKey = cleanEnv('BREVO_API_KEY') || cleanEnv('BREVO_KEY');
+        this.brevoSenderEmail = (cleanEnv('BREVO_SENDER_EMAIL') || cleanEnv('SMTP_USER') || 'bonustimoy@gmail.com').trim().toLowerCase();
+        this.brevoSenderName = cleanEnv('BREVO_SENDER_NAME') || 'PSAU Feedback System';
+        if (this.brevoKey) {
+            const maskedKey = this.brevoKey.substring(0, 10) + '***';
+            console.log(` Brevo HTTPS API enabled (sender: ${this.brevoSenderEmail}, key: ${maskedKey} len:${this.brevoKey.length}) — will be tried before SMTP (Railway/Render Free safe).`);
+            if (!this.brevoSenderEmail.includes('@')) console.warn(' BREVO_SENDER_EMAIL invalid — will fallback to SMTP');
+        }
         // Priority 0: Gmail OAuth2 (most reliable on Railway if configured)
         const oauthClientId = cleanEnv('GMAIL_OAUTH_CLIENT_ID');
         const oauthClientSecret = cleanEnv('GMAIL_OAUTH_CLIENT_SECRET');
@@ -410,8 +420,59 @@ class EmailService {
         return this.sendMail(toEmail, subject, html);
     }
 
+    // Brevo HTTPS sender — uses port 443 (never blocked on Railway/Render Free)
+    async sendViaBrevo(to, subject, html) {
+        if (!this.brevoKey || !isValidEmail(to) || !isValidEmail(this.brevoSenderEmail)) return false;
+        try {
+            const payload = {
+                sender: { name: this.brevoSenderName, email: this.brevoSenderEmail },
+                to: [{ email: String(to).trim() }],
+                subject: String(subject || '').replace(/[\r\n]/g, '').substring(0, 998),
+                htmlContent: String(html || '')
+            };
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 15000);
+            const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'api-key': this.brevoKey,
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+            clearTimeout(timer);
+            if (res.ok) {
+                const data = await res.json().catch(() => ({}));
+                console.log(` Email sent via Brevo HTTPS API to ${to}. MessageId: ${data.messageId || 'brevo-ok'}`);
+                this.lastError = null;
+                return true;
+            }
+            const errText = await res.text().catch(() => res.statusText);
+            console.warn(` Brevo API failed (${res.status}): ${errText.substring(0, 300)}`);
+            // 401 = bad key, 402 = daily limit (300/day free), 400 = unverified sender
+            if (res.status === 401) this.lastError = 'Brevo: invalid API key (check BREVO_API_KEY)';
+            else if (res.status === 400 && /unverified|sender/i.test(errText)) this.lastError = 'Brevo: sender not verified — add/verify ' + this.brevoSenderEmail + ' in Brevo -> Senders & Domains';
+            else if (res.status === 429 || res.status === 402) this.lastError = 'Brevo: daily limit (300/day free) or rate limited';
+            else this.lastError = `Brevo API error ${res.status}: ${errText.substring(0, 200)}`;
+            return false;
+        } catch (err) {
+            const msg = err.name === 'AbortError' ? 'Brevo API timeout (15s)' : err.message;
+            console.warn(` Brevo HTTPS error: ${msg}`);
+            this.lastError = msg;
+            return false;
+        }
+    }
+
     async sendMail(to, subject, html) {
-        // Firebase + Nodemailer only — no Brevo/Resend
+        // Step 1: Try Brevo HTTPS API first (Railway/Render Free safe — uses 443, never blocked)
+        if (this.brevoKey) {
+            const brevoOk = await this.sendViaBrevo(to, subject, html);
+            if (brevoOk) return true;
+            console.warn(' Brevo API failed or not ready — falling back to SMTP Nodemailer...');
+        }
+        // Firebase + Nodemailer fallback (SMTP 587/465 — may be blocked on free tiers)
         if (!this.transporter) {
             const maskedTo = String(to || '').replace(/^(.{2}).*(@.*)$/, '$1***$2');
             console.log(`\n [EMAIL SIMULATION / TEST MODE] No transporter — email NOT actually sent.`);
@@ -493,8 +554,12 @@ class EmailService {
         const user = cleanEnv('SMTP_USER');
         const pass = cleanEnv('SMTP_PASS');
         const passNorm = pass ? pass.replace(/\s+/g, '') : '';
+        const brevoKey = cleanEnv('BREVO_API_KEY') || cleanEnv('BREVO_KEY');
         return {
             transporterReady: !!this.transporter,
+            brevoReady: !!brevoKey,
+            brevoSender: this.brevoSenderEmail ? this.brevoSenderEmail.replace(/^(.{2}).*(@.*)$/, '$1***$2') : '(not set)',
+            brevoKeyLen: brevoKey ? brevoKey.length : 0,
             lastError: this.lastError || null,
             config: {
                 host: host || '(not set)',
@@ -503,7 +568,8 @@ class EmailService {
                 passLen: passNorm ? passNorm.length : 0,
                 passLooksValid: passNorm.length === 16,
                 nodeEnv: process.env.NODE_ENV || '(not set)',
-                hasOAuth: !!(cleanEnv('GMAIL_OAUTH_CLIENT_ID') && cleanEnv('GMAIL_OAUTH_CLIENT_SECRET'))
+                hasOAuth: !!(cleanEnv('GMAIL_OAUTH_CLIENT_ID') && cleanEnv('GMAIL_OAUTH_CLIENT_SECRET')),
+                hasBrevo: !!brevoKey
             }
         };
     }

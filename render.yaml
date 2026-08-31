@@ -38,6 +38,13 @@ services:
         sync: false
       - key: SMTP_PASS
         sync: false
+      # Brevo HTTPS API (Railway/Render Free safe — uses 443, not blocked like SMTP)
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        value: bonustimoy@gmail.com
+      - key: BREVO_SENDER_NAME
+        value: PSAU Feedback System
       # JSON stringified serviceAccountKey.json — see notes below
       - key: FIREBASE_SERVICE_ACCOUNT
         sync: false
