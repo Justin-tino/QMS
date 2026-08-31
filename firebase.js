@@ -143,6 +143,12 @@ if (serviceAccount) {
         useFirebase = false;
     }
 }
+if (!activeDb) {
+    console.warn(' FIREBASE_SERVICE_ACCOUNT not set or invalid — using in-memory mock (data will NOT persist across restarts).');
+    console.warn(' Fix: On Railway set FIREBASE_SERVICE_ACCOUNT to single-line JSON of serviceAccountKey.json (see .env.example).');
+    activeDb = mockDb;
+    useFirebase = false;
+}
 
 // Wrapper to handle runtime Firestore errors (like disabled API or permission denied)
 const db = {
