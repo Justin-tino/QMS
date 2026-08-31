@@ -55,9 +55,9 @@ function isValidEmail(email) {
     };
     if (typoMap[lowerDomain]) return false;
     // Also block 1-edit distance to common providers (gmail.com, psau.edu.ph etc.)
-    const commonDomains = ['gmail.com','yahoo.com','hotmail.com','outlook.com','icloud.com','psau.edu.ph'];
-    function lev(a,b){ const m=a.length,n=b.length; const dp=Array.from({length:m+1},()=>Array(n+1).fill(0)); for(let i=0;i<=m;i++) dp[i][0]=i; for(let j=0;j<=n;j++) dp[0][j]=j; for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); return dp[m][n]; }
-    for(const c of commonDomains){ if(lowerDomain!==c && lev(lowerDomain,c)===1) return false; }
+    const commonDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'psau.edu.ph'];
+    function lev(a, b) { const m = a.length, n = b.length; const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0)); for (let i = 0; i <= m; i++) dp[i][0] = i; for (let j = 0; j <= n; j++) dp[0][j] = j; for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return dp[m][n]; }
+    for (const c of commonDomains) { if (lowerDomain !== c && lev(lowerDomain, c) === 1) return false; }
     return true;
 }
 function getEmailTypoSuggestion(email) {
@@ -85,9 +85,9 @@ function getEmailTypoSuggestion(email) {
     };
     if (typoMap[domain]) return typoMap[domain];
     // Levenshtein distance 1 from common providers
-    const common = ['gmail.com','yahoo.com','hotmail.com','outlook.com','icloud.com','psau.edu.ph'];
-    function lev(a,b){ const m=a.length,n=b.length; const dp=Array.from({length:m+1},()=>Array(n+1).fill(0)); for(let i=0;i<=m;i++) dp[i][0]=i; for(let j=0;j<=n;j++) dp[0][j]=j; for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); return dp[m][n]; }
-    for(const c of common){ if(domain!==c && lev(domain,c)===1) return c; }
+    const common = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'psau.edu.ph'];
+    function lev(a, b) { const m = a.length, n = b.length; const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0)); for (let i = 0; i <= m; i++) dp[i][0] = i; for (let j = 0; j <= n; j++) dp[0][j] = j; for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return dp[m][n]; }
+    for (const c of common) { if (domain !== c && lev(domain, c) === 1) return c; }
     return null;
 }
 function sanitizeField(val, max = 500) {
@@ -97,34 +97,52 @@ function sanitizeField(val, max = 500) {
     return escapeHtml(s.substring(0, max));
 }
 
+// Helper: Railway-safe env reader — trims, strips surrounding quotes, normalizes
+function cleanEnv(name) {
+    let v = process.env[name];
+    if (v === undefined || v === null) return '';
+    v = String(v).trim();
+    // Railway UI sometimes stores values with surrounding quotes if user pasted "value"
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+        v = v.slice(1, -1).trim();
+    }
+    return v;
+}
+
 class EmailService {
     constructor() {
         this.transporter = null;
+        this.lastError = null;
         this.initTransporter();
     }
 
     initTransporter() {
-        // Priority 0: Firebase Gmail OAuth2 (most reliable on Railway, no App Password)
-        if (process.env.GMAIL_OAUTH_CLIENT_ID && process.env.GMAIL_OAUTH_CLIENT_SECRET && process.env.GMAIL_OAUTH_REFRESH_TOKEN) {
+        // Priority 0: Gmail OAuth2 (most reliable on Railway if configured)
+        const oauthClientId = cleanEnv('GMAIL_OAUTH_CLIENT_ID');
+        const oauthClientSecret = cleanEnv('GMAIL_OAUTH_CLIENT_SECRET');
+        const oauthRefreshToken = cleanEnv('GMAIL_OAUTH_REFRESH_TOKEN');
+        if (oauthClientId && oauthClientSecret && oauthRefreshToken) {
             try {
-                const oauthUser = process.env.GMAIL_OAUTH_USER || process.env.SMTP_USER || 'bonustimoy@gmail.com';
+                const oauthUserRaw = cleanEnv('GMAIL_OAUTH_USER') || cleanEnv('SMTP_USER') || 'bonustimoy@gmail.com';
+                const oauthUser = oauthUserRaw.trim().toLowerCase();
+                const oauthAccessToken = cleanEnv('GMAIL_OAUTH_ACCESS_TOKEN') || undefined;
                 this.transporter = nodemailer.createTransport({
                     service: 'gmail',
                     auth: {
                         type: 'OAuth2',
                         user: oauthUser,
-                        clientId: process.env.GMAIL_OAUTH_CLIENT_ID,
-                        clientSecret: process.env.GMAIL_OAUTH_CLIENT_SECRET,
-                        refreshToken: process.env.GMAIL_OAUTH_REFRESH_TOKEN,
-                        accessToken: process.env.GMAIL_OAUTH_ACCESS_TOKEN || undefined
+                        clientId: oauthClientId,
+                        clientSecret: oauthClientSecret,
+                        refreshToken: oauthRefreshToken,
+                        accessToken: oauthAccessToken
                     },
                     family: 4,
-                    connectionTimeout: 10000,
-                    greetingTimeout: 10000,
-                    socketTimeout: 15000
+                    connectionTimeout: 15000,
+                    greetingTimeout: 15000,
+                    socketTimeout: 20000
                 });
                 this.transporter.verify((err) => {
-                    if (err) console.warn(' Gmail OAuth verify failed:', err.message, '— check GMAIL_OAUTH_* vars');
+                    if (err) console.warn(' Gmail OAuth verify failed:', err.message, '— check GMAIL_OAUTH_* vars. Code:', err.code);
                     else console.log(` Gmail OAuth verified successfully for ${oauthUser}`);
                 });
                 console.log(` Nodemailer Gmail OAuth initialized for ${oauthUser}`);
@@ -133,96 +151,62 @@ class EmailService {
                 console.warn(' Gmail OAuth init error:', err.message);
             }
         }
-        // Priority 1: HTTPS API providers (Resend / Brevo) — never blocked by Railway, no SMTP ports
-        if (process.env.RESEND_API_KEY) {
-            console.log(' Email provider: Resend API (HTTPS) — will use https://api.resend.com/emails');
-            return;
-        }
-        if (process.env.BREVO_API_KEY) {
-            console.log(' Email provider: Brevo API (HTTPS) — will use https://api.brevo.com/v3/smtp/email');
-            return;
-        }
-        const host = process.env.SMTP_HOST;
-        const port = parseInt(process.env.SMTP_PORT) || 587;
-        const user = process.env.SMTP_USER;
-        const pass = process.env.SMTP_PASS;
+        // SMTP via Nodemailer (Gmail) — Firebase + Nodemailer only (no Brevo/Resend per requirement)
+        // Priority: Gmail OAuth2 (if configured) → Gmail SMTP App Password
+        const host = cleanEnv('SMTP_HOST') || 'smtp.gmail.com';
+        const portRaw = cleanEnv('SMTP_PORT') || '587';
+        const port = parseInt(portRaw, 10) || 587;
+        let user = cleanEnv('SMTP_USER');
+        let pass = cleanEnv('SMTP_PASS');
+        // App Passwords are often copied as "abcd efgh ijkl mnop" with spaces — normalize by removing spaces
+        if (pass) pass = pass.replace(/\s+/g, '');
+        if (user) user = user.trim().toLowerCase();
 
-        if (host && user && pass) {
+        // Masked log for Railway diagnostics — never log the actual password
+        const hasHost = !!host;
+        const hasUser = !!user;
+        const hasPass = !!pass;
+        if (hasHost && hasUser && hasPass) {
             try {
-                // Railway often blocks 587 greeting — use timeouts + IPv4 + TLS tweaks for Gmail
                 this.transporter = nodemailer.createTransport({
                     host,
                     port,
-                    secure: port === 465,
+                    secure: port === 465, // true for 465, false for 587 STARTTLS
                     auth: { user, pass },
-                    family: 4,
-                    connectionTimeout: 10000,
-                    greetingTimeout: 10000,
-                    socketTimeout: 15000,
+                    family: 4, // Force IPv4 — Railway internal DNS often resolves IPv6 first which Gmail may not route
+                    connectionTimeout: 15000,
+                    greetingTimeout: 15000,
+                    socketTimeout: 20000,
                     requireTLS: port === 587,
-                    tls: { ciphers: 'SSLv3', rejectUnauthorized: false },
+                    // Modern TLS for Gmail — do NOT use ciphers:'SSLv3' (deprecated, fails on Node 20+)
+                    tls: {
+                        // Enforce TLS 1.2+ ; Gmail rejects SSLv3
+                        minVersion: 'TLSv1.2',
+                        rejectUnauthorized: true
+                    },
                     logger: false,
                     debug: false
                 });
-                // Verify in background — if it fails we log but keep transporter for retry
+                // Verify in background — log detailed error for Railway logs but keep transporter for retry on send
                 this.transporter.verify((err) => {
-                    if (err) console.warn(' SMTP verify failed (will retry on send):', err.message, '— check SMTP_HOST/PORT/USER/PASS and Gmail App Password, or set RESEND_API_KEY/BREVO_API_KEY for HTTPS mail');
-                    else console.log(` Nodemailer SMTP verified successfully (${host}:${port}).`);
+                    if (err) {
+                        this.lastError = err.message;
+                        console.warn(` SMTP verify failed (will retry on send): ${err.message} — code:${err.code || 'n/a'} response:${err.response || 'n/a'}`);
+                        console.warn(' Check: SMTP_HOST/PORT/USER/PASS, Gmail App Password (16 chars, no spaces, 2FA required), and that Gmail account allows SMTP. On Railway, ensure vars have no surrounding quotes.');
+                    } else console.log(` Nodemailer SMTP verified successfully (${host}:${port} as ${user}).`);
                 });
-                console.log(` Nodemailer SMTP initialized successfully (${host}:${port}).`);
+                console.log(` Nodemailer SMTP initialized (${host}:${port} as ${user} — pass len:${pass.length}).`);
+                if (pass.length !== 16) console.warn(` SMTP_PASS length is ${pass.length}, expected 16 (Gmail App Password without spaces). If you copied "xxxx xxxx xxxx xxxx", spaces are auto-stripped.`);
             } catch (err) {
                 console.warn(' Nodemailer SMTP init error:', err.message);
+                this.lastError = err.message;
             }
         } else {
-            console.log(' SMTP credentials not fully set and no RESEND_API_KEY/BREVO_API_KEY. Email notifications will operate in Console/Test mode.');
-            console.log(' Tip: Set RESEND_API_KEY or BREVO_API_KEY for reliable HTTPS email on Railway (no SMTP ports).');
-        }
-    }
-
-    async sendViaResend(to, subject, html) {
-        const apiKey = process.env.RESEND_API_KEY;
-        const from = process.env.RESEND_FROM || process.env.SMTP_USER || 'onboarding@resend.dev';
-        if (!apiKey) return false;
-        try {
-            const res = await fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ from: `PSAU Feedback System <${from}>`, to: [to], subject, html })
-            });
-            const data = await res.json().catch(() => ({}));
-            if (res.ok) {
-                console.log(` Email sent via Resend to ${to}. Id: ${data.id || 'ok'}`);
-                return true;
+            console.log(' SMTP credentials incomplete — email will run in Console/Test mode (no real send). Missing:', [!hasHost && 'SMTP_HOST', !hasUser && 'SMTP_USER', !hasPass && 'SMTP_PASS'].filter(Boolean).join(', '));
+            console.log(' Tip: On Railway, Variables must be set WITHOUT surrounding quotes. Example: SMTP_USER=bonustimoy@gmail.com  NOT  "bonustimoy@gmail.com"');
+            if (process.env.NODE_ENV === 'production') {
+                console.warn(' PRODUCTION: SMTP not configured — Database Backup OTP / Forgot Password emails WILL FAIL with "Failed to send verification email". Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS on Railway.');
             }
-            console.warn(` Resend API failed (${res.status}):`, data.message || JSON.stringify(data).slice(0,300));
-            return false;
-        } catch (err) {
-            console.warn(' Resend API error:', err.message);
-            return false;
-        }
-    }
-
-    async sendViaBrevo(to, subject, html) {
-        const apiKey = process.env.BREVO_API_KEY;
-        const senderEmail = process.env.BREVO_SENDER || process.env.SMTP_USER || 'bonustimoy@gmail.com';
-        const senderName = 'PSAU Feedback System';
-        if (!apiKey) return false;
-        try {
-            const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: { 'api-key': apiKey, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sender: { name: senderName, email: senderEmail }, to: [{ email: to }], subject, htmlContent: html })
-            });
-            const data = await res.json().catch(() => ({}));
-            if (res.ok) {
-                console.log(` Email sent via Brevo to ${to}. messageId: ${data.messageId || 'ok'}`);
-                return true;
-            }
-            console.warn(` Brevo API failed (${res.status}):`, data.message || JSON.stringify(data).slice(0,400));
-            return false;
-        } catch (err) {
-            console.warn(' Brevo API error:', err.message);
-            return false;
         }
     }
 
@@ -413,45 +397,81 @@ class EmailService {
     }
 
     async sendMail(to, subject, html) {
-        // Priority: HTTPS APIs first (Railway-safe) — then SMTP — then simulation
-        if (process.env.RESEND_API_KEY) {
-            const ok = await this.sendViaResend(to, subject, html);
-            if (ok) return true;
-            console.warn(' Resend failed, falling back to SMTP/simulation...');
-        }
-        if (process.env.BREVO_API_KEY) {
-            const ok = await this.sendViaBrevo(to, subject, html);
-            if (ok) return true;
-            console.warn(' Brevo failed, falling back to SMTP/simulation...');
-        }
+        // Firebase + Nodemailer only — no Brevo/Resend
         if (!this.transporter) {
-            // mask recipient address in logs — no PII in console output
             const maskedTo = String(to || '').replace(/^(.{2}).*(@.*)$/, '$1***$2');
-            console.log(`\n [EMAIL SIMULATION / TEST MODE]`);
+            console.log(`\n [EMAIL SIMULATION / TEST MODE] No transporter — email NOT actually sent.`);
             console.log(` To: ${maskedTo}`);
             console.log(` Subject: ${subject}`);
-            console.log(` (Configure RESEND_API_KEY or BREVO_API_KEY or SMTP_HOST/USER/PASS to send real emails)\n`);
-            // In simulation we return true so UI shows success even without SMTP (useful for demo)
+            console.log(` Fix: On Railway, set SMTP_HOST=smtp.gmail.com, SMTP_PORT=587, SMTP_USER, SMTP_PASS (16-char App Password, no spaces). Vars must NOT have surrounding quotes.\n`);
+            // In production we MUST return false so the UI shows the real error (Backup OTP was incorrectly showing success in some paths)
+            // Only in non-production do we simulate success for dev convenience
+            if (process.env.NODE_ENV === 'production') {
+                this.lastError = 'SMTP transporter not initialized — check Railway env vars';
+                return false;
+            }
             return true;
         }
 
+        // Ensure from address is clean and matches authenticated user (Gmail requires From == auth user or alias)
+        const fromUser = cleanEnv('SMTP_USER') || cleanEnv('GMAIL_OAUTH_USER') || 'bonustimoy@gmail.com';
+        const cleanFrom = fromUser.trim().toLowerCase();
         try {
             const info = await this.transporter.sendMail({
-                from: `"PSAU Feedback System" <${process.env.SMTP_USER}>`,
+                from: `"PSAU Feedback System" <${cleanFrom}>`,
                 to,
                 subject,
                 html
             });
             console.log(` Email sent successfully to ${to}. MessageId: ${info.messageId}`);
+            this.lastError = null;
             return true;
         } catch (err) {
-            console.error(` Email sending failed to ${to}:`, err.message);
-            // If SMTP timeout and we have HTTPS fallback not yet tried, suggest it
-            if (err.message && err.message.includes('timeout')) {
-                console.warn(' Hint: Railway often blocks SMTP 587/465. Set RESEND_API_KEY or BREVO_API_KEY for HTTPS email (works on Railway).');
+            this.lastError = err.message;
+            const code = err.code || 'N/A';
+            const resp = err.response || err.message;
+            console.error(` Email sending failed to ${to}: ${err.message} (code:${code})`);
+            if (err.response) console.error(` SMTP response: ${err.response}`);
+            if (err.command) console.error(` SMTP command: ${err.command}`);
+            // Detailed hints for Railway debugging — based on common Gmail SMTP failures
+            if (/Invalid login|535|Username and Password not accepted/i.test(err.message) || /535/.test(String(err.response || ''))) {
+                console.warn(' Hint: Gmail rejected login. 1) Verify Gmail App Password is 16 chars WITHOUT spaces (remove spaces). 2) Ensure 2-Step Verification is ON for bonustimoy@gmail.com. 3) If you changed Google password, old App Password is revoked — generate a NEW App Password at https://myaccount.google.com/apppasswords . 4) Check Railway SMTP_PASS has no surrounding quotes.');
+            } else if (err.message && err.message.includes('timeout')) {
+                console.warn(' Hint: SMTP timeout — Railway may be blocking outbound port 587. Try SMTP_PORT=465 with secure=true (SSL) or check Railway network policy. Current config still prefers 587 STARTTLS.');
+            } else if (/ECONNECTION|ETIMEDOUT|ENOTFOUND/i.test(err.message)) {
+                console.warn(' Hint: Could not connect to smtp.gmail.com. Check SMTP_HOST/PORT and Railway outbound networking. Verify Railway allows SMTP egress (some Hobby plans block 587).');
             }
             return false;
         }
+    }
+
+    // Expose last error + config status for diagnostics (used by /admin/email-diagnostics)
+    getStatus() {
+        const host = cleanEnv('SMTP_HOST');
+        const port = cleanEnv('SMTP_PORT');
+        const user = cleanEnv('SMTP_USER');
+        const pass = cleanEnv('SMTP_PASS');
+        const passNorm = pass ? pass.replace(/\s+/g, '') : '';
+        return {
+            transporterReady: !!this.transporter,
+            lastError: this.lastError || null,
+            config: {
+                host: host || '(not set)',
+                port: port || '(not set)',
+                user: user ? user.replace(/^(.{2}).*(@.*)$/, '$1***$2') : '(not set)',
+                passLen: passNorm ? passNorm.length : 0,
+                passLooksValid: passNorm.length === 16,
+                nodeEnv: process.env.NODE_ENV || '(not set)',
+                hasOAuth: !!(cleanEnv('GMAIL_OAUTH_CLIENT_ID') && cleanEnv('GMAIL_OAUTH_CLIENT_SECRET'))
+            }
+        };
+    }
+
+    // Force re-init (useful after Railway env var update without full restart in dev)
+    reinitialize() {
+        this.transporter = null;
+        this.lastError = null;
+        this.initTransporter();
     }
 }
 

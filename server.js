@@ -1828,6 +1828,53 @@ app.post('/admin/settings/send-password-reset', requireAuth, requireAdmin, valid
   }
 });
 
+// ========== EMAIL DIAGNOSTICS (Railway debugging — Firebase + Nodemailer) ==========
+// Helps verify Railway env vars without sending OTP. Protected: admin only.
+app.get('/admin/email-diagnostics', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const status = typeof emailService.getStatus === 'function' ? emailService.getStatus() : { transporterReady: !!emailService.transporter, lastError: null, config: {} };
+    // Live verify attempt (non-blocking, 8s timeout)
+    let verifyOk = null;
+    let verifyError = null;
+    if (emailService.transporter) {
+      try {
+        await emailService.transporter.verify();
+        verifyOk = true;
+      } catch (e) {
+        verifyOk = false;
+        verifyError = e.message + (e.code ? ` (code:${e.code})` : '') + (e.response ? ` response:${String(e.response).slice(0,200)}` : '');
+      }
+    } else {
+      verifyOk = false;
+      verifyError = status.lastError || 'Transporter not initialized — check SMTP_HOST/USER/PASS on Railway';
+    }
+    res.json({
+      success: true,
+      verifyOk,
+      verifyError,
+      ...status,
+      help: verifyOk ? ' SMTP is working — OTP / Forgot Password should send.' : ' Fix Railway vars: SMTP_HOST=smtp.gmail.com SMTP_PORT=587 SMTP_USER=bonustimoy@gmail.com SMTP_PASS=16-char App Password (no spaces, no quotes). See Gmail App Password at https://myaccount.google.com/apppasswords (requires 2FA).'
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Test-send endpoint — sends a real OTP-style email to the logged-in admin (rate-limited by loginLimiter indirectly)
+app.post('/admin/email-test', requireAuth, requireAdmin, validateCsrf, async (req, res) => {
+  try {
+    const adminEmail = req.session.adminUser;
+    const testCode = '123456';
+    const sent = await emailService.sendOtpEmail(adminEmail, testCode);
+    const status = typeof emailService.getStatus === 'function' ? emailService.getStatus() : {};
+    if (sent) return res.json({ success: true, message: ` Test email sent to ${adminEmail}. Check inbox & Spam.`, status });
+    return res.json({ success: false, error: `Failed to send test email to ${adminEmail}.`, detail: status.lastError || 'Unknown SMTP error — check Railway logs', status });
+  } catch (e) {
+    console.error('Email test error:', e);
+    res.json({ success: false, error: e.message });
+  }
+});
+
 // Admin Settings: Send OTP Code for Backup Vault
 app.post('/admin/settings/backup/send-otp', requireAuth, requireAdmin, validateCsrf, async (req, res) => {
   try {
@@ -1845,11 +1892,12 @@ app.post('/admin/settings/backup/send-otp', requireAuth, requireAdmin, validateC
     await new Promise((resolve) => req.session.save(resolve));
 
     const sent = await emailService.sendOtpEmail(adminEmail, otpCode);
-    logAudit('backup_otp_requested', adminEmail, { delivered: !!sent }).catch(() => { });
+    const emailStatus = typeof emailService.getStatus === 'function' ? emailService.getStatus() : {};
+    logAudit('backup_otp_requested', adminEmail, { delivered: !!sent, lastError: emailStatus.lastError || null }).catch(() => { });
 
     if (!sent) {
-      // Never leak OTP to client — dev logs server-side only, prod returns error
-      console.warn(` Backup OTP email failed for ${adminEmail} — SMTP not delivered (check SMTP_HOST/PORT/USER/PASS / Gmail App Password).`);
+      const lastErr = emailStatus.lastError || 'SMTP transporter not ready';
+      console.warn(` Backup OTP email failed for ${adminEmail} — ${lastErr}. Check Railway SMTP_HOST/PORT/USER/PASS and Gmail App Password. Verify at /admin/email-diagnostics`);
       if (process.env.NODE_ENV !== 'production') {
         console.log(` [DEV] Backup OTP for ${adminEmail}: ${otpCode} (server log only, never in API response)`);
         return res.json({
@@ -1857,7 +1905,8 @@ app.post('/admin/settings/backup/send-otp', requireAuth, requireAdmin, validateC
           message: `Email not configured — Dev OTP logged to server console for ${adminEmail}. Check terminal logs to verify.`
         });
       }
-      return res.json({ success: false, error: `Failed to send verification email to ${adminEmail}. Please check SMTP configuration, verify Gmail App Password, and check Spam folder. Code was not sent.` });
+      // In production, surface the underlying SMTP error to help Railway debugging (masked)
+      return res.json({ success: false, error: `Failed to send verification email to ${adminEmail}. SMTP: ${lastErr}. Please check SMTP configuration on Railway, verify Gmail App Password (16 chars, no spaces/quotes), and check Spam folder. Code was not sent.` });
     }
 
     console.log(` Backup OTP sent to ${adminEmail}`);
