@@ -282,8 +282,12 @@
 [data-theme='dark'] #deleteConfirmModal .modal-content { background:#0f172a; border-color:#1e293b; }
 
 /* ===== COMPACT DASHBOARD — reduce vertical rhythm so all sections fit without long scroll ===== */
-.admin-main { padding: 0.85rem 1.1rem 1.25rem 1.1rem !important; }
-.dash-header { margin-bottom: 0.65rem !important; padding-bottom: 0.55rem !important; }
+.admin-main { padding: 0.85rem 1.1rem 1.25rem 1.1rem !important; overflow: visible !important; position: relative; }
+.dash-header { margin-bottom: 0.65rem !important; padding-bottom: 0.55rem !important; overflow: visible !important; position: relative !important; z-index: 40 !important; }
+.dash-header-right { overflow: visible !important; z-index: 50 !important; }
+#dashDatePopover { z-index: 1000 !important; }
+#dashDatePickerInput { box-sizing: border-box !important; }
+.admin-main .filter-bar, .admin-main .stats-grid, .admin-main .charts-grid, .admin-main .ai-section { position: relative; z-index: 1; }
 .dash-header-left h1 { font-size: 1.05rem !important; margin-bottom: 0.1rem !important; }
 .dash-header-left p { font-size: 0.75rem !important; }
 .filter-bar { padding: 0.55rem 0.75rem !important; margin-bottom: 0.65rem !important; gap: 0.45rem !important; }
@@ -495,9 +499,15 @@
 .um-input-icon {
   position: absolute;
   left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: #94a3b8;
   font-size: 0.82rem;
   pointer-events: none;
+  line-height: 1;
+}
+.um-input-wrap .um-input {
+  padding-left: 2.35rem !important;
 }
 .um-input {
   width: 100%;
@@ -768,10 +778,19 @@
   border-radius: 8px;
   transition: all 0.15s ease;
   flex-shrink: 0;
+  position: static !important;
+  right: auto !important;
+  top: auto !important;
+  font-size: 1.25rem !important;
+  font-weight: 700;
+  line-height: 1;
 }
 .close-modal:hover {
   background: #f1f5f9;
   color: #0f172a;
+}
+.um-modal-header .close-modal {
+  margin-left: auto;
 }
 /* Add Employee — field & footer polish */
 #addEmployeeModal .um-add-modal-body {
@@ -797,6 +816,23 @@
   outline: none;
 }
 .um-input-wrap:focus-within .um-input-icon { color: #1b5e20; }
+#editUserModal .modal-content {
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#editUserModal .um-modal-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: min(68vh, 560px);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+#editUserModal .um-modal-body::-webkit-scrollbar { width: 6px; }
+#editUserModal .um-modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+#editUserModal .um-modal-body::-webkit-scrollbar-track { background: transparent; }
 .um-add-modal-footer {
   background: #f8fafc;
   border-top: 1px solid #eef2f7;
@@ -862,6 +898,45 @@
   border-top: 1px solid #e2e8f0;
   display: flex;
   justify-content: flex-end;
+  flex-shrink: 0;
+}
+@media (max-width: 560px) {
+  #editUserModal .modal-content, #addEmployeeModal .modal-content {
+    width: 96%;
+    margin: 2vh auto;
+    max-width: none;
+    border-radius: 14px;
+  }
+  #editUserModal .um-modal-header { padding: 1.1rem 1rem 0.9rem 1rem; gap: 0.7rem; }
+  #editUserModal .um-modal-body { padding: 1rem; gap: 0.85rem; max-height: min(72vh, 520px); }
+  #editUserModal .um-modal-section { padding: 0.75rem; }
+  #editUserModal .um-modal-title { font-size: 0.98rem; }
+  #editUserModal .um-modal-sub { font-size: 0.74rem; }
+  #dashDatePopover {
+    right: -0.5rem !important;
+    left: auto !important;
+    min-width: 260px !important;
+    max-width: calc(100vw - 1.5rem) !important;
+  }
+  .dash-header-right { gap: 0.4rem !important; }
+}
+@media (max-width: 380px) {
+  #dashDatePopover {
+    right: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: calc(100vw - 1rem) !important;
+    min-width: 0 !important;
+  }
+}
+@media (max-width: 420px) {
+  #editUserModal .um-modal-section > div[style*="display:flex"] {
+    flex-direction: column !important;
+  }
+  #editUserModal #btnSaveEdit, #editUserModal #btnEditPw {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* Dark Mode Overrides for User Management */
@@ -1019,16 +1094,16 @@
             <div class="dash-header-left">
                 <h1 id="dashHeaderTitle">Quality Management System</h1>
             </div>
-            <div class="dash-header-right" style="position:relative; display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+            <div class="dash-header-right" style="position:relative; display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; justify-content:flex-end; z-index:50; overflow:visible;">
                 <span id="headerOfficeFilterWrap" style="display:inline-flex; align-items:center; gap:0.5rem;">
                 <span style="font-size:0.72rem; color:#64748b; font-weight:600; white-space:nowrap;">Filter office/department:</span>
                 <select id="headerOfficeFilter" class="filter-select" style="min-width:200px; max-width:280px; padding:0.35rem 0.6rem; font-size:0.78rem; border-radius:8px;" onchange="syncHeaderOfficeFilter()"></select>
                 </span>
                 <button type="button" id="dashDateBadge" class="dash-date-badge" onclick="toggleDashDatePicker()" title="Click to filter by any date/year/day — admin & employee" style="cursor:pointer; border:1px solid #e2e8f0; background:#fff; border-radius:20px; padding:0.35rem 0.7rem; font-size:0.78rem; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; color:#334155;">
-                  <i class="fas fa-calendar" style="color:#1b5e20;"></i> <%= new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }) %>
+                  <i class="fas fa-calendar" style="color:#1b5e20;"></i> <span id="dashDateBadgeText"><%= (function(){ try{ var t=typeof filterType!=='undefined'?filterType:'overall'; var df=typeof dateFrom!=='undefined'?dateFrom:''; var dt=typeof dateTo!=='undefined'?dateTo:''; var pl=typeof periodLabel!=='undefined'?periodLabel:''; var txt=new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); if(t==='range'&&df&&dt&&df===dt){ var d=new Date(df); if(!isNaN(d.getTime())) txt=d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); } else if(t==='range'&&(df||dt)){ txt=pl||txt; } else if(t==='month'&&pl){ txt=pl; } return txt; }catch(e){ return new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); } })() %></span>
                 </button>
                 <!-- Clickable date popover — admin & employee, any previous date/year/day -->
-                <div id="dashDatePopover" style="display:none; position:absolute; top:calc(100% + 0.5rem); right:0; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:0.9rem; box-shadow:0 12px 24px rgba(15,23,42,0.12); z-index:60; min-width:268px;">
+                <div id="dashDatePopover" style="display:none; position:absolute; top:calc(100% + 0.5rem); right:0; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:0.9rem; box-shadow:0 12px 24px rgba(15,23,42,0.18); z-index:1000; min-width:268px; max-width:min(92vw,320px);">
                   <label for="dashDatePickerInput" style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Jump to specific day / year</label>
                   <input type="date" id="dashDatePickerInput" style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem;">
                   <div style="display:flex; gap:0.4rem; margin-top:0.6rem;">
@@ -1573,8 +1648,11 @@ function toggleDeptRankings(){
  </div><!-- END TAB SECTION 1: DASHBOARD ANALYTICS -->
 
  <!-- TAB SECTION 2: CUSTOMER FEEDBACK MANAGEMENT -->
- <div id="section-feedback" class="tab-section" style="display: none;">
- <div class="table-card glass fade-up hover-lift">
+  <div id="section-feedback" class="tab-section" style="display: none;">
+  <div id="globalDateContext-feedback" style="display:none; align-items:center; gap:0.5rem; padding:0.6rem 0.85rem; margin-bottom:0.85rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:0.78rem; font-weight:600; color:#334155;">
+    <i class="fas fa-calendar" style="color:#1b5e20;"></i> <span id="globalDateContext-feedback-text">Overall (All Time) — no date filter</span> <a href="#" onclick="switchMainTab('dashboard');return false;" style="margin-left:auto; font-size:0.72rem; color:#1b5e20; font-weight:700; text-decoration:underline; white-space:nowrap;">Change on Dashboard</a>
+  </div>
+  <div class="table-card glass fade-up hover-lift">
  <div class="table-header" style="flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
  <div>
  <h3 style="margin-bottom: 0.2rem;">Customer Feedback Responses (<span id="visibleFbCount"><%= feedbacks.length %></span>)</h3>
@@ -1729,8 +1807,11 @@ function toggleDeptRankings(){
  </div><!-- END TAB SECTION 2: CUSTOMER FEEDBACK MANAGEMENT -->
 
  <!-- TAB SECTION 3: OFFICE QR CODE GENERATOR -->
- <div id="section-qr" class="tab-section" style="display: none;">
- <div class="qr-card glass fade-up hover-lift">
+  <div id="section-qr" class="tab-section" style="display: none;">
+  <div id="globalDateContext-qr" style="display:none; align-items:center; gap:0.5rem; padding:0.6rem 0.85rem; margin-bottom:0.85rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:0.78rem; font-weight:600; color:#334155;">
+    <i class="fas fa-calendar" style="color:#1b5e20;"></i> <span id="globalDateContext-qr-text">Overall (All Time) — no date filter</span> <a href="#" onclick="switchMainTab('dashboard');return false;" style="margin-left:auto; font-size:0.72rem; color:#1b5e20; font-weight:700; text-decoration:underline; white-space:nowrap;">Change on Dashboard</a>
+  </div>
+  <div class="qr-card glass fade-up hover-lift">
  <div class="qr-layout">
  <div class="qr-form-side">
  <div class="qr-select-wrap">
@@ -1760,8 +1841,11 @@ function toggleDeptRankings(){
     var _activeUsers = _userList.filter(function(u){ return !u.disabled; }).length;
     var _suspendedUsers = _userList.filter(function(u){ return u.disabled; }).length;
   %>
-  <div id="section-users" class="tab-section" style="display:none;">
-    <div class="um-container">
+   <div id="section-users" class="tab-section" style="display:none;">
+     <div id="globalDateContext-users" style="display:none; align-items:center; gap:0.5rem; padding:0.6rem 0.85rem; margin-bottom:0.85rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:0.78rem; font-weight:600; color:#334155;">
+       <i class="fas fa-calendar" style="color:#1b5e20;"></i> <span id="globalDateContext-users-text">Overall (All Time) — no date filter</span> <a href="#" onclick="switchMainTab('dashboard');return false;" style="margin-left:auto; font-size:0.72rem; color:#1b5e20; font-weight:700; text-decoration:underline; white-space:nowrap;">Change on Dashboard</a>
+     </div>
+     <div class="um-container">
 
 
 
@@ -1899,8 +1983,11 @@ function toggleDeptRankings(){
     var _adminEmail = typeof adminUser !== 'undefined' ? adminUser : '';
     var _adminRole = typeof userRole !== 'undefined' ? userRole : 'admin';
   %>
-  <div id="section-settings" class="tab-section" style="display:none;">
-    <div class="settings-hub-container">
+   <div id="section-settings" class="tab-section" style="display:none;">
+     <div id="globalDateContext-settings" style="display:none; align-items:center; gap:0.5rem; padding:0.6rem 0.85rem; margin-bottom:0.85rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:0.78rem; font-weight:600; color:#334155;">
+       <i class="fas fa-calendar" style="color:#1b5e20;"></i> <span id="globalDateContext-settings-text">Overall (All Time) — no date filter</span> <a href="#" onclick="switchMainTab('dashboard');return false;" style="margin-left:auto; font-size:0.72rem; color:#1b5e20; font-weight:700; text-decoration:underline; white-space:nowrap;">Change on Dashboard</a>
+     </div>
+     <div class="settings-hub-container">
       
       <!-- Card 1: Profile & Password -->
       <div class="settings-card fade-up">
@@ -2533,6 +2620,20 @@ function toggleDeptRankings(){
   if (filterZone) filterZone.style.display = (tab === 'dashboard' || tab === 'feedback') ? 'block' : 'none';
   const officeFilterWrap = document.getElementById('headerOfficeFilterWrap');
   if (officeFilterWrap) officeFilterWrap.style.display = (tab === 'users' || tab === 'settings' || tab === 'qr') ? 'none' : 'inline-flex';
+  // Only Dashboard shows and controls the date — all other tabs hide it (but still follow filter internally)
+  const _badge = document.getElementById('dashDateBadge');
+  const _isDash = tab === 'dashboard';
+  if(_badge){
+    _badge.style.display = _isDash ? 'inline-flex' : 'none';
+    if(_isDash){
+      _badge.style.opacity='1'; _badge.style.cursor='pointer';
+      _badge.title='Click to filter by any date/year/day — admin & employee';
+      _badge.onclick=toggleDashDatePicker;
+    } else {
+      _badge.onclick=null;
+      const _pop=document.getElementById('dashDatePopover'); if(_pop) _pop.style.display='none';
+    }
+  }
   const entry = titles[tab] || titles.dashboard;
   const titleEl = document.getElementById('dashHeaderTitle');
   const subtitleEl = document.getElementById('dashHeaderSubtitle');
@@ -3188,11 +3289,111 @@ function toggleDeptRankings(){
  if (dateTo) params.set('dateTo', dateTo);
  }
 
- showGlobalTimer('Applying filters...', '');
-  setTimeout(function(){ window.location.href = '/admin/dashboard?' + params.toString(); }, 250);
- }
+  // persist for follower tabs/pages (AI Assistant, Feedback, QR, Users, Settings)
+  try{
+    const _ft=document.getElementById('filterTypeSelect')?.value||'overall';
+    const _df=document.getElementById('dateFrom')?.value||'';
+    const _dt=document.getElementById('dateTo')?.value||'';
+    const _mv=document.getElementById('monthFilter')?.value||'';
+    const _off=document.getElementById('officeFilter')?.value||document.getElementById('headerOfficeFilter')?.value||'all';
+    const _bt=document.getElementById('dashDateBadgeText')?.textContent?.trim()||'';
+    let _badgeForStore=_bt;
+    if(_ft==='range'&&_df&&_dt&&_df===_dt){ try{ _badgeForStore=new Date(_df).toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); }catch(e){ _badgeForStore=_df; } }
+    else if(_ft==='range'&&( _df||_dt)){ _badgeForStore=_df&&_dt?(_df+' to '+_dt):(_df||_dt); }
+    else if(_ft==='month'&&_mv){ try{ const p=_mv.split('-'); const mn=['January','February','March','April','May','June','July','August','September','October','November','December']; _badgeForStore=mn[parseInt(p[1])-1]+' '+p[0]; }catch(e){} }
+    const _payload={filterType:_ft,dateFrom:_df,dateTo:_dt,monthVal:_mv,badgeText:_badgeForStore,office:_off,ts:Date.now()};
+    try{ localStorage.setItem('psau_global_dateFilter', JSON.stringify(_payload)); }catch(e){}
+  }catch(e){}
+  showGlobalTimer('Applying filters...', '');
+   setTimeout(function(){ window.location.href = '/admin/dashboard?' + params.toString(); }, 250);
+  }
 
- function setQuickRange(preset){
+  // ===== GLOBAL DATE FOLLOWER — Dashboard is sole writer, others just display =====
+  function loadGlobalDateFilter(){ try{ const r=localStorage.getItem('psau_global_dateFilter'); return r?JSON.parse(r):null; }catch(e){ return null; } }
+  function getGlobalDateDisplayText(){
+    const gf=loadGlobalDateFilter();
+    if(!gf) {
+      // fallback to current URL/server state if no stored filter (first visit) — read live DOM
+      try{
+        const ft=document.getElementById('filterTypeSelect')?.value||'overall';
+        const df=document.getElementById('dateFrom')?.value||'';
+        const dt=document.getElementById('dateTo')?.value||'';
+        const bt=document.getElementById('dashDateBadgeText')?.textContent?.trim()||'';
+        if(ft==='range'&&df&&dt&&df===dt){ const d=new Date(df); if(!isNaN(d.getTime())) return d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); }
+        if((ft==='range'&&(df||dt))||ft==='month'){ return bt||null; }
+      }catch(e){}
+      return null;
+    }
+    if(gf.filterType==='range'&&gf.dateFrom&&gf.dateTo&&gf.dateFrom===gf.dateTo){
+      try{ const d=new Date(gf.dateFrom); if(!isNaN(d.getTime())) return d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); }catch(e){}
+      return gf.dateFrom;
+    }
+    if(gf.filterType==='range'&&(gf.dateFrom||gf.dateTo)){
+      return gf.badgeText|| (gf.dateFrom&&gf.dateTo?gf.dateFrom+' to '+gf.dateTo:(gf.dateFrom||gf.dateTo));
+    }
+    if(gf.filterType==='month'&&gf.badgeText) return gf.badgeText;
+    if(gf.filterType==='overall') return null;
+    return gf.badgeText||null;
+  }
+  function updateAllGlobalDateContexts(){
+    // User requested: only Dashboard shows date — hide follower banners but keep filter following internally
+    ['feedback','qr','users','settings'].forEach(function(tab){
+      const el=document.getElementById('globalDateContext-'+tab);
+      if(el) el.style.display='none';
+    });
+  }
+  function syncGlobalDateFromUrlToStorage(){
+    try{
+      const ft=document.getElementById('filterTypeSelect')?.value||'overall';
+      const df=document.getElementById('dateFrom')?.value||'';
+      const dt=document.getElementById('dateTo')?.value||'';
+      const mv=document.getElementById('monthFilter')?.value||'';
+      const bt=document.getElementById('dashDateBadgeText')?.textContent?.trim()||'';
+      const off=document.getElementById('officeFilter')?.value||document.getElementById('headerOfficeFilter')?.value||'all';
+      const payload={filterType:ft,dateFrom:df,dateTo:dt,monthVal:mv,badgeText:bt,office:off,ts:Date.now()};
+      localStorage.setItem('psau_global_dateFilter', JSON.stringify(payload));
+    }catch(e){}
+  }
+  function getQuarterFromMonth(m){ if(m<=2) return 'Q1'; if(m<=5) return 'Q2'; if(m<=8) return 'Q3'; return 'Q4'; }
+  function updateQuarterlyNavLinks(){
+    try{
+      const gf=loadGlobalDateFilter();
+      if(!gf || gf.filterType==='overall') return;
+      let dateStr='';
+      let year=null; let quarter=null;
+      if(gf.filterType==='range' && gf.dateFrom){
+        dateStr=gf.dateFrom;
+        const d=new Date(gf.dateFrom);
+        if(!isNaN(d.getTime())){ year=d.getFullYear(); quarter=getQuarterFromMonth(d.getMonth()); }
+      } else if(gf.filterType==='month' && gf.monthVal){
+        const p=gf.monthVal.split('-'); year=parseInt(p[0]); const m=parseInt(p[1])-1; quarter=getQuarterFromMonth(m); dateStr=gf.monthVal+'-01';
+      }
+      if(!year||!quarter) return;
+      const base='/admin/quarterly-reports';
+      document.querySelectorAll('a[href="/admin/quarterly-reports"], a.side-link[href="/admin/quarterly-reports"], a.dash-tab-btn[href="/admin/quarterly-reports"]').forEach(function(a){
+        try{
+          const u=new URL(a.getAttribute('href'), window.location.origin);
+          if(!u.searchParams.has('year')) u.searchParams.set('year', year);
+          if(!u.searchParams.has('quarter')) u.searchParams.set('quarter', quarter);
+          if(dateStr && !u.searchParams.has('date')) u.searchParams.set('date', dateStr);
+          a.setAttribute('href', u.pathname + '?' + u.searchParams.toString());
+          // also intercept click to ensure params fresh
+          a.addEventListener('click', function(e){
+            try{
+              const cur=loadGlobalDateFilter();
+              if(!cur || cur.filterType==='overall') return;
+              let ds=''; let yr=null; let qr=null;
+              if(cur.filterType==='range' && cur.dateFrom){ ds=cur.dateFrom; const dd=new Date(cur.dateFrom); if(!isNaN(dd.getTime())){ yr=dd.getFullYear(); qr=getQuarterFromMonth(dd.getMonth()); } }
+              else if(cur.filterType==='month' && cur.monthVal){ const pp=cur.monthVal.split('-'); yr=parseInt(pp[0]); qr=getQuarterFromMonth(parseInt(pp[1])-1); ds=cur.monthVal+'-01'; }
+              if(yr&&qr){ e.preventDefault(); const nu=new URL('/admin/quarterly-reports', window.location.origin); nu.searchParams.set('year',yr); nu.searchParams.set('quarter',qr); if(ds) nu.searchParams.set('date',ds); if(cur.office&&cur.office!=='all') nu.searchParams.set('office',cur.office); window.location.href=nu.toString(); }
+            }catch(err){}
+          }, {once:true});
+        }catch(e){}
+      });
+    }catch(e){}
+  }
+
+  function setQuickRange(preset){
  const ft=document.getElementById('filterTypeSelect');
  const df=document.getElementById('dateFrom');
  const dt=document.getElementById('dateTo');
@@ -3208,22 +3409,70 @@ function toggleDeptRankings(){
 
  // ========== CLICKABLE DATE BADGE — admin & employee, any previous date/year/day ==========
  // Secure: validates YYYY-MM-DD via regex + Date check, sanitizes before navigation. Same stack: vanilla JS + existing filter infra.
- function toggleDashDatePicker(){
-   const pop=document.getElementById('dashDatePopover');
-   const inp=document.getElementById('dashDatePickerInput');
-   if(!pop) return;
-   const show = pop.style.display==='none' || !pop.style.display;
-   pop.style.display = show ? 'block' : 'none';
-   if(show && inp){
-     // prefill with current range single-day if active, else today
-     const df=document.getElementById('dateFrom')?.value;
-     const dt=document.getElementById('dateTo')?.value;
-     if(df && dt && df===dt) inp.value=df;
-     else if(df) inp.value=df;
-     else inp.valueAsDate = new Date();
-     inp.focus();
-   }
- }
+  function toggleDashDatePicker(){
+    const pop=document.getElementById('dashDatePopover');
+    const badge=document.getElementById('dashDateBadge');
+    const inp=document.getElementById('dashDatePickerInput');
+    if(!pop || !badge) return;
+    const isHidden = pop.style.display==='none' || !pop.style.display || getComputedStyle(pop).display==='none';
+    if(isHidden){
+      pop.style.display='block';
+      pop.style.position='fixed';
+      pop.style.zIndex='5000';
+      pop.style.left='auto';
+      pop.style.right='auto';
+      pop.style.width='280px';
+      pop.style.maxWidth='min(92vw, 300px)';
+      pop.style.boxSizing='border-box';
+      const rect=badge.getBoundingClientRect();
+      void pop.offsetWidth;
+      const w=pop.getBoundingClientRect().width || 280;
+      const h=pop.getBoundingClientRect().height || 220;
+      let top=rect.bottom + 8;
+      let rightGap = window.innerWidth - rect.right;
+      // right-align popover with badge right edge using right property
+      let right = rightGap;
+      // if pop would overflow left side, switch to left anchoring
+      let leftEdge = window.innerWidth - right - w;
+      if(leftEdge < 8){
+        pop.style.left='8px';
+        pop.style.right='auto';
+        pop.style.top=top + 'px';
+      } else {
+        pop.style.right=right + 'px';
+        pop.style.left='auto';
+        pop.style.top=top + 'px';
+      }
+      // flip above if would overflow bottom
+      requestAnimationFrame(function(){
+        const pr=pop.getBoundingClientRect();
+        if(pr.bottom > window.innerHeight - 8){
+          const alt = rect.top - pr.height - 8;
+          pop.style.top = (alt >= 8 ? alt : Math.max(8, window.innerHeight - pr.height - 8)) + 'px';
+        }
+        if(pr.right > window.innerWidth - 8){
+          pop.style.right='8px';
+          pop.style.left='auto';
+        }
+        if(pr.left < 8){
+          pop.style.left='8px';
+          pop.style.right='auto';
+        }
+      });
+      if(inp){
+        const df=document.getElementById('dateFrom')?.value;
+        const dt=document.getElementById('dateTo')?.value;
+        if(df && dt && df===dt) inp.value=df;
+        else if(df) inp.value=df;
+        else try{ inp.valueAsDate = new Date(); }catch(e){ inp.value=new Date().toISOString().split('T')[0]; }
+        setTimeout(function(){ try{inp.focus(); if(inp.showPicker) inp.showPicker(); }catch(e){} }, 30);
+      }
+    } else {
+      pop.style.display='none';
+    }
+  }
+  window.addEventListener('resize', function(){ const p=document.getElementById('dashDatePopover'); if(p && getComputedStyle(p).display!=='none') p.style.display='none'; });
+  window.addEventListener('scroll', function(){ const p=document.getElementById('dashDatePopover'); if(p && getComputedStyle(p).display!=='none') p.style.display='none'; }, true);
  function isValidYMD(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime()); }
  function shiftDashDate(dir){
    const inp=document.getElementById('dashDatePickerInput');
@@ -3286,7 +3535,14 @@ function toggleDeptRankings(){
      h.value=o.value;
    }
  }
- document.addEventListener('DOMContentLoaded', syncOfficeFiltersOnLoad);
+  document.addEventListener('DOMContentLoaded', function(){
+    syncOfficeFiltersOnLoad();
+    try{ syncGlobalDateFromUrlToStorage(); }catch(e){}
+    try{ updateAllGlobalDateContexts(); }catch(e){}
+    try{ updateQuarterlyNavLinks(); }catch(e){}
+    // if hash tab was auto-restored, ensure context visible
+    setTimeout(function(){ try{ updateAllGlobalDateContexts(); updateQuarterlyNavLinks(); }catch(e){} },300);
+  });
 
    async function loadReportSignatories() {
     // 1) server-persistent defaults already rendered via EJS; 2) per-browser override via localStorage takes precedence per-report

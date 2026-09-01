@@ -29,6 +29,11 @@ class NaiveBayesSentimentClassifier {
         };
         this.totalDocs = 0;
 
+        // Model version — bump this whenever the seed corpus changes.
+        // Persisted states from older versions are ignored on load to prevent
+        // poisoned/legacy training data from overriding the fresh seed corpus.
+        this.modelVersion = 2;
+
         // Initialize with trained trilingual sentiment dictionary
         this.seedCorpus();
     }
@@ -38,6 +43,7 @@ class NaiveBayesSentimentClassifier {
      */
     exportModelState() {
         return {
+            modelVersion: this.modelVersion,
             vocabulary: Array.from(this.vocabulary),
             wordCounts: this.wordCounts,
             totalWordCounts: this.totalWordCounts,
@@ -52,6 +58,14 @@ class NaiveBayesSentimentClassifier {
      */
     loadModelState(data) {
         if (!data) return;
+
+        // Guard against stale/poisoned states: if the persisted state was saved
+        // by an older model version (different seed corpus), discard it and keep
+        // the fresh seed corpus instead. It will be overwritten on the next save.
+        if (data.modelVersion !== this.modelVersion) {
+            console.log(` Skipping stale ML model state (v${data.modelVersion || 1}) — current model version is v${this.modelVersion}. Using fresh seed corpus.`);
+            return;
+        }
 
         if (Array.isArray(data.vocabulary)) {
             this.vocabulary = new Set(data.vocabulary);
@@ -132,6 +146,12 @@ class NaiveBayesSentimentClassifier {
         if (!text || typeof text !== 'string' || !text.trim()) return;
         if (!this.categories.includes(category)) return;
 
+        // Guard against label noise: very short feedbacks (e.g. "okay naman",
+        // "salamat lang") are highly ambiguous. Learning them into a single
+        // category caused short neutral phrases to be permanently biased
+        // (self-training feedback loop). Require a minimal token signal.
+        if (this.tokenize(text).length < 4) return;
+
         this.train(text, category);
     }
 
@@ -208,7 +228,16 @@ class NaiveBayesSentimentClassifier {
                 "sakto mu ing oras ning pamangaintay",
                 "average service acceptable processing time",
                 "standard procedure completed as expected",
-                "neither bad nor good just fine"
+                "neither bad nor good just fine",
+                // Common short neutral / lukewarm phrases (EN / Taglish)
+                "okay naman",
+                "okay naman ang serbisyo",
+                "okay lang naman ang serbisyo nila",
+                "medyo okay lang ang serbisyo",
+                "ok lang naman siya",
+                "fine naman ang transaction",
+                "acceptable naman ang proseso",
+                "alright naman ang karanasan ko"
             ],
             Mixed: [
                 "mabilis ang serbisyo pero medyo masungit ang staff",
@@ -288,6 +317,27 @@ class NaiveBayesSentimentClassifier {
             confidence: maxScore,
             scores: normalizedScores
         };
+    }
+
+    /**
+     * Hybrid satisfaction analysis — combines text sentiment with SQD ratings.
+     * The NB classifier reads only the comment text, so lukewarm phrases
+     * ("okay lang", "fine") are Neutral even when ratings are perfect.
+     * Per the capstone paper: "analyze the comments AND ratings given by the
+     * users to determine the level of satisfaction" — when the text sentiment
+     * is Neutral, the SQD rating average decides the satisfaction level.
+     */
+    refineWithRatings(result, avgSQD) {
+        const avg = parseFloat(avgSQD);
+        if (result && result.sentiment === 'Neutral' && !isNaN(avg) && avg > 0) {
+            if (avg >= 4.5) {
+                return { ...result, sentiment: 'Positive', source: 'text+sqd' };
+            }
+            if (avg <= 2.5) {
+                return { ...result, sentiment: 'Negative', source: 'text+sqd' };
+            }
+        }
+        return result;
     }
 
     /**

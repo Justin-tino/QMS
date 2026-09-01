@@ -1054,20 +1054,32 @@ app.post('/submit-feedback', feedbackLimiter, validateCsrf, async (req, res) => 
     const sqdVals = sqdFields.map(f => parseFloat(data[f])).filter(v => !isNaN(v));
     const avgSQD = sqdVals.length > 0 ? (sqdVals.reduce((a, b) => a + b, 0) / sqdVals.length).toFixed(2) : 'N/A';
 
-    // Run local Multinomial Naïve Bayes classifier (multilingual: EN, Tagalog, Kapampangan)
+    // Run local Multinomial Naïve Bayes classifier (multilingual: EN, Tagalog, Kapampangan),
+    // then refine using the SQD rating average (hybrid analysis per paper:
+    // "analyze the comments AND ratings... to determine the level of satisfaction").
+    // Text-only sentiment stays authoritative for Positive/Negative/Mixed results;
+    // Neutral text is decided by the ratings (e.g. "okay lang" + 5.00 SQD = Positive).
     const sanitizedSuggestionsForML = sanitizeText(data.suggestions, 2000);
-    const naiveBayesResult = naiveBayes.classify(sanitizedSuggestionsForML || '');
+    const nbTextResult = naiveBayes.classify(sanitizedSuggestionsForML || '');
+    const naiveBayesResult = naiveBayes.refineWithRatings(nbTextResult, avgSQD);
     const naiveBayesSentiment = naiveBayesResult.sentiment;
-    console.log(` Naïve Bayes Classification -> ${naiveBayesSentiment} (Confidence: ${(naiveBayesResult.confidence * 100).toFixed(1)}%)`);
+    console.log(` Naïve Bayes Classification -> ${naiveBayesSentiment} (Text: ${nbTextResult.sentiment} @ ${(nbTextResult.confidence * 100).toFixed(1)}%, AvgSQD: ${avgSQD})`);
 
-    // Incrementally train local ML model if feedback text is present
+    // Incrementally train local ML model if feedback text is present.
+    // Only learn from confident predictions — training on low-confidence
+    // (ambiguous) texts with their own predicted label causes a self-training
+    // feedback loop that poisons the model (e.g. "Okay naman" learned as Negative).
     if (sanitizedSuggestionsForML && sanitizedSuggestionsForML.trim().length > 0) {
-      naiveBayes.incrementalTrain(sanitizedSuggestionsForML, naiveBayesSentiment);
+      if (naiveBayesResult.confidence >= 0.65) {
+        naiveBayes.incrementalTrain(sanitizedSuggestionsForML, naiveBayesSentiment);
 
-      // Asynchronously save updated model state back to ml_model_state Firestore collection
-      db.collection('ml_model_state').doc('naive_bayes').set(naiveBayes.exportModelState())
-        .then(() => console.log(' ML Model state updated and persisted to Firestore.'))
-        .catch(err => console.error(' Error persisting updated ML model state to Firestore:', err.message));
+        // Asynchronously save updated model state back to ml_model_state Firestore collection
+        db.collection('ml_model_state').doc('naive_bayes').set(naiveBayes.exportModelState())
+          .then(() => console.log(' ML Model state updated and persisted to Firestore.'))
+          .catch(err => console.error(' Error persisting updated ML model state to Firestore:', err.message));
+      } else {
+        console.log(` Skipped incremental training — confidence ${(naiveBayesResult.confidence * 100).toFixed(1)}% below threshold (ambiguous feedback).`);
+      }
     }
 
     // Handle "Others" transaction type
@@ -1104,6 +1116,7 @@ app.post('/submit-feedback', feedbackLimiter, validateCsrf, async (req, res) => 
       avgSQD,
       sentiment: naiveBayesSentiment,
       naiveBayesSentiment,
+      textSentiment: nbTextResult.sentiment,
       submittedAt: new Date().toISOString()
     };
 
@@ -2486,11 +2499,18 @@ app.get('/admin/quarterly-reports', requireAuth, async (req, res) => {
     }
 
     const quarterlyData = processQuarterlyData(feedbacksToProcess, req.query.year, req.query.quarter);
+    // Preserve exact chosen day for badge (so Aug 31 != Sep 1 even within same quarter)
+    let selectedQuarterDate = '';
+    if (req.query.date && /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date))) {
+      const d = new Date(String(req.query.date));
+      if (!isNaN(d.getTime())) selectedQuarterDate = String(req.query.date);
+    }
 
     res.render('quarterly-report', {
       ...quarterlyData,
       availableOffices,
       selectedOffice,
+      selectedQuarterDate,
       userRole: req.session.role || 'admin',
       adminUser: req.session.adminUser || ''
     });

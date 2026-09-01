@@ -311,9 +311,6 @@ class EmailService {
  <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Suggestions:</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${sanitizeField(feedbackData.suggestions, 1000) || 'None provided.'}</td></tr>
  <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Timestamp:</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${new Date().toLocaleString('en-PH')}</td></tr>
  </table>
- <div style="text-align: center; margin-top: 25px;">
- <a href="http://localhost:3000/admin/dashboard" style="background-color: #1b5e20; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Open Dashboard</a>
- </div>
  </div>
  </div>
  `;
