@@ -368,6 +368,32 @@
         break-inside: avoid
       }
     }
+
+    /* ===== FIX: date popover was masked behind next glass card (z-index + overflow) ===== */
+    .admin-main { overflow: visible !important; position: relative; }
+    .dash-header { position: relative !important; z-index: 40 !important; overflow: visible !important; }
+    .dash-header-right { position: relative !important; z-index: 50 !important; overflow: visible !important; }
+    #quarterDatePopover { z-index: 1000 !important; }
+    #quarterDatePickerInput, #dashDatePickerInput { box-sizing: border-box !important; }
+    .admin-shell { overflow: visible; }
+    .glass { position: relative; z-index: 1; }
+    @media (max-width: 560px) {
+      #quarterDatePopover {
+        right: -0.5rem !important;
+        left: auto !important;
+        min-width: 260px !important;
+        max-width: calc(100vw - 1.5rem) !important;
+      }
+    }
+    @media (max-width: 380px) {
+      #quarterDatePopover {
+        right: 0 !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: calc(100vw - 1rem) !important;
+        min-width: 0 !important;
+      }
+    }
   </style>
 
   <div class="admin-shell">
@@ -422,7 +448,7 @@
           <h1 style="display:flex; align-items:center; gap:0.6rem;"><span data-i18n="q.title">Automated Quarterly
               Customer Feedback Report</span></h1>
         </div>
-        <div class="dash-header-right" style="display:flex; gap:0.5rem; align-items:center; position:relative;">
+        <div class="dash-header-right" style="display:flex; gap:0.5rem; align-items:center; position:relative; z-index:50; overflow:visible;">
           <select id="quarterOfficeFilter" onchange="applyQuarterOfficeFilter(this.value)"
             style="cursor:pointer; border:1px solid #e2e8f0; background:#fff; border-radius:20px; padding:0.35rem 0.75rem; font-size:0.78rem; font-weight:600; color:#334155;">
             <option value="all" <%=typeof selectedOffice !=='undefined' && selectedOffice==='all' ? 'selected' : '' %>
@@ -435,14 +461,14 @@
                 <% }); %>
                   <% } %>
           </select>
-          <button type="button" id="quarterDateBadge" class="dash-date-badge" onclick="toggleQuarterDatePicker()"
-            title="Click to filter by any date/year/day"
-            style="cursor:pointer; border:1px solid #e2e8f0; background:#fff; border-radius:20px; padding:0.35rem 0.7rem; font-size:0.78rem; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; color:#334155;">
-            <i class="fas fa-calendar" style="color:#1b5e20;"></i>
-            <%= new Date().toLocaleDateString('en-PH', { year: 'numeric' , month: 'long' , day: 'numeric' }) %>
-          </button>
+          <div id="quarterDateBadge" class="dash-date-badge" title="Date follows Dashboard" style="display:none; cursor:default; border:1px solid #e2e8f0; background:#f8fafc; border-radius:20px; padding:0.35rem 0.7rem; font-size:0.78rem; font-weight:600; align-items:center; gap:0.35rem; color:#334155;">
+            <i class="fas fa-calendar" style="color:#1b5e20;"></i> <span id="quarterDateBadgeText"><%= (function(){ try{ if(typeof selectedQuarterDate!=='undefined'&&selectedQuarterDate){ var d=new Date(selectedQuarterDate); if(!isNaN(d.getTime())) return d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); } return new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); }catch(e){ return new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); } })() %></span>
+          </div>
+          <span id="quarterDateMirrorHint" style="display:none; font-size:0.68rem; color:#64748b; font-weight:600; align-items:center; gap:0.3rem; white-space:nowrap;">
+            <i class="fas fa-link" style="font-size:0.62rem;"></i> Mirrored from Dashboard <a href="/admin/dashboard" style="color:#1b5e20; text-decoration:underline; margin-left:0.25rem;">Change</a>
+          </span>
           <div id="quarterDatePopover"
-            style="display:none; position:absolute; top:calc(100% + 0.5rem); right:0; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:0.9rem; box-shadow:0 12px 24px rgba(15,23,42,0.12); z-index:60; min-width:268px;">
+            style="display:none; position:absolute; top:calc(100% + 0.5rem); right:0; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:0.9rem; box-shadow:0 12px 24px rgba(15,23,42,0.18); z-index:1000; min-width:268px; max-width:min(92vw,320px);">
             <label for="quarterDatePickerInput"
               style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Jump
               to specific day / year</label>
@@ -466,7 +492,12 @@
             <div style="font-size:0.65rem; color:#94a3b8; margin-top:0.5rem; text-align:center;">Admin & employee —
               jumps to year/quarter of chosen date</div>
           </div>
-          <a href="/admin/report?filterType=range&office=<%= typeof selectedOffice !== 'undefined' ? encodeURIComponent(selectedOffice) : 'all' %>&dateFrom=<%= activeQuarter==='Q1' ? selectedYear+'-01-01' : activeQuarter==='Q2' ? selectedYear+'-04-01' : activeQuarter==='Q3' ? selectedYear+'-07-01' : selectedYear+'-10-01' %>&dateTo=<%= activeQuarter==='Q1' ? selectedYear+'-03-31' : activeQuarter==='Q2' ? selectedYear+'-06-30' : activeQuarter==='Q3' ? selectedYear+'-09-30' : selectedYear+'-12-31' %>"
+          <!-- Report-specific date (AI Assistant only, does not affect Dashboard filter) -->
+          <div style="display:flex; align-items:center; gap:0.35rem; background:#fff; border:1px solid #e2e8f0; border-radius:20px; padding:0.22rem 0.55rem 0.22rem 0.7rem;">
+            <label for="aiReportDate" style="font-size:0.68rem; font-weight:700; color:#475569; white-space:nowrap; cursor:pointer;"><i class="fas fa-calendar" style="color:#1b5e20; margin-right:0.2rem;"></i>Report date:</label>
+            <input type="date" id="aiReportDate" style="border:none; background:transparent; font-size:0.78rem; font-weight:600; color:#0f172a; outline:none; padding:0.15rem 0; cursor:pointer;">
+          </div>
+          <a id="btnGenerateReport" href="/admin/report?filterType=range&office=<%= typeof selectedOffice !== 'undefined' ? encodeURIComponent(selectedOffice) : 'all' %>&dateFrom=<%= activeQuarter==='Q1' ? selectedYear+'-01-01' : activeQuarter==='Q2' ? selectedYear+'-04-01' : activeQuarter==='Q3' ? selectedYear+'-07-01' : selectedYear+'-10-01' %>&dateTo=<%= activeQuarter==='Q1' ? selectedYear+'-03-31' : activeQuarter==='Q2' ? selectedYear+'-06-30' : activeQuarter==='Q3' ? selectedYear+'-09-30' : selectedYear+'-12-31' %>"
             target="_blank" class="btn-submit"
             style="padding:0.5rem 0.9rem; font-size:0.78rem; border-radius:8px; background:#0f172a; color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:0.35rem; white-space:nowrap;"><i
               class="fas fa-file-lines"></i> Generate Report</a>
@@ -678,11 +709,6 @@
                   title="Download suggestions">
                   <i class="fas fa-download"></i>
                 </button>
-                <button type="button" onclick="shareAISuggestions()"
-                  style="background:none; border:none; color:#64748b; font-size:0.9rem; font-weight:600; cursor:pointer;"
-                  title="Share suggestions">
-                  <i class="fas fa-share-nodes"></i>
-                </button>
               </div>
 
             </div>
@@ -785,15 +811,85 @@
       var sel = document.querySelector('select[onchange*="quarterly-reports"]');
       if (sel) sel.addEventListener('change', function () { showGlobalTimer('Loading year...', ''); });
     });
-    // Clickable date badge — quarterly, admin & employee, any previous date/year/day (same stack)
+    // Dashboard is sole writer — this picker is now read-only and mirrors Dashboard
     function toggleQuarterDatePicker() {
-      var pop = document.getElementById('quarterDatePopover');
-      var inp = document.getElementById('quarterDatePickerInput');
-      if (!pop) return;
-      var show = pop.style.display === 'none' || !pop.style.display;
-      pop.style.display = show ? 'block' : 'none';
-      if (show && inp) { inp.valueAsDate = new Date(); inp.focus(); }
+      var txt=null; try{ var r=localStorage.getItem('psau_global_dateFilter'); if(r){ var gf=JSON.parse(r); if(gf.filterType==='range'&&gf.dateFrom&&gf.dateTo&&gf.dateFrom===gf.dateTo){ var d=new Date(gf.dateFrom); if(!isNaN(d.getTime())) txt=d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); else txt=gf.dateFrom; } else if(gf.badgeText) txt=gf.badgeText; } }catch(e){}
+      var msg=txt ? ('Filtered date: '+txt+' (from Dashboard). Go to Dashboard to change.') : 'No date filter — Overall (All Time). Set date on Dashboard.';
+      // use app dialog if available
+      if(typeof psauAlert==='function'){ try{ psauAlert({title:'Date follows Dashboard', message:msg, variant:'info'}); return; }catch(e){} }
+      // fallback to unified dialog
+      var ov=document.getElementById('psauDialog');
+      if(ov && document.getElementById('psauDialogConfirm')){
+        try{
+          document.getElementById('psauDialogTitle').textContent='Date follows Dashboard';
+          document.getElementById('psauDialogMessage').textContent=msg;
+          document.getElementById('psauDialogCancel').textContent='OK';
+          document.getElementById('psauDialogConfirm').textContent='Go to Dashboard';
+          ov.style.display='flex'; ov.classList.add('open'); document.body.style.overflow='hidden';
+          var c=document.getElementById('psauDialogConfirm'), x=document.getElementById('psauDialogCancel');
+          var close=function(go){ ov.style.display='none'; ov.classList.remove('open'); document.body.style.overflow=''; c.onclick=null; x.onclick=null; ov.onclick=null; if(go) window.location.href='/admin/dashboard'; };
+          c.onclick=function(){ close(true); }; x.onclick=function(){ close(false); }; ov.onclick=function(ev){ if(ev.target===ov) close(false); };
+          return;
+        }catch(e){}
+      }
+      alert(msg);
     }
+    // Auto-mirror Dashboard date on load if no explicit ?date in URL (hidden badge)
+    (function(){
+      try{
+        var url=new URL(window.location.href);
+        if(url.searchParams.has('date')) return;
+        var raw=localStorage.getItem('psau_global_dateFilter');
+        if(!raw) return;
+        var gf=JSON.parse(raw);
+        var dateStr='';
+        if(gf && gf.filterType==='range' && gf.dateFrom && gf.dateTo && gf.dateFrom===gf.dateTo) dateStr=gf.dateFrom;
+        else if(gf && gf.dateFrom) dateStr=gf.dateFrom;
+        if(!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
+        var d=new Date(dateStr); if(isNaN(d.getTime())) return;
+        var badge=document.getElementById('quarterDateBadgeText');
+        if(badge){ badge.textContent=d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); badge.title='Filtered date: '+badge.textContent+' (from Dashboard)'; }
+        var br=document.getElementById('quarterDateBadge');
+        if(br) br.title='Date follows Dashboard: '+d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})+' — change on Dashboard';
+      }catch(e){}
+    })();
+    // Report-specific date for Generate Report (AI Assistant only, independent from Dashboard global filter)
+    (function(){
+      var inp=document.getElementById('aiReportDate');
+      var btn=document.getElementById('btnGenerateReport');
+      var officeSel=document.getElementById('quarterOfficeFilter');
+      if(!inp||!btn) return;
+      function getDefaultReportDate(){
+        var serverDate='<%= typeof selectedQuarterDate !== "undefined" ? selectedQuarterDate : "" %>';
+        if(serverDate && /^\d{4}-\d{2}-\d{2}$/.test(serverDate)) return serverDate;
+        try{
+          var raw=localStorage.getItem('psau_global_dateFilter');
+          if(raw){
+            var gf=JSON.parse(raw);
+            if(gf.filterType==='range' && gf.dateFrom && /^\d{4}-\d{2}-\d{2}$/.test(gf.dateFrom)) return gf.dateFrom;
+            if(gf.dateFrom && /^\d{4}-\d{2}-\d{2}$/.test(gf.dateFrom)) return gf.dateFrom;
+          }
+        }catch(e){}
+        return new Date().toISOString().split('T')[0];
+      }
+      function updateGenerateReportLink(){
+        var v=inp.value;
+        if(!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
+        var office=officeSel ? officeSel.value : '<%= typeof selectedOffice !== "undefined" ? selectedOffice : "all" %>';
+        var params=new URLSearchParams();
+        params.set('filterType','range');
+        params.set('office', office||'all');
+        params.set('dateFrom', v);
+        params.set('dateTo', v);
+        btn.href='/admin/report?' + params.toString();
+        try{ btn.title='Generate report for '+ new Date(v).toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); }catch(e){}
+      }
+      inp.value=getDefaultReportDate();
+      updateGenerateReportLink();
+      inp.addEventListener('change', updateGenerateReportLink);
+      inp.addEventListener('input', updateGenerateReportLink);
+      if(officeSel) officeSel.addEventListener('change', updateGenerateReportLink);
+    })();
     function isValidYMDQ(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime()); }
     function shiftQuarterDate(dir) {
       var inp = document.getElementById('quarterDatePickerInput');
@@ -821,6 +917,7 @@
       var url = new URL(window.location.href);
       url.searchParams.set('year', y);
       url.searchParams.set('quarter', q);
+      url.searchParams.set('date', v);
       window.location.href = url.toString();
     }
     function applyQuarterOfficeFilter(val) {
@@ -1071,18 +1168,6 @@
         const btn = document.querySelector('button[onclick="copyAISuggestions()"]');
         if (btn) { const orig = btn.innerHTML; btn.innerHTML = '<span>&#10003;</span> Copied'; setTimeout(function () { btn.innerHTML = orig; }, 1500); }
       } catch (e) { alert('Copy failed'); }
-    }
-
-    function shareAISuggestions() {
-      const reply = document.getElementById('aiSuggestReply');
-      if (!reply) return;
-      const text = (reply.innerText || '').trim();
-      if (!text) { alert('Nothing to share'); return; }
-      if (navigator.share) {
-        navigator.share({ title: 'PSAU AI Suggestions - SQD Analysis', text: text }).catch(function () { });
-      } else {
-        copyAISuggestions();
-      }
     }
 
     function downloadAISuggestions() {
