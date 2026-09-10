@@ -1054,31 +1054,41 @@ app.post('/submit-feedback', feedbackLimiter, validateCsrf, async (req, res) => 
     const sqdVals = sqdFields.map(f => parseFloat(data[f])).filter(v => !isNaN(v));
     const avgSQD = sqdVals.length > 0 ? (sqdVals.reduce((a, b) => a + b, 0) / sqdVals.length).toFixed(2) : 'N/A';
 
-    // Run local Multinomial Naïve Bayes classifier (multilingual: EN, Tagalog, Kapampangan),
-    // then refine using the SQD rating average (hybrid analysis per paper:
-    // "analyze the comments AND ratings... to determine the level of satisfaction").
-    // Text-only sentiment stays authoritative for Positive/Negative/Mixed results;
-    // Neutral text is decided by the ratings (e.g. "okay lang" + 5.00 SQD = Positive).
+    // Hybrid CLIENT SUGGESTION & FEEDBACK classification — comment TEXT ONLY (never SQD ratings).
+    //   1. Local Trilingual Naïve Bayes (EN, Tagalog, Kapampangan) runs first — free & instant.
+    //   2. If the comment matches well-trained data (NB confidence >= 65%), the NB verdict is used.
+    //   3. If NB is unsure (comment not covered by the trained corpus), the comment is escalated
+    //      to Google Gemini, which truly understands full EN/Tagalog/Kapampangan sentences.
+    //   4. If Gemini is unavailable (no key / timeout / error), the NB verdict is kept.
+    // Status rules (applied to both engines):
+    //   positive comment without suggestions         -> Positive
+    //   positive comment with improvement suggestion -> Neutral
+    //   negative comment (with or without suggestion)-> Negative
+    //   mixed comment (positive + negative aspects)  -> Negative
+    //   no comment at all                            -> N/A
     const sanitizedSuggestionsForML = sanitizeText(data.suggestions, 2000);
-    const nbTextResult = naiveBayes.classify(sanitizedSuggestionsForML || '');
-    const naiveBayesResult = naiveBayes.refineWithRatings(nbTextResult, avgSQD);
+    const naiveBayesResult = await aiService.classifySuggestionsHybrid(sanitizedSuggestionsForML);
     const naiveBayesSentiment = naiveBayesResult.sentiment;
-    console.log(` Naïve Bayes Classification -> ${naiveBayesSentiment} (Text: ${nbTextResult.sentiment} @ ${(nbTextResult.confidence * 100).toFixed(1)}%, AvgSQD: ${avgSQD})`);
+    console.log(` Hybrid Classification -> ${naiveBayesSentiment} (Engine: ${naiveBayesResult.engine}, Confidence: ${(naiveBayesResult.confidence * 100).toFixed(1)}%, Coverage: ${((naiveBayesResult.coverage || 0) * 100).toFixed(0)}%, ImprovementSuggestion: ${naiveBayesResult.hasSuggestion})`);
 
-    // Incrementally train local ML model if feedback text is present.
-    // Only learn from confident predictions — training on low-confidence
-    // (ambiguous) texts with their own predicted label causes a self-training
-    // feedback loop that poisons the model (e.g. "Okay naman" learned as Negative).
+    // Incrementally train the local NB model so it learns from every submission and
+    // Gemini escalations shrink over time.
+    //   - Confident NB verdicts are trained as-is.
+    //   - Gemini verdicts are ALSO trained (the comment NB was unsure about now has a
+    //     trusted label from a stronger engine) — this grows NB's coverage organically.
+    //   - Low-confidence NB verdicts with no Gemini key are skipped (ambiguous text
+    //     trained with its own predicted label would poison the model).
     if (sanitizedSuggestionsForML && sanitizedSuggestionsForML.trim().length > 0) {
-      if (naiveBayesResult.confidence >= 0.65) {
+      const shouldTrain = naiveBayesResult.engine === 'gemini' || naiveBayesResult.engine === 'naive-bayes';
+      if (shouldTrain) {
         naiveBayes.incrementalTrain(sanitizedSuggestionsForML, naiveBayesSentiment);
 
         // Asynchronously save updated model state back to ml_model_state Firestore collection
         db.collection('ml_model_state').doc('naive_bayes').set(naiveBayes.exportModelState())
-          .then(() => console.log(' ML Model state updated and persisted to Firestore.'))
+          .then(() => console.log(` ML Model state updated and persisted to Firestore (learned from ${naiveBayesResult.engine} verdict).`))
           .catch(err => console.error(' Error persisting updated ML model state to Firestore:', err.message));
       } else {
-        console.log(` Skipped incremental training — confidence ${(naiveBayesResult.confidence * 100).toFixed(1)}% below threshold (ambiguous feedback).`);
+        console.log(` Skipped incremental training — NB unsure (${(naiveBayesResult.confidence * 100).toFixed(1)}%) and no Gemini label available (ambiguous feedback).`);
       }
     }
 
@@ -1116,7 +1126,7 @@ app.post('/submit-feedback', feedbackLimiter, validateCsrf, async (req, res) => 
       avgSQD,
       sentiment: naiveBayesSentiment,
       naiveBayesSentiment,
-      textSentiment: nbTextResult.sentiment,
+      textSentiment: naiveBayesResult.sentiment,
       submittedAt: new Date().toISOString()
     };
 

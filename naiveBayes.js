@@ -32,7 +32,7 @@ class NaiveBayesSentimentClassifier {
         // Model version — bump this whenever the seed corpus changes.
         // Persisted states from older versions are ignored on load to prevent
         // poisoned/legacy training data from overriding the fresh seed corpus.
-        this.modelVersion = 2;
+        this.modelVersion = 5;
 
         // Initialize with trained trilingual sentiment dictionary
         this.seedCorpus();
@@ -97,8 +97,65 @@ class NaiveBayesSentimentClassifier {
     }
 
     /**
+     * Light multilingual stemmer — collapses word variants to a shared stem so the
+     * classifier "understands" inflected forms it has never literally seen.
+     *   Tagalog: napakaganda/magandang/maganda → ganda | matulungin/tumulong → tulung
+     *            mabagal/kabagalan → bagal | salamat pasasalamat → salamat
+     *   Kapampangan: mabagut/bagut → bagut | pamangaintay/pamag-antay → antay
+     *   English: waited/waiting/waits → wait | rude/rudeness → rude
+     * Affix stripping only (no aggressive stemming) — avoids over-merging in agglutinative Filipino morphology.
+     */
+    stem(word) {
+        let w = word;
+        if (w.length <= 3) return w;
+
+        // --- Common Filipino affixes (longest first) ---
+        const prefixes = ['nakakapang', 'nakakapag', 'makapag', 'nagpapa', 'pinaka', 'napaka', 'nakaka', 'nagka', 'nagpa', 'magpa', 'mang', 'nang', 'nag', 'mag', 'man', 'ma', 'pa', 'ka', 'na'];
+        // Verb-focus prefixes ("mag" = to do X). "maganda" (beautiful) is NOT mag+anda —
+        // when one of these precedes a VOWEL, skip it so adjective roots stay intact
+        // (maganda/magandang → ganda via the shorter 'ma' prefix instead).
+        const verbFocus = new Set(['nag', 'mag', 'magpa', 'nagpa', 'makapag', 'nakakapag', 'nakakapang', 'nagpapa', 'nagka']);
+        for (const p of prefixes) {
+            if (w.startsWith(p) && w.length - p.length >= 3) {
+                if (verbFocus.has(p) && /[aeiou]/.test(w[p.length] || '')) continue;
+                w = w.slice(p.length);
+                break;
+            }
+        }
+
+        // --- English derivational suffixes ---
+        const enSuffixes = [['ingly', 2], ['edly', 2], ['ies', 'y'], ['iness', 'y'], ['ments', ''], ['ment', ''], ['ness', ''], ['ful', ''], ['ing', ''], ['ies', 'y'], ['ied', 'y'], ['ers', ''], ['er', ''], ['est', ''], ['ed', ''], ['ly', ''], ['s', '']];
+        for (const [s, rep] of enSuffixes) {
+            if (w.endsWith(s) && w.length - s.length >= 3) {
+                w = w.slice(0, w.length - s.length) + (rep === 2 ? w.slice(w.length - s.length + 1) : rep);
+                break;
+            }
+        }
+
+        // --- Filipino suffixes (linkers & aspect markers) ---
+        const filSuffixes = [['han', ''], ['hın', ''], ['an', ''], ['in', ''], ['ng', '']];
+        for (const [s, rep] of filSuffixes) {
+            if (w.endsWith(s) && w.length - s.length >= 3) {
+                w = w.slice(0, w.length - s.length) + rep;
+                break;
+            }
+        }
+
+        // --- Kapampangan suffixes ---
+        if (w.endsWith('an') && w.length >= 5) w = w.slice(0, -2);
+
+        // --- Filipino reduplication removal (bumibilis → bilis, nagmamadali → madali) ---
+        if (w.length >= 6 && w[0] === w[2] && w[1] === w[3]) {
+            w = w.slice(2);
+        }
+
+        return w;
+    }
+
+    /**
      * Clean and tokenize input text into n-grams (unigrams & bigrams)
      * Supports English, Tagalog, and Kapampangan character sets.
+     * Unigrams are stemmed; bigrams keep original surface forms for context.
      */
     tokenize(text) {
         if (!text || typeof text !== 'string') return [];
@@ -110,9 +167,12 @@ class NaiveBayesSentimentClassifier {
             .trim();
 
         const words = cleaned.split(' ').filter(w => w.length > 1);
-        const tokens = [...words];
+        const stemmed = words.map(w => this.stem(w));
 
-        // Add bigrams for context (e.g. "hindi mabait", "dakal a salamat")
+        // Stemmed unigrams (generalize across inflected variants)
+        const tokens = [...stemmed];
+
+        // Bigrams from original surface words for context (e.g. "hindi mabait", "dakal a salamat")
         for (let i = 0; i < words.length - 1; i++) {
             tokens.push(`${words[i]}_${words[i + 1]}`);
         }
@@ -173,6 +233,13 @@ class NaiveBayesSentimentClassifier {
                 "masaya ako sa mabilis na pag-asikaso",
                 "salamat sa magandang pagtrato sa amin",
                 "mabilis magproseso hindi nagpapatagal",
+                "okay naman po ang serbisyo salamat",
+                "okay lang po salamat sa tulong",
+                "salamat po sa maayos na serbisyo",
+                "okay na okay ang pagkaka-asikaso",
+                "walang problema salamat po",
+                "okay naman salamat",
+                "ok lang po salamat",
 
                 // Kapampangan
                 "mayap a serbisyu mabilis at santing",
@@ -182,6 +249,18 @@ class NaiveBayesSentimentClassifier {
                 "masanting a lugal at maayos ing sistema",
                 "mayap la pamanangap kaku king opisina",
                 "dakal a salamat maasikaso la ngan",
+                // Kapampangan affirmative acknowledgments ("okay lang/mu" = affirming "good")
+                "okay yamu",
+                "ok yamu",
+                "okay mu",
+                "ok mu",
+                "okay yamu salamat",
+                "ok mu pu dakal a salamat",
+                "mayap yamu",
+                "mayap mu salamat",
+                "okay la reng tauan salamat",
+                "mayap ya ing serbisyu dakal a salamat",
+                "ok la pu salamat",
 
                 // English
                 "excellent service very fast and polite staff",
@@ -191,7 +270,32 @@ class NaiveBayesSentimentClassifier {
                 "satisfied with the service outcome high quality",
                 "prompt response and friendly reception",
                 "very easy transaction hassle free process",
-                "outstanding assistance from the university team"
+                "outstanding assistance from the university team",
+                "okay thank you very much",
+                "ok thanks good job",
+                "all good thank you",
+                "good service thanks",
+                // Kapampangan "I was able to avail" compliment patterns ("Ang ganda ng service, aburyan ke")
+                "ang ganda ng service aburyan ke",
+                "ang ganda ng serbisyo abyuran ke",
+                "ang ganda ng service",
+                "ang ganda ng serbisyo",
+                "ganda ng service aburyan ke",
+                "abyuran ke",
+                "aburyan ke",
+                "abyuran ke ing serbisyu",
+                "aburyan ke pu",
+                "ganda ing serbisyu abyuran ke",
+                "mayap ing serbisyu aburyan ke",
+                "napakabait ng staff napakabilis ng serbisyo",
+                "napakabait ng mga empleyado napakagalang at matulungin",
+                "mabait ang staff at napakabilis mag-asikaso",
+                "napakagalang ng mga empleyado mabilis ang transaksyon",
+                "bait ng staff galang mabilis at maayos",
+                "napakabait ng nag-asikaso sa akin",
+                "the staff were very accommodating and helpful",
+                "very accommodating staff and quick process",
+                "friendly and courteous employees fast service"
             ],
             Negative: [
                 // Tagalog
@@ -217,7 +321,14 @@ class NaiveBayesSentimentClassifier {
                 "poor organization terrible line system waste of time",
                 "frustrating experience bad customer treatment",
                 "expensive fees for simple transaction delay",
-                "horrible assistance nobody knows what to do"
+                "horrible assistance nobody knows what to do",
+                "bagal ng serbisyo",
+                "bagal ng proseso",
+                "bagal nila mag-asikaso",
+                "antagal ng serbisyo",
+                "antagal bago mabigyan ng papers",
+                "napakabagal ng linya napakabagal ng serbisyo",
+                "napakabagal ng proseso at matagal mag-antay"
             ],
             Neutral: [
                 // Tagalog / Kapampangan / English
@@ -229,15 +340,44 @@ class NaiveBayesSentimentClassifier {
                 "average service acceptable processing time",
                 "standard procedure completed as expected",
                 "neither bad nor good just fine",
-                // Common short neutral / lukewarm phrases (EN / Taglish)
-                "okay naman",
-                "okay naman ang serbisyo",
-                "okay lang naman ang serbisyo nila",
-                "medyo okay lang ang serbisyo",
-                "ok lang naman siya",
-                "fine naman ang transaction",
-                "acceptable naman ang proseso",
-                "alright naman ang karanasan ko"
+                "walang masyadong problema saktong pag-asikaso",
+                "normal lang ang pila at oras ng pag-antay",
+                "sakto mu ing oras ning pamangaintay",
+                "karaniwan mu ing karanasan king opisina",
+                // Positive comments that include an improvement suggestion -> Neutral
+                "maganda ang serbisyo pero sana dagdagan pa ang counters",
+                "maganda ang serbisyo pero sana mas marami pa ang staff",
+                "mabilis po sana mas marami pa ang staff",
+                "maganda po sana mas mapapabilis pa ang proseso",
+                "mabilis ang proseso pero sana mas lumawak pa ang parking",
+                "good service but please add more seating",
+                "good service but the waiting area needs more chairs",
+                "great staff but the waiting area could be improved",
+                "fast processing but more payment windows would help",
+                // Polite suggestions without any complaint -> Neutral
+                "sana linisin pa ang comfort room",
+                "sana po palawakin pa ang oras ng serbisyo",
+                "sana magkaroon ng mas maraming window",
+                "sana po may mas malaking waiting area",
+                "sana dagdagan pa po ang tauhan sa tanggapan",
+                "sana may online appointment para hindi na mag-antay",
+                "sana po magkaroon ng mas maraming signages",
+                "i hope you can improve your online system",
+                "it would be better if there is an appointment option",
+                "i suggest adding more staff at the counter",
+                "please improve the online booking system",
+                "i wish there were more payment channels",
+                "the service is good but i suggest adding more staff",
+                "good system but please consider adding more windows",
+                "everything went well but the room needs better ventilation",
+                // Kapampangan positive + polite suggestion -> Neutral
+                "mayap ing serbisyu pero sana dagdagan la ring tauan",
+                "mayap ya pero sana mas lumwat pa ing lugal pamag-antay",
+                "mabilis ing prosesu pero sana misan mas dakal pa reng tao",
+                "sana misan mas mabilis la reng tauan kung maliari mu pu",
+                "sana mas mabilis la reng tauan",
+                "sana dagdagan la reng tauan kung maliari",
+                "sana dakal pa reng tauan king opisina"
             ],
             Mixed: [
                 "mabilis ang serbisyo pero medyo masungit ang staff",
@@ -245,7 +385,20 @@ class NaiveBayesSentimentClassifier {
                 "maganda ang opisina ngunit matagal ang pag-antay",
                 "fast processing but rude front desk response",
                 "good facility but delayed release of documents",
-                "mayap ing opisina pero malwat ing pila"
+                "mayap ing opisina pero malwat ing pila",
+                "mabilis ang serbisyo pero masungit ang staff",
+                "mabilis ang serbisyo ngunit masungit ang empleyado",
+                "maganda ang serbisyo pero maluwag ang system",
+                "helpful staff but very slow document processing",
+                "mayap ya pero misan malwat ing pamangaintay",
+                "mayap ing serbisyu pero misan malwat la reng pila",
+                "the staff were friendly but the waiting time was too long",
+                "friendly staff but slow service",
+                "the employees are nice but the process takes too long",
+                "staff were polite but the queue was poorly organized",
+                "mabilis ing prosesu pero masaguit ya ing tauan",
+                "maasikaso la reng tauan pero malwat ing pamangaintay",
+                "santing la reng tauan pero mabagal ing prosesu"
             ]
         };
 
@@ -320,6 +473,81 @@ class NaiveBayesSentimentClassifier {
     }
 
     /**
+     * Detects whether a comment contains a suggestion / request for improvement.
+     * Multilingual keyword heuristics: English, Tagalog, and Kapampangan.
+     */
+    detectImprovementSuggestion(text) {
+        if (!text || typeof text !== 'string') return false;
+        const t = ` ${text.toLowerCase()} `;
+        const patterns = [
+            // English
+            /\bsuggest/i, /\bsuggestion/i, /\bimprove/i, /\bimprovement/i,
+            /\bhope/i, /\bwish/i, /\bshould be\b/i, /\bcould be\b/i,
+            /\bplease (add|provide|fix|consider)\b/i, /\bi (hope|wish|suggest)\b/i,
+            /\bneed(s)? (to|more|to be)\b/i, /\bmore (staff|chairs|windows|counter|slots)\b/i,
+            /\bi recommend\b/i, /\brecommend (adding|that|to|improving|fixing|using)\b/i, /\brequest(ing)?\b/i, /\bfix(ed)?\b/i, /\badd(itional|ed)?\b/i,
+            /\bbetter if\b/i, /\bit would be better\b/i, /\bplease\b/i, /\bupgrade/i,
+            // Tagalog
+            /\bsana\b/i, /\bdapat\b/i, /\bkung pwede\b/i, /\bkung maaari\b/i,
+            /\bmas mabilis\b/i, /\bmas marami\b/i, /\bdagdagan\b/i, /\bmagdagdag\b/i,
+            /\bi-?improve\b/i, /\bpaunlarin\b/i, /\bhiling\b/i, /\bkailangan\b/i,
+            /\bkulang\b/i, /\bpaki-?(add|dagdagan|ayos)\b/i, /\blinisin\b/i,
+            /\bpalawakin\b/i, /\bmagsanay\b/i, /\bmorena?\b/i, /\bdagdag\b/i,
+            // Kapampangan
+            /\bmisan\b/i, /\bkanita\b/i, /\bkulang\b/i, /\bdagdagan\b/i,
+            /\bkung maliari\b/i, /\bdapat mu\b/i, /\bmagyawan\b/i, /\bablus\b/i,
+            /\bsana la\b/i, /\bmisan pa\b/i
+        ];
+        return patterns.some(p => p.test(t));
+    }
+
+    /**
+     * Measures how well a comment is covered by the trained vocabulary:
+     * the fraction of stemmed unigram tokens that exist in this.vocabulary.
+     * Low coverage means the comment contains words NB has never seen — its
+     * confidence margin is then unreliable (it can be "confidently wrong"),
+     * so the hybrid layer should escalate to Gemini.
+     */
+    getVocabularyCoverage(text) {
+        const tokens = this.tokenize(text).filter(t => !t.includes('_'));
+        if (tokens.length === 0) return 0;
+        let known = 0;
+        tokens.forEach(t => { if (this.vocabulary.has(t)) known++; });
+        return known / tokens.length;
+    }
+
+    /**
+     * Classify the CLIENT SUGGESTION & FEEDBACK comment — text-only, never SQD ratings.
+     * Rules:
+     *   no comment                          -> N/A
+     *   positive without suggestions        -> Positive
+     *   positive with improvement suggestion-> Neutral
+     *   negative (with or without suggestion)-> Negative
+     *   mixed (positive+negative aspects)   -> Negative
+     */
+    classifySuggestions(text) {
+        const trimmed = (text || '').trim();
+        if (!trimmed) {
+            return {
+                sentiment: 'N/A',
+                confidence: 0,
+                scores: {},
+                hasSuggestion: false,
+                source: 'suggestions-text'
+            };
+        }
+        const base = this.classify(trimmed);
+        const hasSuggestion = this.detectImprovementSuggestion(trimmed);
+        let sentiment = base.sentiment;
+        if (sentiment === 'Positive' && hasSuggestion) {
+            sentiment = 'Neutral';
+        } else if (sentiment === 'Mixed') {
+            sentiment = 'Negative';
+        }
+        return { ...base, sentiment, hasSuggestion, source: 'suggestions-text' };
+    }
+
+    /**
      * Hybrid satisfaction analysis — combines text sentiment with SQD ratings.
      * The NB classifier reads only the comment text, so lukewarm phrases
      * ("okay lang", "fine") are Neutral even when ratings are perfect.
@@ -370,6 +598,10 @@ class NaiveBayesSentimentClassifier {
             { text: "normal lang ang pila at oras ng pag-antay", actual: "Neutral" },
             { text: "standard procedure completed without issues", actual: "Neutral" },
             { text: "neither bad nor good just fine", actual: "Neutral" },
+            { text: "maganda ang serbisyo pero sana dagdagan pa ang counters", actual: "Neutral" },
+            { text: "good service but the waiting area needs more chairs", actual: "Neutral" },
+            { text: "sana po magkaroon ng mas maraming signages", actual: "Neutral" },
+            { text: "ang ganda ng service aburyan ke", actual: "Positive" },
 
             // Mixed Test Samples
             { text: "mabilis ang serbisyo pero medyo masungit ang staff", actual: "Mixed" },

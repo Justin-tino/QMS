@@ -19,6 +19,163 @@ if (apiKey) {
 }
 
 /**
+ * Hybrid Client Suggestion & Feedback classifier.
+ *
+ * Strategy:
+ *   1. Run the local Trilingual Naïve Bayes classifier first (free, instant).
+ *   2. If Naïve Bayes is CONFIDENT (>= threshold), its verdict is authoritative —
+ *      the comment matched well-trained data, no Gemini call needed.
+ *   3. If Naïve Bayes is UNSURE (low confidence — comment not covered by the
+ *      trained corpus), escalate to Google Gemini, which truly understands
+ *      English / Tagalog / Kapampangan sentences. Its verdict is mapped through
+ *      the same rules, then returned.
+ *   4. If Gemini is unavailable (no API key / timeout / error), fall back to the
+ *      Naïve Bayes verdict so classification never blocks a submission.
+ *
+ * Returns: { sentiment, confidence, hasSuggestion, engine }
+ */
+async function classifySuggestionsHybrid(comment) {
+  const NB_CONFIDENCE_THRESHOLD = 0.65;   // below this, the comment is "not in" the trained corpus
+  const NB_COVERAGE_THRESHOLD = 0.55;     // below this, most words are unseen -> NB margin unreliable
+  const GEMINI_TIMEOUT_MS = 7000;         // per attempt (max 2 attempts + 1.2s pause on retries)
+
+  // Step 1 — local Naïve Bayes verdict
+  const nbResult = naiveBayes.classifySuggestions(comment || '');
+
+  // No comment at all — nothing to escalate (N/A)
+  if (nbResult.sentiment === 'N/A') {
+    return { ...nbResult, engine: 'none' };
+  }
+
+  // Vocabulary coverage — how much of this comment NB has actually been trained on
+  const coverage = naiveBayes.getVocabularyCoverage(comment || '');
+  nbResult.coverage = parseFloat(coverage.toFixed(2));
+
+  // Step 2 — confident local match: the comment matched well-trained data, use NB directly.
+  // Requires BOTH a strong probability margin AND sufficient vocabulary coverage —
+  // a high margin over mostly-unseen words is a guess, not knowledge.
+  if (nbResult.confidence >= NB_CONFIDENCE_THRESHOLD && coverage >= NB_COVERAGE_THRESHOLD) {
+    return { ...nbResult, engine: 'naive-bayes' };
+  }
+
+  // Step 3 — low confidence: escalate to Gemini
+  if (!process.env.GEMINI_API_KEY) {
+    console.log(' Hybrid classifier: NB unsure + no GEMINI_API_KEY — keeping NB verdict.');
+    return { ...nbResult, engine: 'naive-bayes-fallback' };
+  }
+
+  try {
+    console.log(` Hybrid classifier: NB unsure (conf ${(nbResult.confidence * 100).toFixed(1)}% / coverage ${(coverage * 100).toFixed(0)}%) — escalating to Gemini...`);
+
+    // Prompt-injection hardening: strip control chars, fences, instruction-like text
+    let safeComment = String(comment || '')
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+      .replace(/```/g, '')
+      .substring(0, 1000)
+      .trim();
+    safeComment = safeComment
+      .replace(/ignore (previous|above) instructions/gi, '[filtered]')
+      .replace(/system:/gi, '[filtered]');
+
+    const aiInstance = genAI || new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = aiInstance.getGenerativeModel({ model: 'gemini-3.6-flash' });
+
+    const prompt = `
+ You are a sentiment classifier for client suggestions & feedback at Pampanga State Agricultural University (PSAU).
+ Clients write comments in English, Tagalog (Filipino), Taglish, or Kapampangan. You must understand all of them.
+
+ Classify this client comment:
+
+ "${safeComment}"
+
+ Rules:
+ - "hasSuggestion" is true ONLY if the comment contains a suggestion or request for improvement
+   (e.g., sana, dapat, kailangan, dagdagan, linisin, suggest, improve, hope, please add, kung maliari).
+ - A plain compliment (even "okay yamu", "ok mu", "okay naman", "salamat po") is Positive with hasSuggestion=false.
+ - A polite request/suggestion for improvement with NO complaint and NO praise (e.g., "sana may online
+   appointment", "please add more chairs", "gawin mong malinaw ang instructions") is Neutral with hasSuggestion=true.
+ - Mixed comments (both praise and complaint, e.g., "mabilis pero masungit") are Negative.
+ - Kapampangan guide: mayap = good, santing = nice, dakal a salamat = thank you very much, abyuran/aburyan ke =
+   "I was able to avail (of the service)" (neutral clause, NOT negative), malwat = long, masaguit/matsura = rude,
+   marok = bad, misan = sometimes.
+
+ Examples:
+ "Ang ganda ng service, aburyan ke"            -> {"sentiment":"Positive","hasSuggestion":false}
+ "Okay yamu"                                   -> {"sentiment":"Positive","hasSuggestion":false}
+ "Mabilis ing prosesu dakal a salamat"         -> {"sentiment":"Positive","hasSuggestion":false}
+ "Sana po may online appointment"              -> {"sentiment":"Neutral","hasSuggestion":true}
+ "Okay naman po sana po dagdagan pa ang tauhan" -> {"sentiment":"Neutral","hasSuggestion":true}
+ "Mabilis ang serbisyo pero masungit ang staff" -> {"sentiment":"Negative","hasSuggestion":false}
+ "Marok ing serbisyu malwat ing pamangaintay"  -> {"sentiment":"Negative","hasSuggestion":false}
+
+ Respond ONLY with raw JSON (no markdown, no code fences):
+ {"sentiment":"Positive|Negative|Neutral","hasSuggestion":true|false}
+ `;
+
+    // Call Gemini with one automatic retry — free-tier 503 spikes / cold-start
+    // timeouts are transient, a single retry recovers most of them.
+    const callGemini = () => Promise.race([
+      model.generateContent(prompt),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Gemini timeout')), GEMINI_TIMEOUT_MS))
+    ]);
+
+    let result;
+    try {
+      result = await callGemini();
+    } catch (firstErr) {
+      // On quota errors (429) Gemini reports how long to wait — retrying sooner
+      // just fails again. Honor that delay (capped to protect form UX).
+      let waitMs = 1200;
+      const delayMatch = String(firstErr.message || '').match(/[Rr]etry in ([\d.]+)s/);
+      if (delayMatch) waitMs = Math.min(parseFloat(delayMatch[1]) * 1000 + 500, 11000);
+      console.warn(` Hybrid classifier: Gemini attempt 1 failed (${String(firstErr.message).split('\n')[0].substring(0, 140)}) — retrying in ${(waitMs / 1000).toFixed(1)}s...`);
+      await new Promise(r => setTimeout(r, waitMs));
+      result = await callGemini();
+    }
+
+    const response = await result.response;
+    let text = (response.text() || '').replace(/```json/gi, '').replace(/```/g, '').trim();
+
+    // Extract first JSON object from the reply
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Gemini returned non-JSON reply');
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    let sentiment = String(parsed.sentiment || '').trim();
+    const hasSuggestion = parsed.hasSuggestion === true;
+
+    // Map Gemini's verdict through the same status rules:
+    //   positive without suggestions            -> Positive
+    //   positive with improvement suggestion    -> Neutral
+    //   negative / mixed (with or without)      -> Negative
+    //   bare polite suggestion (Neutral)        -> Neutral
+    if (/^positive$/i.test(sentiment)) {
+      sentiment = hasSuggestion ? 'Neutral' : 'Positive';
+    } else if (/^(negative|mixed)$/i.test(sentiment)) {
+      sentiment = 'Negative';
+    } else if (/^neutral$/i.test(sentiment)) {
+      sentiment = 'Neutral';
+    } else {
+      // Unknown sentiment label — reject and keep NB verdict
+      throw new Error('Gemini returned unknown sentiment: ' + sentiment);
+    }
+
+    console.log(` Hybrid classifier: Gemini verdict -> ${sentiment} (hasSuggestion: ${hasSuggestion})`);
+    return {
+      sentiment,
+      confidence: 0.9,
+      scores: {},
+      hasSuggestion,
+      source: 'suggestions-text',
+      engine: 'gemini'
+    };
+  } catch (err) {
+    console.warn(` Hybrid classifier: Gemini unavailable (${err.message}) — falling back to NB verdict.`);
+    return { ...nbResult, engine: 'naive-bayes-fallback' };
+  }
+}
+
+/**
  * Generate analysis report using Gemini AI Model with seamless fallback to Local ML
  */
 async function generateHybridReport(feedbacks, officeName, periodLabel, localReportGenerator) {
@@ -383,5 +540,6 @@ Use ICON_NAME values from this list for items 1-5 respectively: "fas fa-comment-
 
 module.exports = {
   generateHybridReport,
-  generateSuggestionsOnly
+  generateSuggestionsOnly,
+  classifySuggestionsHybrid
 };

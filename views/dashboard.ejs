@@ -1782,7 +1782,7 @@ function toggleDeptRankings(){
  <span style="font-size: 0.72rem; color: var(--text-muted);">/5.00</span>
  </td>
  <td>
- <span class="badge <%= sentiment.toLowerCase() %>">
+ <span class="badge <%= sentiment.toLowerCase() === 'n/a' ? 'n-a' : sentiment.toLowerCase() %>">
  <%= sentiment %>
  </span>
  </td>
@@ -4344,9 +4344,9 @@ function toggleDeptRankings(){
  document.getElementById('m-avgsqd').textContent = (fb.avgSQD || '0.00') + '/5.00';
  document.getElementById('m-suggestions').textContent = fb.suggestions || 'Walang nakasulat na suhestiyon.';
 
- const sentiment = fb.sentiment || 'Neutral';
+ const sentiment = fb.sentiment || 'N/A';
  const badgeEl = document.getElementById('m-sentiment');
- badgeEl.className = 'badge ' + sentiment.toLowerCase();
+ badgeEl.className = 'badge ' + (sentiment.toLowerCase() === 'n/a' ? 'n-a' : sentiment.toLowerCase());
  badgeEl.textContent = sentiment;
 
  const emojiMap = { '1': '\u{1F621}', '2': '\u{1F61F}', '3': '\u{1F610}', '4': '\u{1F642}', '5': '\u{1F60D}', 'N/A': '\u{1F6AB}' };

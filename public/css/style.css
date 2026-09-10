@@ -1496,6 +1496,12 @@ body {
     border: 1px solid #fed7aa;
 }
 
+.badge.n-a {
+    background: #f8fafc;
+    color: #94a3b8;
+    border: 1px dashed #cbd5e1;
+}
+
 /* Site Footer */
 .site-footer {
     text-align: center;
@@ -2889,6 +2895,12 @@ body {
 [data-theme='dark'] .badge.mixed {
     background: rgba(251, 191, 36, .12) !important;
     color: #fbbf24 !important
+}
+
+[data-theme='dark'] .badge.n-a {
+    background: rgba(148, 163, 184, .08) !important;
+    color: #64748b !important;
+    border-color: #334155 !important
 }
 
 [data-theme='dark'] .fb-pills-bar,
