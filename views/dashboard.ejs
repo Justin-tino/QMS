@@ -1060,8 +1060,8 @@
   <a href="/admin/quarterly-reports" class="side-link" id="side-quarterly"><i class="fas fa-wand-magic-sparkles"></i> <span>AI Assistant</span></a>
  <% if (typeof userRole !== 'undefined' && userRole === 'admin') { %>
  <button type="button" class="side-link" id="side-users" onclick="switchMainTab('users')"><i class="fas fa-user"></i> <span data-i18n="nav.users">Users</span></button>
- <button type="button" class="side-link" id="side-settings" onclick="switchMainTab('settings')"><i class="fas fa-gear"></i> <span data-i18n="nav.settings">Settings</span></button>
  <% } %>
+ <button type="button" class="side-link" id="side-settings" onclick="switchMainTab('settings')"><i class="fas fa-gear"></i> <span data-i18n="nav.settings">Settings</span></button>
  </nav>
  <div class="side-bottom">
   <div class="side-user-card">
@@ -1086,8 +1086,8 @@
              <a href="/admin/quarterly-reports" class="dash-tab-btn">AI Assistant</a>
  <% if (typeof userRole !== 'undefined' && userRole === 'admin') { %>
  <button type="button" class="dash-tab-btn" id="tabNav-users" onclick="switchMainTab('users')">Users</button>
- <button type="button" class="dash-tab-btn" id="tabNav-settings" onclick="switchMainTab('settings')">Settings</button>
  <% } %>
+ <button type="button" class="dash-tab-btn" id="tabNav-settings" onclick="switchMainTab('settings')">Settings</button>
  </div>
 
         <div class="dash-header">
@@ -1411,8 +1411,7 @@
  <i class="fas fa-triangle-exclamation" style="margin-top:0.2rem;"></i>
  <div>
  <strong>Decision Support Alert:</strong>
- Overall SQD <strong><%= stats.avgSQD %>/5.00</strong><% if (dssAvg < 3.50) { %> is below the 3.50 service threshold<% } %><% if (dssNegPct >= 20) { %><%= dssAvg < 3.50 ? ' and' : '' %> negative sentiment is <strong><%= dssNegPct %>%</strong> (≥20%)<% } %><% if (stats.ccAwarenessPct < 50) { %><%= (dssAvg < 3.50 || dssNegPct >= 20) ? ' and' : '' %> Citizen's Charter awareness is <strong><%= stats.ccAwarenessPct %>%</strong> (<50%)<% } %>.
- Per QMS corrective action procedure, prioritize the lowest SQD dimensions below and re-evaluate next quarter.
+ Service quality thresholds were not met. Per QMS corrective action procedure, prioritize the lowest SQD dimensions below and re-evaluate next quarter.
  </div>
  </div>
  <% } %>
@@ -1787,8 +1786,8 @@ function toggleDeptRankings(){
  </span>
  </td>
  <td style="max-width: 250px;">
- <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); font-size: 0.82rem;" title="<%= fb.suggestions || '' %>">
- <%= fb.suggestions || '—' %>
+ <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); font-size: 0.82rem;" title="<%= (fb.suggestions && String(fb.suggestions).trim()) ? fb.suggestions : '' %>">
+ <%= (fb.suggestions && String(fb.suggestions).trim()) ? fb.suggestions : 'N/A' %>
  </div>
  </td>
   <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;"><%= petsaStr || 'N/A' %></td>
@@ -2170,12 +2169,14 @@ function toggleDeptRankings(){
         </div>
       </div>
 
+      <%- include('partials/report-signatories-card') %>
+
     </div>
 
     <script>
     // Secure accordion toggle — allowlist validated, uses textContent, no innerHTML with user input
     function toggleSettingsDetail(id) {
-      var allowed = ['settings-detail-profile','settings-detail-appearance','settings-detail-security'];
+      var allowed = ['settings-detail-profile','settings-detail-appearance','settings-detail-security','settings-detail-signatories'];
       if (allowed.indexOf(id) === -1) return;
       var el = document.getElementById(id);
       if (!el) return;
@@ -2196,6 +2197,7 @@ function toggleDeptRankings(){
         el.classList.add('open');
         var btn = document.querySelector('[aria-controls="' + id + '"]');
         if (btn) btn.setAttribute('aria-expanded','true');
+        if (id === 'settings-detail-signatories' && typeof loadReportSignatories === 'function') loadReportSignatories();
       } else {
         el.style.display = 'none';
         el.classList.remove('open');
@@ -2212,6 +2214,50 @@ function toggleDeptRankings(){
         if(confirm('Proceed to logout?')) go();
       }
       return false;
+    }
+    </script>
+  </div>
+  <% } %>
+
+  <% /* TAB SECTION (Staff/Employee): SETTINGS — Report Signatories only */ %>
+  <% if (typeof userRole !== 'undefined' && userRole === 'staff') { %>
+  <div id="section-settings" class="tab-section" style="display:none;">
+    <div class="settings-hub-container">
+      <div class="settings-card fade-up" style="margin-bottom:0.9rem;">
+        <div class="settings-card-header" style="cursor:default;">
+          <div class="settings-card-header-left">
+            <div class="settings-card-icon" style="background:#eff6ff; color:#2563eb;">
+              <i class="fas fa-user-shield"></i>
+            </div>
+            <div>
+              <h4 class="settings-card-title">Profile</h4>
+              <p class="settings-card-sub"><%= typeof adminUser !== 'undefined' && adminUser ? adminUser : 'Staff account' %> &bull; Employee</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <%- include('partials/report-signatories-card') %>
+    </div>
+    <script>
+    // Staff build: accordion toggle for the signatories card (admin block not rendered for staff)
+    if (typeof window.toggleSettingsDetail !== 'function') {
+      window.toggleSettingsDetail = function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var isHidden = el.style.display === 'none' || el.style.display === '' || window.getComputedStyle(el).display === 'none';
+        if (isHidden) {
+          el.style.display = 'block';
+          el.classList.add('open');
+          var btn = document.querySelector('[aria-controls="' + id + '"]');
+          if (btn) btn.setAttribute('aria-expanded','true');
+          if (id === 'settings-detail-signatories' && typeof loadReportSignatories === 'function') loadReportSignatories();
+        } else {
+          el.style.display = 'none';
+          el.classList.remove('open');
+          var btn2 = document.querySelector('[aria-controls="' + id + '"]');
+          if (btn2) btn2.setAttribute('aria-expanded','false');
+        }
+      };
     }
     </script>
   </div>
@@ -3545,62 +3591,27 @@ function toggleDeptRankings(){
   });
 
    async function loadReportSignatories() {
-    // 1) server-persistent defaults already rendered via EJS; 2) per-browser override via localStorage takes precedence per-report
-    try {
-      const p = localStorage.getItem('psau_report_prepared');
-      const r = localStorage.getItem('psau_report_reviewed');
-      const c = localStorage.getItem('psau_report_certified');
-      const elP = document.getElementById('modalPreparedName');
-      const elR = document.getElementById('modalReviewedName');
-      const elC = document.getElementById('modalCertifiedName');
-      if (elP && p) elP.value = p;
-      if (elR && r) elR.value = r;
-      if (elC && c) elC.value = c;
-    } catch(e){}
-    // also refresh from server in background to keep Settings changes in sync
+    // Load saved Report Signatories (Settings → Report Signatories) into the settings inputs.
+    // Inputs are skipped while the user is actively typing in them (document.activeElement check).
     try {
       const resp = await fetch('/admin/api/report-signatories', { headers:{'X-Requested-With':'XMLHttpRequest'}, credentials:'same-origin' });
       if (resp.ok) {
         const j = await resp.json();
         if (j.success && j.signatories) {
           const s=j.signatories;
-          const mP=document.getElementById('modalPreparedName');
-          const mR=document.getElementById('modalReviewedName');
-          const mC=document.getElementById('modalCertifiedName');
-          // only overwrite modal if no local override exists
-          try {
-            if (mP && !localStorage.getItem('psau_report_prepared')) mP.value = s.preparedBy;
-            if (mR && !localStorage.getItem('psau_report_reviewed')) mR.value = s.reviewedBy;
-            if (mC && !localStorage.getItem('psau_report_certified')) mC.value = s.certifiedBy;
-          } catch(e){}
-          // also keep Settings card in sync if user hasn't typed there
-          const sP=document.getElementById('setPreparedBy'); if(sP && document.activeElement!==sP) sP.value=s.preparedBy;
-          const sR=document.getElementById('setReviewedBy'); if(sR && document.activeElement!==sR) sR.value=s.reviewedBy;
-          const sC=document.getElementById('setCertifiedBy'); if(sC && document.activeElement!==sC) sC.value=s.certifiedBy;
-          const sPP=document.getElementById('setPreparedPos'); if(sPP && document.activeElement!==sPP) sPP.value=s.preparedPos;
-          const sRP=document.getElementById('setReviewedPos'); if(sRP && document.activeElement!==sRP) sRP.value=s.reviewedPos;
-          const sCP=document.getElementById('setCertifiedPos'); if(sCP && document.activeElement!==sCP) sCP.value=s.certifiedPos;
-          const sPD=document.getElementById('setPreparedDate'); if(sPD && document.activeElement!==sPD) sPD.value=s.preparedDate;
-          const sRD=document.getElementById('setReviewedDate'); if(sRD && document.activeElement!==sRD) sRD.value=s.reviewedDate;
-          const sCD=document.getElementById('setCertifiedDate'); if(sCD && document.activeElement!==sCD) sCD.value=s.certifiedDate;
+          const map = {
+            setPreparedBy: s.preparedBy, setPreparedPos: s.preparedPos,
+            setReviewedBy: s.reviewedBy, setReviewedPos: s.reviewedPos,
+            setCertifiedBy: s.certifiedBy, setCertifiedPos: s.certifiedPos
+          };
+          Object.keys(map).forEach(function(id){
+            const el = document.getElementById(id);
+            if (el && document.activeElement !== el) el.value = map[id] || '';
+          });
         }
       }
     } catch(e){}
   }
-  function saveReportSignatories() {
-    try {
-      const elP = document.getElementById('modalPreparedName');
-      const elR = document.getElementById('modalReviewedName');
-      const elC = document.getElementById('modalCertifiedName');
-      if (elP) localStorage.setItem('psau_report_prepared', elP.value.trim());
-      if (elR) localStorage.setItem('psau_report_reviewed', elR.value.trim());
-      if (elC) localStorage.setItem('psau_report_certified', elC.value.trim());
-    } catch(e){}
-  }
-  // auto-save on input
-  document.addEventListener('input', function(e){
-    if (e.target && ['modalPreparedName','modalReviewedName','modalCertifiedName'].includes(e.target.id)) saveReportSignatories();
-  });
 
   function getDashboardFilteredOffice(){
     const h=document.getElementById('headerOfficeFilter');
@@ -3613,7 +3624,6 @@ function toggleDeptRankings(){
   if (reportModal) {
   reportModal.style.display = 'block';
   setModalFilterMode(currentModalMode);
-  loadReportSignatories();
   // Enforce dashboard office filter — report must match current dashboard scope
   const filteredOffice=getDashboardFilteredOffice();
   const dst=document.getElementById('modalOfficeSelect');
@@ -3688,14 +3698,7 @@ function toggleDeptRankings(){
   if (dFrom && dFrom.value) params.set('dateFrom', dFrom.value);
   if (dTo && dTo.value) params.set('dateTo', dTo.value);
   }
-  // signatories — editable
-  const elP = document.getElementById('modalPreparedName');
-  const elR = document.getElementById('modalReviewedName');
-  const elC = document.getElementById('modalCertifiedName');
-  if (elP && elP.value.trim()) params.set('preparedBy', elP.value.trim());
-  if (elR && elR.value.trim()) params.set('reviewedBy', elR.value.trim());
-  if (elC && elC.value.trim()) params.set('certifiedBy', elC.value.trim());
-  try { saveReportSignatories(); } catch(e){}
+  // Note: signatories are NOT passed here — they come from Settings → Report Signatories (server-persisted)
   return params;
   }
 
@@ -3816,13 +3819,10 @@ function toggleDeptRankings(){
       const payload = {
         preparedBy: document.getElementById('setPreparedBy')?.value?.trim() || '',
         preparedPos: document.getElementById('setPreparedPos')?.value?.trim() || '',
-        preparedDate: document.getElementById('setPreparedDate')?.value?.trim() || '',
         reviewedBy: document.getElementById('setReviewedBy')?.value?.trim() || '',
         reviewedPos: document.getElementById('setReviewedPos')?.value?.trim() || '',
-        reviewedDate: document.getElementById('setReviewedDate')?.value?.trim() || '',
         certifiedBy: document.getElementById('setCertifiedBy')?.value?.trim() || '',
         certifiedPos: document.getElementById('setCertifiedPos')?.value?.trim() || '',
-        certifiedDate: document.getElementById('setCertifiedDate')?.value?.trim() || '',
         _csrf: '<%= csrfToken %>'
       };
       const r = await fetch('/admin/api/report-signatories', { method:'POST', headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'}, body: JSON.stringify(payload) });
@@ -3830,11 +3830,6 @@ function toggleDeptRankings(){
       if (j.success) {
         if (msg) { msg.textContent = 'Signatories saved — future reports will use these names.'; msg.style.display='block'; msg.style.background='#f0fdf4'; msg.style.border='1px solid #bbf7d0'; msg.style.color='#15803d'; }
         if (badge) { badge.style.display='inline-block'; setTimeout(()=>badge.style.display='none', 2500); }
-        // also update modal defaults to match
-        const mP = document.getElementById('modalPreparedName'); if (mP) mP.value = payload.preparedBy;
-        const mR = document.getElementById('modalReviewedName'); if (mR) mR.value = payload.reviewedBy;
-        const mC = document.getElementById('modalCertifiedName'); if (mC) mC.value = payload.certifiedBy;
-        try { localStorage.setItem('psau_report_prepared', payload.preparedBy); localStorage.setItem('psau_report_reviewed', payload.reviewedBy); localStorage.setItem('psau_report_certified', payload.certifiedBy); } catch(e){}
       } else {
         if (msg) { msg.textContent = j.error || 'Failed to save.'; msg.style.display='block'; msg.style.background='#fef2f2'; msg.style.border='1px solid #fecaca'; msg.style.color='#b91c1c'; }
       }

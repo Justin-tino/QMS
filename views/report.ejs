@@ -180,44 +180,13 @@
             color: #333;
         }
 
-        #signEditBar {
-            max-width: 820px;
-            margin: 0 auto 0.8rem auto;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 0.7rem 0.9rem;
-            display: flex;
-            gap: 0.7rem;
-            flex-wrap: wrap;
-            align-items: end;
-        }
-
-        #signEditBar input {
-            width: 100%;
-            padding: 0.35rem 0.5rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 0.8rem;
-        }
-
-        #signEditBar label {
-            font-size: 0.68rem;
-            font-weight: 700;
-            color: #334155;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 0.2rem;
-        }
-
         @media print {
             body {
                 background: #fff;
                 padding: 0;
             }
 
-            .btn-bar,
-            #signEditBar {
+            .btn-bar {
                 display: none !important;
             }
 
@@ -242,29 +211,6 @@
     </div>
     <% const _todayShort=(typeof todayShort !=='undefined' && todayShort) ? todayShort : new
         Date().toLocaleDateString('en-US', { month:'2-digit', day:'2-digit', year:'numeric' }); %>
-        <div id="signEditBar">
-            <div style="flex:1; min-width:180px;"><label>Prepared by</label><input id="editPreparedBy"
-                    value="<%= typeof preparedBy !== 'undefined' ? preparedBy : 'Ma. Reena Rose P. Tayag' %>"
-                    oninput="document.getElementById('sigPreparedName').textContent=this.value"></div>
-            <div style="flex:1; min-width:180px;"><label>Position</label><input id="editPreparedPos"
-                    value="<%= typeof preparedPos !== 'undefined' ? preparedPos : 'Assistant Quality Management Representative' %>"
-                    oninput="document.getElementById('sigPreparedPos').textContent=this.value"></div>
-            <div style="flex:1; min-width:180px;"><label>Reviewed by</label><input id="editReviewedBy"
-                    value="<%= typeof reviewedBy !== 'undefined' ? reviewedBy : 'Glenda Marie T. Maniago' %>"
-                    oninput="document.getElementById('sigReviewedName').textContent=this.value"></div>
-            <div style="flex:1; min-width:180px;"><label>Position</label><input id="editReviewedPos"
-                    value="<%= typeof reviewedPos !== 'undefined' ? reviewedPos : 'Quality Management Representative' %>"
-                    oninput="document.getElementById('sigReviewedPos').textContent=this.value"></div>
-            <div style="flex:1; min-width:180px;"><label>Certified by</label><input id="editCertifiedBy"
-                    value="<%= typeof certifiedBy !== 'undefined' ? certifiedBy : 'Dexter Andrew O. Manalo' %>"
-                    oninput="document.getElementById('sigCertifiedName').textContent=this.value"></div>
-            <div style="flex:1; min-width:180px;"><label>Position</label><input id="editCertifiedPos"
-                    value="<%= typeof certifiedPos !== 'undefined' ? certifiedPos : 'Director, Office of Institutional Quality Assurance' %>"
-                    oninput="document.getElementById('sigCertifiedPos').textContent=this.value"></div>
-            <div style="width:100%; font-size:0.7rem; color:#64748b; margin-top:0.3rem;">Edit names/positions directly —
-                changes reflect instantly on the sheet and on print. To make permanent, save in <strong>Settings →
-                    Report Signatories</strong>.</div>
-        </div>
 
         <div class="sheet">
             <table class="hdr-table">

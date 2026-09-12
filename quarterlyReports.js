@@ -157,4 +157,219 @@ function processQuarterlyData(allFeedbacks, selectedYear = new Date().getFullYea
     };
 }
 
-module.exports = { getQuarterFromDate, processQuarterlyData };
+// ===== Office Performance Ranking (Low Performing + Top 3) =====
+// SQD dimension labels (mirror server.js / aiService.js definitions)
+const SQD_DIMENSIONS = [
+    { field: 'sqd0', code: 'SQD0', name: 'Overall Satisfaction' },
+    { field: 'sqd1', code: 'SQD1', name: 'Speed & Waiting Time' },
+    { field: 'sqd2', code: 'SQD2', name: 'Requirements Compliance' },
+    { field: 'sqd3', code: 'SQD3', name: 'Ease of Steps & Payment' },
+    { field: 'sqd4', code: 'SQD4', name: 'Location & Info Access' },
+    { field: 'sqd5', code: 'SQD5', name: 'Fairness of Fees' },
+    { field: 'sqd6', code: 'SQD6', name: 'Equality of Treatment' },
+    { field: 'sqd7', code: 'SQD7', name: 'Staff Courtesy' },
+    { field: 'sqd8', code: 'SQD8', name: 'Outcome Fulfillment' }
+];
+
+// Data-driven improvement strategies, keyed by the weakest SQD dimension
+const SQD_TIPS = {
+    sqd0: [
+        'Review the end-to-end service experience and address the most common complaints raised in feedback comments.',
+        'Set a target overall satisfaction score and monitor it monthly with the office team.'
+    ],
+    sqd1: [
+        'Streamline queue management: display estimated processing times and add numbering at service counters.',
+        'Reassign or add staff during peak hours to cut down waiting time.'
+    ],
+    sqd2: [
+        'Post a clear checklist of required documents at the entrance and online so clients come prepared.',
+        'Allow pre-validation of requirements (online or via phone) to avoid repeat visits.'
+    ],
+    sqd3: [
+        'Reduce the number of steps per transaction and combine related windows into a single service lane.',
+        'Offer clear step-by-step guides for payment and form filling.'
+    ],
+    sqd4: [
+        'Improve directional signage and publish office location, hours, and contact details online.',
+        'Provide a visible Citizen\u2019s Charter and information board near the entrance.'
+    ],
+    sqd5: [
+        'Display the official schedule of fees prominently and issue official receipts for every payment.',
+        'Review charges against the approved fee matrix and remove unnecessary add-on costs.'
+    ],
+    sqd6: [
+        'Conduct a staff re-orientation on equal treatment of all clients (no favoritism, no discrimination).',
+        'Install a feedback and grievance channel that clients can use without fear.'
+    ],
+    sqd7: [
+        'Hold regular customer-care and courtesy training for frontline personnel.',
+        'Recognize and reward staff who receive positive client feedback to reinforce good behavior.'
+    ],
+    sqd8: [
+        'Track and resolve the root causes of unfulfilled or delayed requests; follow up pending transactions weekly.',
+        'Give clients clear timelines and status updates until the transaction is fully completed.'
+    ]
+};
+/**
+ * Ranks offices/departments by average SQD (ascending — worst first).
+ * Returns the full list plus the "low performing" subset and the top 3.
+ * Low performing = offices averaging below 4.00; if none qualify, the bottom 3
+ * offices are returned so the section is never empty when data exists.
+ */
+function computeOfficeRankings(items) {
+    const offices = {};
+    (items || []).forEach(f => {
+        if (!f || typeof f.tanggapan !== 'string') return;
+        const name = f.tanggapan.trim();
+        if (!name) return;
+        if (!offices[name]) {
+            offices[name] = { name, total: 0, ratings: [], sqdSums: {}, sqdCounts: {}, positive: 0, negative: 0, neutral: 0 };
+        }
+        offices[name].total++;
+        const score = parseFloat(f.avgSQD);
+        if (!isNaN(score)) offices[name].ratings.push(score);
+        SQD_DIMENSIONS.forEach(dim => {
+            const v = parseFloat(f[dim.field]);
+            if (!isNaN(v)) {
+                offices[name].sqdSums[dim.field] = (offices[name].sqdSums[dim.field] || 0) + v;
+                offices[name].sqdCounts[dim.field] = (offices[name].sqdCounts[dim.field] || 0) + 1;
+            }
+        });
+        const hasComment = f.suggestions && String(f.suggestions).trim().length > 0;
+        if (hasComment) {
+            const s = String(f.sentiment || 'neutral').toLowerCase();
+            if (s === 'positive') offices[name].positive++;
+            else if (s === 'negative') offices[name].negative++;
+            else offices[name].neutral++;
+        }
+    });
+
+    const ranked = Object.values(offices).map(o => {
+        const avg = o.ratings.length > 0
+            ? Math.round((o.ratings.reduce((a, b) => a + b, 0) / o.ratings.length) * 100) / 100
+            : null;
+
+        // ALL SQD dimension averages for THIS office — the basis of its own suggestions
+        const dimAverages = SQD_DIMENSIONS
+            .map(dim => ({ dim, count: o.sqdCounts[dim.field] || 0 }))
+            .filter(x => x.count > 0)
+            .map(x => ({
+                code: x.dim.code,
+                name: x.dim.name,
+                count: x.count,
+                avg: Math.round((o.sqdSums[x.dim.field] / x.count) * 100) / 100
+            }))
+            .sort((a, b) => a.avg - b.avg || a.code.localeCompare(b.code));
+
+        // Problem areas = the 2 lowest-rated dimensions of THIS office (not of other offices)
+        const weakAreas = dimAverages.slice(0, Math.min(2, dimAverages.length));
+        const weakest = weakAreas.length ? weakAreas[0] : null;
+
+        // Dynamic, office-specific suggestions — composed from THIS office's actual scores,
+        // rating counts, written comments and response volume. Two offices with the same
+        // weakest dimension still get different text because their numbers differ.
+        const suggestions = [];
+        weakAreas.forEach((wa, i) => {
+            const actions = SQD_TIPS[wa.code.toLowerCase()] || [];
+            if (!actions.length) return;
+            // Vary the action pick between offices that share the same weak dimension
+            const action = actions[(o.name.length + o.total + i) % actions.length];
+            const severity = wa.avg <= 2.5 ? 'lowest-rated area'
+                : (wa.avg <= 3.5 ? 'weak area' : 'area to watch');
+            suggestions.push(
+                `${wa.code} ${wa.name} is this office's ${severity}: ${wa.avg.toFixed(2)}/5.00 across ${wa.count} client${wa.count === 1 ? '' : 's'} — ${action}`
+            );
+        });
+
+        // Comment-driven line — depends on THIS office's own sentiment mix
+        const commented = o.positive + o.negative + o.neutral;
+        if (commented >= 3 && o.negative > 0 && (o.negative / commented) >= 0.25) {
+            suggestions.push(
+                `${o.negative} of ${commented} written comments here were negative — read them in the Feedback page and resolve the most repeated complaint first.`
+            );
+        }
+
+        // Low-sample line — depends on THIS office's response volume
+        if (o.ratings.length > 0 && o.ratings.length < 3) {
+            suggestions.push(
+                `Only ${o.ratings.length} rated response${o.ratings.length === 1 ? '' : 's'} so far — the score may not yet reflect the office; display the QR feedback card at its counter to gather more.`
+            );
+        }
+
+        return {
+            name: o.name,
+            total: o.total,
+            responses: o.ratings.length,
+            avg,
+            avgDisplay: avg !== null ? avg.toFixed(2) : 'N/A',
+            weakest,
+            weakAreas,
+            suggestions: suggestions.slice(0, 3),
+            positive: o.positive,
+            negative: o.negative,
+            neutral: o.neutral
+        };
+    }).sort((a, b) => {
+        if (a.avg === null && b.avg === null) return a.name.localeCompare(b.name);
+        if (a.avg === null) return 1;
+        if (b.avg === null) return -1;
+        return a.avg - b.avg || a.name.localeCompare(b.name);
+    });
+
+    const withScores = ranked.filter(o => o.avg !== null);
+    const LOW_THRESHOLD = 4.0;
+    let lowPerformers = withScores.filter(o => o.avg < LOW_THRESHOLD);
+    if (lowPerformers.length === 0 && withScores.length > 0) {
+        lowPerformers = withScores.slice(0, Math.min(3, withScores.length));
+    }
+    const top3 = withScores.slice(-3).reverse();
+
+    return { all: ranked, lowPerformers, top3, lowThreshold: LOW_THRESHOLD };
+}
+
+
+/**
+ * Analyzes SQD dimensions (SQD0-SQD8) across ALL responses in scope.
+ * Finds the WEAKEST and STRONGEST dimension so the UI can give targeted,
+ * data-driven improvement suggestions instead of fixed generic ones.
+ */
+function computeDimensionAnalysis(items) {
+    const sums = {};
+    const counts = {};
+    let responses = 0;
+    (items || []).forEach(f => {
+        if (!f) return;
+        let hasAny = false;
+        SQD_DIMENSIONS.forEach(dim => {
+            const v = parseFloat(f[dim.field]);
+            if (!isNaN(v)) {
+                sums[dim.field] = (sums[dim.field] || 0) + v;
+                counts[dim.field] = (counts[dim.field] || 0) + 1;
+                hasAny = true;
+            }
+        });
+        if (hasAny) responses++;
+    });
+
+    const dims = SQD_DIMENSIONS
+        .map(dim => ({
+            code: dim.code,
+            name: dim.name,
+            count: counts[dim.field] || 0,
+            avg: counts[dim.field] ? Math.round((sums[dim.field] / counts[dim.field]) * 100) / 100 : null
+        }))
+        .filter(d => d.count > 0)
+        .sort((a, b) => a.avg - b.avg || a.code.localeCompare(b.code));
+
+    if (!dims.length) {
+        return { hasData: false, responses: 0, dims: [], weakest: null, strongest: null, tips: [] };
+    }
+
+    const weakest = dims[0];
+    const strongest = dims[dims.length - 1];
+    const tips = SQD_TIPS[weakest.code.toLowerCase()] || [];
+
+    return { hasData: true, responses, dims, weakest, strongest, tips };
+}
+
+module.exports = { getQuarterFromDate, processQuarterlyData, computeOfficeRankings, computeDimensionAnalysis, SQD_DIMENSIONS, SQD_TIPS };

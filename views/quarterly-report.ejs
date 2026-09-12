@@ -504,229 +504,112 @@
         </div>
       </div>
 
-      <!-- 2. AI Suggestions Section — Matches Reference UI focused on SQD & Feedback Analysis -->
+      <!-- 2. AI Assistant Section — gated behind Generate (rankings + per-office suggestions hidden until generated) -->
       <div class="glass fade-up d2"
         style="margin-bottom:1.5rem; background:#ffffff; border-radius:20px; border:1px solid #e2e8f0; padding:1.5rem 1.75rem; box-shadow:0 10px 30px rgba(15,23,42,0.04);">
 
+        <!-- Top Generate button — reveals rankings + per-office suggestions -->
+        <div style="text-align:center; padding:0.5rem 0 1.25rem 0;">
+          <button type="button" onclick="generateAssistantResults()" id="aiAssistantGenerateBtn"
+            style="background:linear-gradient(135deg, #16a34a 0%, #15803d 100%); color:#ffffff; border:none; border-radius:9999px; padding:0.9rem 2.8rem; font-weight:700; font-size:1rem; cursor:pointer; display:inline-flex; align-items:center; gap:0.6rem; box-shadow:0 4px 16px rgba(22, 163, 74, 0.3); transition:all 0.2s ease;">
+            <i class="fas fa-wand-magic-sparkles"></i> Generate
+          </button>
+          <div style="font-size:0.78rem; color:#64748b; text-align:center; margin-top:0.55rem;">Click Generate to reveal office performance rankings with suggestions for the selected scope.</div>
+        </div>
 
-        <!-- Dual Column Grid -->
-        <div style="display:grid; grid-template-columns:1fr 1.35fr; gap:1.5rem;" class="ai-suggestions-grid">
+        <!-- Results Grid (hidden until Generate) -->
+        <div id="aiAssistantResults" style="display:none; grid-template-columns:1fr; gap:1.5rem;" class="reports-grid">
 
-          <!-- Left Column: Generator Panel -->
+          <!-- Left Column: Office Performance Ranking (Low Performing + Top 3) -->
           <div
-            style="border:1px solid #e2e8f0; border-radius:16px; background:#ffffff; padding:2rem 1.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; min-height:480px; position:relative;">
+            style="border:1px solid #e2e8f0; border-radius:16px; background:#ffffff; padding:1.25rem 1.5rem; display:flex; flex-direction:column; min-height:480px; position:relative;">
 
-            <!-- Outer Sparkle Ring Visual -->
-            <div
-              style="position:relative; width:150px; height:150px; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:center;">
-              <!-- Decorative Sparkles -->
-              <span style="position:absolute; top:8px; right:20px; color:#4ade80; font-size:1rem;">✦</span>
-              <span style="position:absolute; bottom:12px; left:16px; color:#86efac; font-size:0.8rem;">✦</span>
-              <span style="position:absolute; top:28px; left:10px; color:#4ade80; font-size:0.75rem;">✦</span>
-              <span style="position:absolute; bottom:8px; right:28px; color:#86efac; font-size:0.85rem;">✦</span>
-
-              <!-- Soft Green Outer Aura Ring -->
-              <div
-                style="width:138px; height:138px; border-radius:50%; background:#f0fdf4; border:1px solid #dcfce7; display:flex; align-items:center; justify-content:center; box-shadow:0 0 25px rgba(34,197,94,0.14);">
-                <!-- Inner Light Green Circle -->
-                <div
-                  style="width:90px; height:90px; border-radius:50%; background:#dcfce7; border:1px solid #bbf7d0; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 2px 6px rgba(22,163,74,0.18);">
-                  <!-- Green Magic Wand Icon -->
-                  <i class="fas fa-magic"
-                    style="font-size:2.2rem; color:#16a34a; transform:rotate(-15deg); filter:drop-shadow(0 3px 6px rgba(22,163,74,0.3));"></i>
-                </div>
+            <!-- Low Performing Offices header -->
+            <div style="display:flex; align-items:center; gap:0.55rem; margin-bottom:1.1rem; padding-bottom:0.75rem; border-bottom:1px solid #f1f5f9;">
+              <span style="width:34px; height:34px; border-radius:10px; background:#fef2f2; color:#dc2626; display:inline-flex; align-items:center; justify-content:center; border:1px solid #fecaca; flex-shrink:0;"><i class="fas fa-triangle-exclamation"></i></span>
+              <div>
+                <div style="font-weight:800; color:#dc2626; font-size:1rem;">Low Performing Offices</div>
+                <div style="font-size:0.72rem; color:#64748b;">Ranked by average SQD • <%= activeQuarter %> <%= selectedYear %></div>
               </div>
             </div>
 
-            <!-- Main Generate Button -->
-            <button type="button" onclick="generateAISuggestions()" id="aiSuggestBtn"
-              style="background:linear-gradient(135deg, #16a34a 0%, #15803d 100%); color:#ffffff; border:none; border-radius:9999px; padding:0.9rem 2.8rem; font-weight:700; font-size:1rem; cursor:pointer; display:inline-flex; align-items:center; gap:0.6rem; box-shadow:0 4px 16px rgba(22, 163, 74, 0.3); transition:all 0.2s ease;">
-              <i class="fas fa-wand-magic-sparkles"></i> Generate
-            </button>
-            <div style="font-size:0.82rem; color:#64748b; margin-top:0.75rem;">Click to get AI suggestions</div>
+            <div style="flex:1; overflow-y:auto;">
+              <% if (typeof officeRankings !== 'undefined' && officeRankings && officeRankings.lowPerformers && officeRankings.lowPerformers.length) { %>
+                <% officeRankings.lowPerformers.forEach(function(off, idx) { %>
+                  <!-- Low performer office with suggestions below (hidden past 5 until "Show all") -->
+                  <div class="low-performer-card" data-extra="<%= idx >= 5 ? '1' : '0' %>"
+                    style="border:1px solid #fecaca; background:#fff8f8; border-radius:12px; padding:0.9rem 1rem; margin-bottom:0.85rem;<%= idx >= 5 ? ' display:none;' : '' %>">
+                    <div style="display:flex; align-items:flex-start; gap:0.6rem;">
+                      <span style="width:26px; height:26px; border-radius:50%; background:#dc2626; color:#fff; font-weight:800; font-size:0.78rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;"><%= idx + 1 %></span>
+                      <div style="flex:1;">
+                        <div style="font-weight:800; color:#0f172a; font-size:0.95rem;"><%= off.name %></div>
+                        <div style="font-size:0.74rem; color:#64748b; margin-top:0.15rem; line-height:1.5;">
+                          Average SQD: <strong style="color:#dc2626;"><%= off.avgDisplay %></strong> •
+                          <%= off.responses %> response<%= off.responses === 1 ? '' : 's' %><% if (off.weakest) { %> •
+                          Weakest: <strong style="color:#b45309;"><%= off.weakest.code %> <%= off.weakest.name %> (<%= off.weakest.avg.toFixed(2) %>)</strong><% } %>
+                        </div>
+                      </div>
+                      <span style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; border-radius:20px; padding:0.2rem 0.65rem; font-size:0.72rem; font-weight:800; flex-shrink:0;">Needs Improvement</span>
+                    </div>
+                    <% if (off.suggestions && off.suggestions.length) { %>
+                      <div style="margin-top:0.55rem; margin-left:2.3rem; border-left:3px solid #f59e0b; background:#fffbeb; padding:0.55rem 0.75rem; border-radius:4px;">
+                        <div style="font-size:0.74rem; font-weight:800; color:#92400e; margin-bottom:0.3rem;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i>Suggestions for this office:</div>
+                        <% off.suggestions.forEach(function(sug) { %>
+                          <div style="font-size:0.78rem; color:#334155; line-height:1.55; margin-bottom:0.25rem;">• <%= sug %></div>
+                        <% }); %>
+                      </div>
+                    <% } %>
+                  </div>
+                <% }); %>
+                <% if (officeRankings.lowPerformers.length > 5) { %>
+                  <div style="text-align:center; margin:0.35rem 0 0.9rem 0;">
+                    <button type="button" id="btnShowAllOffices" onclick="toggleLowPerformers(true)"
+                      style="background:#0f172a; color:#fff; border:none; padding:0.5rem 1.1rem; border-radius:20px; font-size:0.78rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem;">
+                      <i class="fas fa-chevron-down"></i> Show all (<%= officeRankings.lowPerformers.length - 5 %> more)
+                    </button>
+                    <button type="button" id="btnViewLessOffices" onclick="toggleLowPerformers(false)"
+                      style="display:none; background:#fff; color:#334155; border:1px solid #e2e8f0; padding:0.5rem 1.1rem; border-radius:20px; font-size:0.78rem; font-weight:700; cursor:pointer; align-items:center; gap:0.35rem;">
+                      <i class="fas fa-chevron-up"></i> View less
+                    </button>
+                  </div>
+                <% } %>
 
-            <!-- Hidden input box for backend query parameter passing (preserves SQD & feedback analysis focus) -->
-            <input type="hidden" id="aiSuggestInput"
-              value="Provide 5 actionable SQD and feedback analysis suggestions for <%= activeQuarter %> <%= selectedYear %>">
-          </div>
-
-          <!-- Right Column: AI Suggestions Output Panel -->
-          <div
-            style="border:1px solid #e2e8f0; border-radius:16px; background:#ffffff; padding:1.25rem 1.5rem; display:flex; flex-direction:column; justify-content:space-between; min-height:480px;">
-            <div>
-              <!-- Header Bar -->
-              <div
-                style="display:flex; align-items:center; margin-bottom:1.1rem; padding-bottom:0.75rem; border-bottom:1px solid #f1f5f9;">
-                <div style="display:flex; align-items:center; gap:0.55rem;">
-                  <span style="font-weight:700; color:#15803d; font-size:0.98rem;">AI Suggestions</span>
+              <% } else { %>
+                <div style="text-align:center; padding:1.5rem 1rem; border:1px dashed #fecaca; border-radius:10px; background:#fff8f8;">
+                  <div style="font-weight:700; color:#475569;"><i class="fas fa-comment-dots" style="color:#dc2626; margin-right:0.3rem;"></i>No feedback data yet</div>
+                  <div style="font-size:0.78rem; color:#64748b; margin-top:0.35rem;">Once feedback comes in for <%= activeQuarter %> <%= selectedYear %>, the lowest-ranked offices with their suggestions will appear here.</div>
                 </div>
-              </div>
-
-              <!-- Suggestions Cards List -->
-              <div id="aiSuggestReply">
-                <!-- Item 1: Encourage Active Participation -->
-                <div class="ai-suggestion-card"
-                  style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
-                  <div
-                    style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
-                    <i class="fas fa-comment-dots"></i>
-                  </div>
-                  <div style="flex:1;">
-                    <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
-                      <span
-                        style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">1</span>
-                      <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Encourage Active Feedback
-                        Participation</span>
-                    </div>
-                    <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Ask
-                      open-ended questions and invite students and clients to share thoughts through digital QR feedback
-                      cards.</div>
-                    <div
-                      style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
-                      <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i>
-                        Strategy:</strong> Deploy QR code standees at all service counters, train desk personnel to
-                      prompt feedback completion, and audit comment themes weekly.
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Item 2: Set Clear Goals -->
-                <div class="ai-suggestion-card"
-                  style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
-                  <div
-                    style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
-                    <i class="fas fa-calendar-check"></i>
-                  </div>
-                  <div style="flex:1;">
-                    <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
-                      <span
-                        style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">2</span>
-                      <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Set Clear SQD Service Goals &amp;
-                        SLAs</span>
-                    </div>
-                    <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Define clear
-                      transaction benchmarks and display estimated processing times for each university service.</div>
-                    <div
-                      style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
-                      <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i>
-                        Strategy:</strong> Post Citizen's Charter checklists at office entryways, enforce maximum
-                      turnaround time SLAs, and monitor waiting time compliance.
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Item 3: Personalize Support -->
-                <div class="ai-suggestion-card"
-                  style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
-                  <div
-                    style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
-                    <i class="fas fa-users"></i>
-                  </div>
-                  <div style="flex:1;">
-                    <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
-                      <span
-                        style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">3</span>
-                      <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Personalize Client Support &amp;
-                        Frontline Care</span>
-                    </div>
-                    <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Adapt
-                      frontline assistance to individual client requirements and transaction types to maintain high
-                      staff courtesy (SQD7).</div>
-                    <div
-                      style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
-                      <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i>
-                        Strategy:</strong> Conduct quarterly customer service orientation for staff, establish dedicated
-                      help desks for complex inquiries, and implement polite greeting protocols.
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Item 4: Recognize Positive Performance -->
-                <div class="ai-suggestion-card"
-                  style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
-                  <div
-                    style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
-                    <i class="fas fa-trophy"></i>
-                  </div>
-                  <div style="flex:1;">
-                    <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
-                      <span
-                        style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">4</span>
-                      <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Recognize Positive Performance
-                        &amp; Effort</span>
-                    </div>
-                    <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Recognize
-                      frontline effort and positive sentiment in feedback to motivate staff and sustain high overall
-                      service ratings (SQD0).</div>
-                    <div
-                      style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
-                      <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i>
-                        Strategy:</strong> Launch a quarterly 'QMS Service Excellence Award' using sentiment tracking
-                      scores to publicly commend top-rated departments and personnel.
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Item 5: Use Interactive Tools -->
-                <div class="ai-suggestion-card"
-                  style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
-                  <div
-                    style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
-                    <i class="fas fa-chart-column"></i>
-                  </div>
-                  <div style="flex:1;">
-                    <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
-                      <span
-                        style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">5</span>
-                      <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Use Interactive SQD Analytics
-                        Tools</span>
-                    </div>
-                    <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Incorporate
-                      quarterly SQD trend reports, Naïve Bayes sentiment tracking, and visual analytics to optimize
-                      university services.</div>
-                    <div
-                      style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
-                      <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i>
-                        Strategy:</strong> Schedule quarterly administrative quality reviews to analyze low-performing
-                      SQD areas, remove workflow bottlenecks, and iterate service processes.
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <% } %>
             </div>
 
-            <!-- Bottom Footer Bar -->
-            <div
-              style="display:flex; justify-content:space-between; align-items:center; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:0.5rem;">
-              <div style="display:flex; gap:0.85rem;">
-                <button type="button" onclick="copyAISuggestions()"
-                  style="background:none; border:none; color:#64748b; font-size:0.9rem; font-weight:600; cursor:pointer;"
-                  title="Copy suggestions">
-                  <i class="far fa-copy"></i>
-                </button>
-                <button type="button" onclick="downloadAISuggestions()"
-                  style="background:none; border:none; color:#64748b; font-size:0.9rem; font-weight:600; cursor:pointer;"
-                  title="Download suggestions">
-                  <i class="fas fa-download"></i>
-                </button>
+            <!-- Top 3 Performing Offices -->
+            <div style="display:flex; align-items:center; gap:0.55rem; margin-top:0.6rem; margin-bottom:0.75rem; padding-top:1rem; border-top:1px solid #f1f5f9;">
+              <span style="width:34px; height:34px; border-radius:10px; background:#fffbeb; color:#d97706; display:inline-flex; align-items:center; justify-content:center; border:1px solid #fde68a; flex-shrink:0;"><i class="fas fa-trophy"></i></span>
+              <div>
+                <div style="font-weight:800; color:#b45309; font-size:1rem;">Top 3 Performing Offices</div>
+                <div style="font-size:0.72rem; color:#64748b;">Highest average SQD • <%= activeQuarter %> <%= selectedYear %></div>
               </div>
+            </div>
+            <% if (typeof officeRankings !== 'undefined' && officeRankings && officeRankings.top3 && officeRankings.top3.length) { %>
+              <% officeRankings.top3.forEach(function(off, idx) { %>
+                <div style="display:flex; align-items:center; gap:0.65rem; border:1px solid #fde68a; background:#fffdf5; border-radius:10px; padding:0.65rem 0.9rem; margin-bottom:0.5rem;">
+                  <span style="width:28px; height:28px; border-radius:50%; background:<%= idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : '#b45309' %>; color:#fff; font-weight:800; font-size:0.8rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;"><%= idx + 1 %>.</span>
+                  <div style="flex:1; font-weight:700; color:#0f172a; font-size:0.9rem;"><%= off.name %></div>
+                  <span style="background:#fffbeb; border:1px solid #fde68a; color:#b45309; border-radius:20px; padding:0.2rem 0.65rem; font-size:0.76rem; font-weight:800; flex-shrink:0;">SQD <%= off.avgDisplay %></span>
+                </div>
+              <% }); %>
+            <% } else { %>
+              <div style="text-align:center; padding:0.9rem; border:1px dashed #fde68a; border-radius:10px; background:#fffdf5; font-size:0.78rem; color:#64748b;">Not enough data to rank the top offices yet.</div>
+            <% } %>
 
+            <!-- Legend — senior friendly reading guide -->
+            <div style="margin-top:auto; padding-top:0.9rem; font-size:0.72rem; color:#64748b; line-height:1.55; border-top:1px solid #f1f5f9;">
+              <strong style="color:#334155;">How to read this:</strong> SQD scores range from 1.00 (poor) to 5.00 (excellent). Offices averaging below 4.00 are listed as Low Performing — every suggestion is computed from that office's own weakest scores, comments and response volume, so it changes as the data changes.
             </div>
           </div>
 
         </div>
-        <style>
-          @media (max-width: 860px) {
-            .ai-suggestions-grid {
-              grid-template-columns: 1fr !important;
-            }
-          }
 
-          .ai-suggestion-card:hover {
-            border-color: #bbf7d0 !important;
-            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.06);
-          }
-        </style>
       </div>
 
     </main>
@@ -947,251 +830,31 @@
       const activeOffice = (document.getElementById('quarterOfficeFilter') && document.getElementById('quarterOfficeFilter').value) ? document.getElementById('quarterOfficeFilter').value : '<%= typeof selectedOffice !== "undefined" ? selectedOffice : "all" %>';
       const p = new URLSearchParams({ quarter: '<%= activeQuarter %>', year: '<%= selectedYear %>', office: activeOffice }); window.open('/admin/print-ai-report?' + p.toString(), '_blank');
     }
-    async function triggerAIAnalysis(forceRefresh) {
-      const activeOffice = (document.getElementById('quarterOfficeFilter') && document.getElementById('quarterOfficeFilter').value) ? document.getElementById('quarterOfficeFilter').value : '<%= typeof selectedOffice !== "undefined" ? selectedOffice : "all" %>';
-      const c = document.getElementById('aiAnalysisContainer'), r = document.getElementById('btnRefreshAI'), p = document.getElementById('btnPrintAI');
-      c.innerHTML = '<div style="text-align:center;padding:1.4rem 1rem;"><div class="psau-timer" style="margin:0 auto 0.9rem auto;"><div class="psau-timer-hand"></div><div class="psau-timer-center"></div></div><div style="font-weight:700;color:#0f172a;font-size:0.85rem;">Analyzing quarterly data...</div><div style="font-size:0.78rem;color:#64748b;margin-top:0.2rem;">Trilingual Naive Bayes &bull; K-Means &bull; Q1-Q4</div><div id="qTimerElapsed" style="margin-top:0.55rem; font-size:0.72rem; font-weight:700; color:#1b5e20; font-variant-numeric:tabular-nums;">0.0s</div></div>';
-      let qStart = Date.now(); let qInt = setInterval(function () { var el = document.getElementById('qTimerElapsed'); if (el) el.textContent = ((Date.now() - qStart) / 1000).toFixed(1) + 's'; }, 100);
-      if (r) r.style.display = 'none'; if (p) p.style.display = 'none';
+    // Low Performing Offices — Show all / View less (first 5 shown by default)
+    function toggleLowPerformers(showAll) {
+      var extras = document.querySelectorAll('.low-performer-card[data-extra="1"]');
+      for (var i = 0; i < extras.length; i++) extras[i].style.display = showAll ? 'block' : 'none';
+      var showBtn = document.getElementById('btnShowAllOffices');
+      var lessBtn = document.getElementById('btnViewLessOffices');
+      if (showBtn) showBtn.style.display = showAll ? 'none' : 'inline-flex';
+      if (lessBtn) lessBtn.style.display = showAll ? 'inline-flex' : 'none';
+    }
+
+    // Top Generate — reveals rankings with per-office suggestions (redundant AI cards panel removed)
+    function generateAssistantResults() {
+      var wrap = document.getElementById('aiAssistantResults');
+      var btn = document.getElementById('aiAssistantGenerateBtn');
+      if (wrap) { wrap.style.display = 'grid'; }
+      if (btn) { btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Regenerate'; }
       try {
-        const pa = new URLSearchParams({ quarter: '<%= activeQuarter %>', year: '<%= selectedYear %>', office: activeOffice }); if (forceRefresh) pa.append('refresh', 'true');
-        const res = await fetch('/admin/generate-ai-report?' + pa.toString()); const j = await res.json();
-        clearInterval(qInt);
-        if (j.success) { c.innerHTML = '<div class="ai-analysis-content">' + j.aiAnalysis + '</div>'; if (r) { r.style.display = 'inline-flex'; } if (p) { p.style.display = 'inline-flex'; } }
-        else { c.innerHTML = '<div style="text-align:center;padding:1rem 1rem;border:1px dashed #fecaca;border-radius:10px;background:#fef2f2;"><div style="color:#dc2626;font-weight:800;font-size:0.9rem;"><i class="fas fa-triangle-exclamation"></i> Failed</div><div style="font-size:0.78rem;color:#64748b;margin:0.3rem auto 0.7rem auto;max-width:420px;">' + (j.error || 'Unknown error') + '</div><button onclick="triggerAIAnalysis(false)" style="background:#dc2626;color:#fff;border:none;padding:0.45rem 0.8rem;border-radius:7px;font-weight:700;cursor:pointer;">Try Again</button></div>'; }
-      } catch (e) { clearInterval(qInt); console.error(e); c.innerHTML = '<div style="text-align:center;padding:1rem;border:1px dashed #fecaca;border-radius:10px;background:#fef2f2;"><div style="color:#dc2626;font-weight:800;">Network Error</div><div style="font-size:0.78rem;color:#64748b;margin-top:0.2rem;">Check connection and try again.</div><button onclick="triggerAIAnalysis(false)" style="margin-top:0.6rem;background:#dc2626;color:#fff;border:none;padding:0.45rem 0.8rem;border-radius:7px;font-weight:700;cursor:pointer;">Retry</button></div>'; }
-    }
-
-    // --- New AI Suggestions (suggestions-only, secure, quality) — Image 2 ---
-    (function () {
-      const ta = document.getElementById('aiSuggestInput');
-      const cnt = document.getElementById('aiSuggestCount');
-      if (ta && cnt) {
-        const upd = function () { cnt.textContent = String(ta.value.length); ta.style.borderColor = ta.value.length === 500 ? '#f59e0b' : '#86efac'; };
-        ta.addEventListener('input', upd);
-        ta.addEventListener('change', upd);
-        upd();
-      }
-    })();
-    async function generateAISuggestions() {
-      const input = document.getElementById('aiSuggestInput');
-      const btn = document.getElementById('aiSuggestBtn');
-      const reply = document.getElementById('aiSuggestReply');
-      const status = document.getElementById('aiSuggestStatus');
-      const meta = document.getElementById('aiSuggestMeta');
-      const raw = input ? String(input.value || '').trim() : '';
-      if (!raw || raw.length < 3) { alert('Please enter your request (at least 3 characters).'); if (input) input.focus(); return; }
-      if (raw.length > 500) { alert('Request too long (max 500).'); return; }
-      const prevHtml = btn ? btn.innerHTML : '';
-      if (btn) { btn.disabled = true; btn.style.opacity = '0.7'; btn.innerHTML = '<span style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.6);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 0.7s linear infinite;"></span> Generating...'; }
-      const activeOffice = (document.getElementById('quarterOfficeFilter') && document.getElementById('quarterOfficeFilter').value) ? document.getElementById('quarterOfficeFilter').value : '<%= typeof selectedOffice !== "undefined" ? selectedOffice : "all" %>';
-      const scopeText = (activeOffice && activeOffice !== 'all') ? activeOffice : 'University-Wide';
-      if (reply) {
-        reply.innerHTML = '<div style="text-align:center;padding:2rem 1rem;"><div class="psau-timer" style="margin:0 auto 0.9rem auto;"><div class="psau-timer-hand"></div><div class="psau-timer-center"></div></div><div style="font-weight:700;color:#0f172a;font-size:0.85rem;">Generating suggestions...</div><div style="font-size:0.76rem;color:#64748b;margin-top:0.2rem;">Gemini AI • suggestions only • ' + scopeText + ' • <%= activeQuarter %> <%= selectedYear %></div><div id="aiSuggestTimer" style="margin-top:0.5rem;font-size:0.72rem;font-weight:700;color:#16a34a;">0.0s</div></div>';
-        const start = Date.now();
-        const int = setInterval(function () { var el = document.getElementById('aiSuggestTimer'); if (el) el.textContent = ((Date.now() - start) / 1000).toFixed(1) + 's'; }, 100);
-        reply._aiInt = int;
-      }
-      try {
-        const payload = { quarter: '<%= activeQuarter %>', year: '<%= selectedYear %>', office: activeOffice, userRequest: raw };
-        let data;
-        try {
-          const res = await fetch('/admin/ai-suggestions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin',
-            body: JSON.stringify(payload)
-          });
-          const text = await res.text();
-          try { data = JSON.parse(text); } catch (parseErr) {
-            console.warn('AI suggestions: server returned non-JSON (maybe 404). Using local SQD+Form fallback.', text.substring(0, 200));
-            throw new Error('Server not ready — showing local SQD + Form suggestions.');
-          }
-          if (!res.ok || !data.success) throw new Error((data && data.error) || 'Failed (' + res.status + ')');
-        } catch (fetchErr) {
-          // Local fallback — ACCURACY: never show N/A/5.00 findings when no data exists.
-          console.warn('AI fetch failed, local fallback:', fetchErr.message);
-          if (reply && reply._aiInt) { clearInterval(reply._aiInt); reply._aiInt = null; }
-          // Injected count for the selected quarter/scope — server-rendered accurate flag
-          const _fallbackHasData = <%= (typeof activeReport !== 'undefined' && activeReport && activeReport.items && activeReport.items.length > 0) ? 'true' : 'false' %>;
-          if (!_fallbackHasData) {
-            const _scopeEsc = String(scopeText || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            const _noDataHtml = `
-<div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:12px; padding:0.95rem 1.1rem; margin-bottom:0.85rem; display:flex; gap:0.85rem; align-items:flex-start;">
-  <div style="width:42px; height:42px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0; border:1px solid #fde68a;"><i class="fas fa-inbox"></i></div>
-  <div style="flex:1;">
-    <div style="font-weight:800; color:#92400e; font-size:0.90rem; line-height:1.3;">No Feedback Data Available — `+_scopeEsc+` (0 respondents)</div>
-    <div style="font-size:0.82rem; color:#78350f; margin-top:0.30rem; line-height:1.5;">Offline fallback cannot compute SQD averages — averages are <strong>N/A</strong>. Collect at least 5–10 responses first.</div>
-    <div style="font-size:0.74rem; color:#a16207; margin-top:0.45rem; background:#ffffff; border:1px dashed #fcd34d; padding:0.45rem 0.65rem; border-radius:8px;">Showing <strong>setup guidance</strong> (not data-driven findings). Reconnect and click Generate again once data exists.</div>
-  </div>
-</div>
-<div class="ai-suggestion-card" style="background:#ffffff; border:1px dashed #fcd34d; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem;">
-  <div style="width:40px; height:40px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #fde68a;"><i class="fas fa-qrcode"></i></div>
-  <div style="flex:1;"><div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;"><span style="width:20px; height:20px; border-radius:50%; background:#f59e0b; color:#fff; font-weight:700; font-size:0.68rem; display:inline-flex; align-items:center; justify-content:center;">1</span><span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Deploy QR Codes & Invite Responses</span><span style="font-size:0.66rem; font-weight:700; color:#d97706; background:#fffbeb; border:1px solid #fde68a; padding:0.12rem 0.45rem; border-radius:20px; margin-left:0.3rem;">SETUP</span></div><div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">No data for <strong>`+_scopeEsc+`</strong> — make the form discoverable at every service point.</div><div style="background:#fffbeb; border-left:3px solid #f59e0b; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;"><strong style="color:#92400e;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i> Strategy:</strong> Print QR codes on transaction slips, desk standees, and waiting-area posters. Aim for ≥10 responses before analysis.</div></div>
-</div>
-<div class="ai-suggestion-card" style="background:#ffffff; border:1px dashed #fcd34d; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem;">
-  <div style="width:40px; height:40px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #fde68a;"><i class="fas fa-chart-line"></i></div>
-  <div style="flex:1;"><div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;"><span style="width:20px; height:20px; border-radius:50%; background:#f59e0b; color:#fff; font-weight:700; font-size:0.68rem; display:inline-flex; align-items:center; justify-content:center;">2</span><span style="font-weight:700; color:#0f172a; font-size:0.88rem;">Verify Collection, Then Re-Run</span><span style="font-size:0.66rem; font-weight:700; color:#d97706; background:#fffbeb; border:1px solid #fde68a; padding:0.12rem 0.45rem; border-radius:20px; margin-left:0.3rem;">NEXT STEP</span></div><div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">Once feedback accumulates, Generate will show <strong>SQD-specific scores</strong> and Naïve Bayes sentiment, not generic setup tips.</div><div style="background:#fffbeb; border-left:3px solid #f59e0b; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;"><strong style="color:#92400e;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i> Strategy:</strong> Check Dashboard after 5–10 submissions, then click Generate again for data-driven priorities.</div></div>
-</div>`;
-            if (reply) {
-              reply.innerHTML = _noDataHtml;
-              const st = document.getElementById('aiSuggestStatus');
-              if (st) { st.style.display = 'inline-flex'; st.innerHTML = '<span style="color:#d97706;">&#9888;</span> No data — setup guidance shown'; }
-            }
-            return;
-          }
-          const fallbackHtml = (function () {
-            const safeReq = String(raw).replace(/</g, '&lt;').substring(0, 120);
-            const pool = [
-              {
-                title: "Streamline Transaction & Processing Speed (SQD1)",
-                detail: "Address processing delays and long queues identified in quarterly client feedback logs.",
-                strategy: "Establish express transaction lanes, digitize document queuing, and set target processing SLAs (max 15 mins per transaction).",
-                icon: "fas fa-comment-dots"
-              },
-              {
-                title: "Enhance Requirements Clarity & Guidance (SQD2)",
-                detail: "Reduce client confusion regarding documentary requirements before reaching frontline windows.",
-                strategy: "Publish step-by-step infographic checklists at office entrances and post downloadable requirement PDFs on the university portal.",
-                icon: "fas fa-calendar-check"
-              },
-              {
-                title: "Simplify Office Approval Workflows (SQD3)",
-                detail: "Minimize redundant signatories and inter-office routing reported in quarterly feedback.",
-                strategy: "Consolidate approval forms into single-window digital routing and train staff on cross-department document verification.",
-                icon: "fas fa-users"
-              },
-              {
-                title: "Improve Information Transparency & Status Tracking (SQD4)",
-                detail: "Ensure clear communication of service timelines, Citizen's Charter standards, and document status.",
-                strategy: "Install digital status monitors in waiting areas and launch real-time online tracking for student requests.",
-                icon: "fas fa-trophy"
-              },
-              {
-                title: "Maintain Clear Payment Channels & Transparency (SQD5)",
-                detail: "Ensure transparency in official fee assessments and prevent cashier bottlenecking during enrollment.",
-                strategy: "Integrate online e-payment gateways (GCash/PayMaya/Bank) and display official receipt breakdown signs at counters.",
-                icon: "fas fa-chart-column"
-              },
-              {
-                title: "Upgrade Waiting Area Comfort & Facility Hygiene (SQD6)",
-                detail: "Improve physical waiting spaces, seating capacity, and ventilation based on visitor feedback.",
-                strategy: "Implement bi-hourly sanitization logs, expand shaded outdoor waiting benches, and install free drinking water stations.",
-                icon: "fas fa-couch"
-              },
-              {
-                title: "Elevate Frontline Staff Courtesy & Client Care (SQD7)",
-                detail: "Reinforce positive client engagement and active listening across all administrative service desks.",
-                strategy: "Conduct mandatory quarterly customer service orientation for staff, establish help desks for complex inquiries, and enforce polite greeting protocols.",
-                icon: "fas fa-hands-helping"
-              },
-              {
-                title: "Establish Rapid Helpdesk & Problem Resolution (SQD8)",
-                detail: "Ensure unhandled client inquiries or complaints receive prompt resolution within 24 hours.",
-                strategy: "Deploy a dedicated QMS helpdesk desk officer and track complaint resolution SLAs in weekly administrative reviews.",
-                icon: "fas fa-headset"
-              }
-            ];
-
-            // Dynamic offset seed based on prompt & timestamp so every regenerate gives new strategies
-            const seed = (safeReq.length + Date.now()) % pool.length;
-            const picked = [];
-            for (let i = 0; i < 5; i++) {
-              picked.push(pool[(seed + i * 2) % pool.length]);
-            }
-
-            return picked.map((card, i) => `
-            <div class="ai-suggestion-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.85rem; transition:all 0.2s ease;">
-              <div style="width:40px; height:40px; border-radius:12px; background:#e8f5e9; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; border:1px solid #c8e6c9;">
-                <i class="${card.icon}"></i>
-              </div>
-              <div style="flex:1;">
-                <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
-                  <span style="width:20px; height:20px; border-radius:50%; background:#16a34a; color:#ffffff; font-weight:700; font-size:0.7rem; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">${i + 1}</span>
-                  <span style="font-weight:700; color:#0f172a; font-size:0.88rem;">${card.title}</span>
-                </div>
-                <div style="font-size:0.8rem; color:#475569; line-height:1.45; margin-bottom:0.35rem;">${card.detail}</div>
-                <div style="background:#f8fafc; border-left:3px solid #16a34a; padding:0.4rem 0.6rem; border-radius:4px; font-size:0.76rem; color:#334155;">
-                  <strong style="color:#15803d;"><i class="fas fa-lightbulb" style="margin-right:0.25rem;"></i> Strategy:</strong> ${card.strategy}
-                </div>
-              </div>
-            </div>
-          `).join('');
-          })();
-          if (reply) {
-            reply.innerHTML = fallbackHtml;
-            const st = document.getElementById('aiSuggestStatus');
-            if (st) { st.style.display = 'inline-flex'; st.innerHTML = '<span style="color:#16a34a;">&#10003;</span> Generated'; }
-            const mt = document.getElementById('aiSuggestMeta');
-            if (mt) mt.textContent = 'SQD + Form suggestions • ' + new Date().toLocaleString('en-PH');
-          }
-          return;
+        if (wrap && !wrap.dataset.scrolled) {
+          wrap.dataset.scrolled = '1';
+          setTimeout(function () { wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
         }
-        if (reply && reply._aiInt) { clearInterval(reply._aiInt); reply._aiInt = null; }
-        if (!data.success) { throw new Error(data.error || 'Failed'); }
-        if (reply) {
-          reply.innerHTML = data.html;
-          if (status) { status.style.display = 'inline-flex'; }
-          if (meta) { meta.textContent = 'Generated for <%= activeQuarter %> <%= selectedYear %> • ' + new Date().toLocaleString('en-PH'); }
-          // ensure status visible
-          if (status) status.style.display = 'inline-flex';
-        }
-      } catch (e) {
-        if (reply && reply._aiInt) { clearInterval(reply._aiInt); reply._aiInt = null; }
-        if (reply) {
-          reply.innerHTML = '<div style="text-align:center;padding:1rem;border:1px dashed #fecaca;background:#fef2f2;border-radius:8px;"><div style="color:#dc2626;font-weight:800;">Failed to generate</div><div style="font-size:0.78rem;color:#64748b;margin-top:0.3rem;">' + (e.message || 'Unknown error').replace(/</g, '&lt;') + '</div><button onclick="generateAISuggestions()" style="margin-top:0.6rem;background:#dc2626;color:#fff;border:none;padding:0.45rem 0.8rem;border-radius:7px;font-weight:700;cursor:pointer;">Retry</button></div>';
-        }
-        console.error(e);
-      } finally {
-        if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = prevHtml || '<span>&#10022;</span> Generate'; }
-      }
-    }
-    function clearAISuggestions() {
-      const input = document.getElementById('aiSuggestInput');
-      const reply = document.getElementById('aiSuggestReply');
-      const status = document.getElementById('aiSuggestStatus');
-      const cnt = document.getElementById('aiSuggestCount');
-      if (input) { input.value = ''; if (cnt) cnt.textContent = '0'; input.style.borderColor = '#86efac'; }
-      if (reply) {
-        reply.innerHTML = '<div id="aiSuggestPlaceholder" style="color:#94a3b8; text-align:center; padding:2rem 1rem;"><div style="width:48px; height:48px; border-radius:50%; background:#f0fdf4; border:1px solid #dcfce7; display:flex; align-items:center; justify-content:center; margin:0 auto 0.7rem auto; color:#16a34a; font-size:1.1rem;">&#128172;</div><div style="font-weight:600; color:#475569;">No suggestions yet</div><div style="font-size:0.76rem; margin-top:0.2rem;">Your AI-powered suggestions will appear here after you generate.</div></div><div id="aiSuggestMeta" style="margin-top:0.6rem; font-size:0.68rem; color:#64748b;"></div>';
-      }
-      if (status) status.style.display = 'none';
-    }
-    async function copyAISuggestions() {
-      const reply = document.getElementById('aiSuggestReply');
-      if (!reply) return;
-      const text = (reply.innerText || '').trim();
-      if (!text) { alert('Nothing to copy'); return; }
-      try {
-        if (navigator.clipboard) await navigator.clipboard.writeText(text);
-        else { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
-        const btn = document.querySelector('button[onclick="copyAISuggestions()"]');
-        if (btn) { const orig = btn.innerHTML; btn.innerHTML = '<span>&#10003;</span> Copied'; setTimeout(function () { btn.innerHTML = orig; }, 1500); }
-      } catch (e) { alert('Copy failed'); }
+      } catch (e) {}
     }
 
-    function downloadAISuggestions() {
-      const reply = document.getElementById('aiSuggestReply');
-      if (!reply) return;
-      const text = (reply.innerText || '').trim();
-      if (!text) { alert('Nothing to download'); return; }
-      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'PSAU_AI_Suggestions_<%= activeQuarter %>_<%= selectedYear %>.txt'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
-    }
-    function rateAISuggestions(dir) {
-      const msg = dir === 'up' ? 'Thanks for your feedback!' : 'Thanks — we will improve.';
-      let toast = document.getElementById('aiRateToast');
-      if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'aiRateToast';
-        toast.style.cssText = 'position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:0.5rem 0.9rem;border-radius:8px;font-size:0.78rem;font-weight:600;z-index:4000;box-shadow:0 8px 20px rgba(15,23,42,0.2);';
-        document.body.appendChild(toast);
-      }
-      toast.textContent = msg;
-      toast.style.display = 'block';
-      setTimeout(function () { toast.style.display = 'none'; }, 1800);
-    }
+
   </script>
 
   <%- include('partials/footer') %>

@@ -483,8 +483,13 @@
     </div>
 
     <script>
-        // Auto-fill today's date
-        document.getElementById('petsa').value = new Date().toISOString().split('T')[0];
+        // Auto-fill today's date (local timezone — toISOString() would use UTC and store
+        // yesterday's date for any submission made before 8:00 AM in UTC+8)
+        (function () {
+            var now = new Date();
+            var localDate = now.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+            document.getElementById('petsa').value = localDate;
+        })();
 
         // Enter key advances focus to the next field; submit button submits as usual
         (function () {

@@ -1,0 +1,56 @@
+<!-- Report Signatories — shared settings card (admin & staff) -->
+<div class="settings-card fade-up">
+  <div class="settings-card-header" onclick="toggleSettingsDetail('settings-detail-signatories')" aria-expanded="false" aria-controls="settings-detail-signatories">
+    <div class="settings-card-header-left">
+      <div class="settings-card-icon" style="background:#f0fdf4; color:#1b5e20;">
+        <i class="fas fa-signature"></i>
+      </div>
+      <div>
+        <h4 class="settings-card-title">Report Signatories</h4>
+        <p class="settings-card-sub">Names and positions printed on generated PSAU-QMS-SF-20 reports</p>
+      </div>
+    </div>
+    <span class="settings-chevron"><i class="fas fa-chevron-right"></i></span>
+  </div>
+  <div id="settings-detail-signatories" class="settings-detail" style="display:none;">
+    <div class="glass" style="padding:1.25rem; border-radius:14px;">
+      <p style="margin:0 0 0.9rem 0; font-size:0.78rem; color:#64748b; line-height:1.55;">
+        These signatories are printed on every generated Customer Feedback Report (PSAU-QMS-SF-20).
+        Edit the names/positions below and click <strong>Save Signatories</strong> — all future reports will use them.
+        Dates always use the date the report is generated.
+      </p>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:0.75rem;">
+        <div>
+          <label for="setPreparedBy" style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Prepared by</label>
+          <input type="text" id="setPreparedBy" maxlength="100" placeholder="Name" style="width:100%; padding:0.6rem 0.75rem; border:1px solid #cbd5e1; border-radius:10px; font-size:0.86rem; color:#0f172a; background:#fff;">
+        </div>
+        <div>
+          <label for="setPreparedPos" style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Position</label>
+          <input type="text" id="setPreparedPos" maxlength="100" placeholder="Position / Designation" style="width:100%; padding:0.6rem 0.75rem; border:1px solid #cbd5e1; border-radius:10px; font-size:0.86rem; color:#0f172a; background:#fff;">
+        </div>
+        <div>
+          <label for="setReviewedBy" style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Reviewed by</label>
+          <input type="text" id="setReviewedBy" maxlength="100" placeholder="Name" style="width:100%; padding:0.6rem 0.75rem; border:1px solid #cbd5e1; border-radius:10px; font-size:0.86rem; color:#0f172a; background:#fff;">
+        </div>
+        <div>
+          <label for="setReviewedPos" style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Position</label>
+          <input type="text" id="setReviewedPos" maxlength="100" placeholder="Position / Designation" style="width:100%; padding:0.6rem 0.75rem; border:1px solid #cbd5e1; border-radius:10px; font-size:0.86rem; color:#0f172a; background:#fff;">
+        </div>
+        <div>
+          <label for="setCertifiedBy" style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Certified by</label>
+          <input type="text" id="setCertifiedBy" maxlength="100" placeholder="Name" style="width:100%; padding:0.6rem 0.75rem; border:1px solid #cbd5e1; border-radius:10px; font-size:0.86rem; color:#0f172a; background:#fff;">
+        </div>
+        <div>
+          <label for="setCertifiedPos" style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Position</label>
+          <input type="text" id="setCertifiedPos" maxlength="100" placeholder="Position / Designation" style="width:100%; padding:0.6rem 0.75rem; border:1px solid #cbd5e1; border-radius:10px; font-size:0.86rem; color:#0f172a; background:#fff;">
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:0.75rem; margin-top:1rem; flex-wrap:wrap;">
+        <button id="btnSaveSignatories" onclick="saveSignatories()" style="background:#1b5e20; color:#fff; border:none; padding:0.7rem 1.3rem; border-radius:10px; font-weight:700; font-size:0.83rem; cursor:pointer; transition:all 0.15s ease;"><i class="fas fa-floppy-disk"></i>&nbsp; Save Signatories</button>
+        <span id="sigSaveBadge" style="display:none; font-size:0.74rem; font-weight:700; color:#15803d; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:20px; padding:0.3rem 0.75rem;"><i class="fas fa-check"></i> Saved</span>
+        <div id="sigMsg" style="font-size:0.8rem; display:none; padding:0.55rem 0.8rem; border-radius:8px; line-height:1.45; flex:1; min-width:200px;" role="alert" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</div>
+

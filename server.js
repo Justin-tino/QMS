@@ -11,7 +11,7 @@ const sanitizeHtml = require('sanitize-html');
 // Custom Modules for Proposal Compliance
 const naiveBayes = require('./naiveBayes');
 const emailService = require('./emailService');
-const { processQuarterlyData } = require('./quarterlyReports');
+const { processQuarterlyData, computeOfficeRankings, computeDimensionAnalysis } = require('./quarterlyReports');
 const HTMLtoDOCX = require('html-to-docx');
 const aiService = require('./aiService');
 const AdmZip = require('adm-zip');
@@ -27,12 +27,38 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
+// Helper: decode HTML entities back to raw characters. sanitize-html re-encodes
+// entities in its output (e.g. "&" -> "&amp;"), which previously got stored in
+// Firestore and then escaped AGAIN by EJS/escapeHtml on render — displaying
+// literal "&amp;" / "&gt;" text on the page (double-escaping bug).
+// Decode is safe here: every render path escapes output (<%= %>, escapeHtml, textContent).
+function decodeHtmlEntities(str, passes = 3) {
+  if (str === null || str === undefined) return str;
+  let out = String(str);
+  for (let i = 0; i < passes; i++) {
+    const prev = out;
+    out = out
+      .replace(/&#0?39;|&apos;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&'); // amp LAST so sequences like &amp;lt; unwind per pass
+    if (out === prev) break;
+  }
+  return out;
+}
+
 // Helper: sanitize user text (strip all tags) and enforce length
 function sanitizeText(value, maxLen = 2000) {
   if (value === null || value === undefined) return '';
   let str = String(value);
   // Strip HTML tags
   str = sanitizeHtml(str, { allowedTags: [], allowedAttributes: {} });
+  // Decode entities that sanitizeHtml re-encoded (prevents double-escaping on render)
+  str = decodeHtmlEntities(str);
+  // Strip any tags that a decoded "&lt;..." could have re-formed
+  str = str.replace(/<[^>]*>/g, '');
   // Remove control characters / null bytes
   str = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
   // Reject prototype pollution keys
@@ -1121,7 +1147,7 @@ app.post('/submit-feedback', feedbackLimiter, validateCsrf, async (req, res) => 
       sqd6: sanitizeText(data.sqd6, 10),
       sqd7: sanitizeText(data.sqd7, 10),
       sqd8: sanitizeText(data.sqd8, 10),
-      suggestions: sanitizeText(data.suggestions, 2000),
+      suggestions: sanitizeText(data.suggestions, 2000).trim(),
       email: sanitizeText(data.email, 200),
       avgSQD,
       sentiment: naiveBayesSentiment,
@@ -2003,20 +2029,62 @@ app.post('/admin/settings/backup/verify-otp', requireAuth, requireAdmin, validat
   }
 });
 
-// Admin: Save Report Signatories
-app.post('/admin/api/report-signatories', requireAuth, requireAdmin, validateCsrf, async (req, res) => {
+// Report Signatories — persisted defaults (Settings → Report Signatories, shared by admin & staff)
+const SIGNATORY_DEFAULTS = {
+  preparedBy: 'Ma. Reena Rose P. Tayag',
+  preparedPos: 'Assistant Quality Management Representative',
+  reviewedBy: 'Glenda Marie T. Maniago',
+  reviewedPos: 'Quality Management Representative',
+  certifiedBy: 'Dexter Andrew O. Manalo',
+  certifiedPos: 'Director, Office of Institutional Quality Assurance'
+};
+
+async function getSavedSignatories() {
   try {
-    const { preparedBy, preparedPos, preparedDate, reviewedBy, reviewedPos, reviewedDate, certifiedBy, certifiedPos, certifiedDate } = req.body;
+    const snap = await db.collection('settings').doc('signatories').get();
+    if (snap.exists) {
+      const d = snap.data();
+      return {
+        preparedBy: d.preparedBy || SIGNATORY_DEFAULTS.preparedBy,
+        preparedPos: d.preparedPos || SIGNATORY_DEFAULTS.preparedPos,
+        reviewedBy: d.reviewedBy || SIGNATORY_DEFAULTS.reviewedBy,
+        reviewedPos: d.reviewedPos || SIGNATORY_DEFAULTS.reviewedPos,
+        certifiedBy: d.certifiedBy || SIGNATORY_DEFAULTS.certifiedBy,
+        certifiedPos: d.certifiedPos || SIGNATORY_DEFAULTS.certifiedPos
+      };
+    }
+  } catch (err) {
+    console.error('Load signatories error:', err.message);
+  }
+  return { ...SIGNATORY_DEFAULTS };
+}
+
+// Load Report Signatories — available to admin & staff (employee)
+app.get('/admin/api/report-signatories', requireAuth, async (req, res) => {
+  try {
+    const signatories = await getSavedSignatories();
+    res.json({ success: true, signatories });
+  } catch (err) {
+    console.error('Error loading signatories:', err);
+    res.json({ success: false, error: 'Failed to load signatories.' });
+  }
+});
+
+// Save Report Signatories — available to admin & staff (employee)
+app.post('/admin/api/report-signatories', requireAuth, validateCsrf, async (req, res) => {
+  try {
+    const { preparedBy, preparedPos, reviewedBy, reviewedPos, certifiedBy, certifiedPos } = req.body;
     const signatoriesData = {
       preparedBy: sanitizeText(preparedBy, 100),
       preparedPos: sanitizeText(preparedPos, 100),
-      preparedDate: sanitizeText(preparedDate, 30),
       reviewedBy: sanitizeText(reviewedBy, 100),
       reviewedPos: sanitizeText(reviewedPos, 100),
-      reviewedDate: sanitizeText(reviewedDate, 30),
       certifiedBy: sanitizeText(certifiedBy, 100),
       certifiedPos: sanitizeText(certifiedPos, 100),
-      certifiedDate: sanitizeText(certifiedDate, 30),
+      // Date fields removed — reports always use the live generation date.
+      preparedDate: '',
+      reviewedDate: '',
+      certifiedDate: '',
       updatedAt: new Date().toISOString(),
       updatedBy: req.session.adminUser
     };
@@ -2433,13 +2501,19 @@ app.get('/admin/report', requireAuth, async (req, res) => {
     const todayShort = now.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }); // e.g. 08/29/2026
     const generatedAt = now.toLocaleString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 
-    // Signatories from query (modal override) — dates default to todayShort (live date)
-    const preparedBy = req.query.preparedBy ? sanitizeText(req.query.preparedBy, 200) : undefined;
-    const reviewedBy = req.query.reviewedBy ? sanitizeText(req.query.reviewedBy, 200) : undefined;
-    const certifiedBy = req.query.certifiedBy ? sanitizeText(req.query.certifiedBy, 200) : undefined;
-    const preparedDate = req.query.preparedDate ? sanitizeText(req.query.preparedDate, 20) : todayShort;
-    const reviewedDate = req.query.reviewedDate ? sanitizeText(req.query.reviewedDate, 20) : todayShort;
-    const certifiedDate = req.query.certifiedDate ? sanitizeText(req.query.certifiedDate, 20) : todayShort;
+    // Signatories — persisted from Settings → Report Signatories (shared by admin & staff).
+    // Dates use the saved date when set, otherwise the live date.
+    const savedSig = await getSavedSignatories();
+    const preparedBy = savedSig.preparedBy;
+    const preparedPos = savedSig.preparedPos;
+    const reviewedBy = savedSig.reviewedBy;
+    const reviewedPos = savedSig.reviewedPos;
+    const certifiedBy = savedSig.certifiedBy;
+    const certifiedPos = savedSig.certifiedPos;
+    // Date fields removed from Settings — reports always use the live generation date.
+    const preparedDate = todayShort;
+    const reviewedDate = todayShort;
+    const certifiedDate = todayShort;
 
     res.render('report', {
       feedbacks,
@@ -2473,8 +2547,11 @@ app.get('/admin/report', requireAuth, async (req, res) => {
       complaints,
       year,
       preparedBy,
+      preparedPos,
       reviewedBy,
+      reviewedPos,
       certifiedBy,
+      certifiedPos,
       preparedDate,
       reviewedDate,
       certifiedDate
@@ -2516,11 +2593,19 @@ app.get('/admin/quarterly-reports', requireAuth, async (req, res) => {
       if (!isNaN(d.getTime())) selectedQuarterDate = String(req.query.date);
     }
 
+    // Office performance ranking for the ACTIVE quarter (Low Performing + Top 3)
+    const activeItems = (quarterlyData.activeReport && quarterlyData.activeReport.items) ? quarterlyData.activeReport.items : [];
+    const officeRankings = computeOfficeRankings(activeItems);
+    // Weakest/strongest SQD dimension across the scope — basis of the dynamic suggestions panel
+    const dimensionAnalysis = computeDimensionAnalysis(activeItems);
+
     res.render('quarterly-report', {
       ...quarterlyData,
       availableOffices,
       selectedOffice,
       selectedQuarterDate,
+      officeRankings,
+      dimensionAnalysis,
       userRole: req.session.role || 'admin',
       adminUser: req.session.adminUser || ''
     });
@@ -2626,8 +2711,49 @@ app.get('/admin/export-docx', requireAuth, async (req, res) => {
 });
 
 // ========== START SERVER ==========
+// One-time data migration: decode HTML entities that older versions stored in
+// Firestore text fields (sanitize-html re-encoded "&" -> "&amp;" on save, which
+// then double-escaped on render as "&amp;"). Idempotent — no-ops when clean.
+async function migrateDecodeStoredEntities() {
+  const TEXT_FIELDS = ['pangalan', 'tanggapan', 'uri_kliyente', 'uri_transaksyon', 'rehiyon', 'suggestions', 'email', 'kasarian', 'petsa'];
+  try {
+    const snapshot = await db.collection('feedbacks').get();
+    let batch = db.batch();
+    let batchOps = 0, fixedDocs = 0;
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const updates = {};
+      TEXT_FIELDS.forEach(k => {
+        const v = data[k];
+        if (typeof v === 'string' && /&(#?[a-zA-Z0-9]+);/.test(v)) {
+          const dec = decodeHtmlEntities(v);
+          if (dec !== v) updates[k] = dec;
+        }
+      });
+      if (Object.keys(updates).length > 0) {
+        batch.update(doc.ref, updates);
+        batchOps++;
+        if (batchOps === 450) { // Firestore batch limit is 500
+          batch.commit().catch(err => console.error(' Entity-decode migration batch failed:', err.message));
+          batch = db.batch();
+          batchOps = 0;
+        }
+      }
+    });
+    if (batchOps > 0) {
+      await batch.commit();
+      console.log(` Entity-decode migration: repaired ${batchOps} feedback docs.`);
+    } else {
+      console.log(' Entity-decode migration: nothing to repair.');
+    }
+  } catch (err) {
+    console.error(' Entity-decode migration failed:', err.message);
+  }
+}
+
 async function startServer() {
   await initMLModel();
+  migrateDecodeStoredEntities(); // fire-and-forget: repairs legacy double-escaped records
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n PSAU Feedback System running on http://localhost:${PORT}`);
     console.log(` Form: http://localhost:${PORT}/`);
