@@ -416,9 +416,9 @@
         <% if (typeof userRole !=='undefined' && userRole==='admin' ) { %>
           <a href="/admin/dashboard" onclick="sessionStorage.setItem('psauTab','users')" class="side-link"><i
               class="fas fa-user"></i> <span data-i18n="nav.users">Users</span></a>
-          <a href="/admin/dashboard" onclick="sessionStorage.setItem('psauTab','settings')" class="side-link"><i
-              class="fas fa-gear"></i> <span data-i18n="nav.settings">Settings</span></a>
           <% } %>
+        <a href="/admin/dashboard" onclick="sessionStorage.setItem('psauTab','settings')" class="side-link"><i
+            class="fas fa-gear"></i> <span data-i18n="nav.settings">Settings</span></a>
       </nav>
       <div class="side-bottom">
         <div class="side-user-card">
@@ -759,13 +759,28 @@
         var v=inp.value;
         if(!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
         var office=officeSel ? officeSel.value : '<%= typeof selectedOffice !== "undefined" ? selectedOffice : "all" %>';
+        // QUARTERLY RANGE FIX: a report date selects the WHOLE quarter up to that
+        // day (quarter start → report date), not just the single day. Previously
+        // dateFrom=dateTo=report date, so only feedback submitted on that exact
+        // day appeared (e.g. Total Respondents: 1) while the rest of the quarter
+        // was silently excluded.
+        var p=v.split('-');
+        var d=new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10));
+        if(isNaN(d.getTime())) return;
+        var qStartMonth=[0,3,6,9][Math.floor(d.getMonth()/3)];
+        var qStart=new Date(d.getFullYear(), qStartMonth, 1);
+        function pad2(n){ n=String(n); return n.length<2 ? '0'+n : n; }
+        var from=qStart.getFullYear()+'-'+pad2(qStart.getMonth()+1)+'-01';
         var params=new URLSearchParams();
         params.set('filterType','range');
         params.set('office', office||'all');
-        params.set('dateFrom', v);
+        params.set('dateFrom', from);
         params.set('dateTo', v);
         btn.href='/admin/report?' + params.toString();
-        try{ btn.title='Generate report for '+ new Date(v).toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); }catch(e){}
+        try{
+          var opts={year:'numeric',month:'long',day:'numeric'};
+          btn.title='Generate quarterly report for '+qStart.toLocaleDateString('en-PH',opts)+' to '+d.toLocaleDateString('en-PH',opts);
+        }catch(e){}
       }
       inp.value=getDefaultReportDate();
       updateGenerateReportLink();

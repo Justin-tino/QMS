@@ -1386,13 +1386,24 @@ function getFilterParams(reqQuery) {
       }
     }
   } else if (filterType === 'range' || reqQuery.dateFrom || reqQuery.dateTo) {
+    // TIMEZONE FIX: parse YYYY-MM-DD date-only strings as LOCAL calendar days.
+    // new Date('2026-09-13') parses as UTC midnight, which is 8:00 AM Philippine
+    // time — submissions made 12:00–8:00 AM PH on that day were excluded from the
+    // report (the "works then breaks after an hour" bug). Parsing the components
+    // as local time makes the range cover the full selected calendar day.
+    const parseDateParam = (val) => {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(val).trim());
+      if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10), 0, 0, 0, 0);
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? null : d;
+    };
     if (reqQuery.dateFrom) {
-      const dFrom = new Date(reqQuery.dateFrom);
-      if (!isNaN(dFrom.getTime())) dateFrom = dFrom;
+      const dFrom = parseDateParam(reqQuery.dateFrom);
+      if (dFrom) dateFrom = dFrom;
     }
     if (reqQuery.dateTo) {
-      const dTo = new Date(reqQuery.dateTo);
-      if (!isNaN(dTo.getTime())) {
+      const dTo = parseDateParam(reqQuery.dateTo);
+      if (dTo) {
         dTo.setHours(23, 59, 59, 999);
         dateTo = dTo;
       }
@@ -1437,14 +1448,36 @@ function filterFeedbacksByParams(allFeedbacks, filterParams) {
   let feedbacks = allFeedbacks;
 
   if (filterParams.dateFrom || filterParams.dateTo) {
+    // DATE MATCH FIX: a feedback has TWO dates — 'petsa' (client-entered
+    // transaction date, e.g. "2026-09-10") and 'submittedAt' (actual server
+    // submission timestamp). The old code did `f.petsa || f.submittedAt`, so
+    // petsa ALWAYS won: a feedback submitted TODAY for an earlier transaction
+    // was excluded from today's report → "Total Respondents: 0" even though
+    // data exists. Now a feedback matches if EITHER date falls in the range.
+    const collectDates = (f) => {
+      const dates = [];
+      if (f.submittedAt) {
+        const d = new Date(f.submittedAt);
+        if (!isNaN(d.getTime())) dates.push(d);
+      }
+      if (f.petsa) {
+        // petsa is a date-only string — treat it as that full local calendar day
+        const p = String(f.petsa).trim();
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(p);
+        const d = m
+          ? new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10), 23, 59, 59, 999)
+          : new Date(p);
+        if (!isNaN(d.getTime())) dates.push(d);
+      }
+      return dates;
+    };
     feedbacks = feedbacks.filter(f => {
-      const dateStr = f.petsa || f.submittedAt;
-      if (!dateStr) return true;
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return true;
-      if (filterParams.dateFrom && d < filterParams.dateFrom) return false;
-      if (filterParams.dateTo && d > filterParams.dateTo) return false;
-      return true;
+      const dates = collectDates(f);
+      if (dates.length === 0) return true; // keep feedbacks with no parseable date
+      return dates.some(d =>
+        (!filterParams.dateFrom || d >= filterParams.dateFrom) &&
+        (!filterParams.dateTo || d <= filterParams.dateTo)
+      );
     });
   }
 
