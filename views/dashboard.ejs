@@ -1329,13 +1329,13 @@
  </div>
  
  <div style="border-left: 1px solid var(--border-color); padding-left: 1.5rem;">
- <h4 style="font-size: 0.82rem; text-transform: uppercase; color: var(--text-primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 800; letter-spacing: 0.5px;">Comparative Cluster Rank</h4>
+ <h4 style="font-size: 0.82rem; text-transform: uppercase; color: var(--text-primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 800; letter-spacing: 0.5px;">Comparative Performance Rank</h4>
  <% 
  const deptCluster = clusteredDepartments.find(d => d.name === selectedOffice);
  %>
  <% if (deptCluster) { %>
  <div style="margin-bottom: 0.6rem; font-size: 0.85rem;">
- K-Means Status: 
+ Performance Status: 
  <% if (deptCluster.cluster.includes('Outstanding') || deptCluster.cluster.includes('Excellent')) { %>
  <span class="badge positive" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;"><%= deptCluster.cluster %></span>
  <% } else if (deptCluster.cluster.includes('Needs Attention') || deptCluster.cluster.includes('Improvement')) { %>
@@ -1348,7 +1348,7 @@
  Comparative standing: <strong>Rank #<%= clusteredDepartments.findIndex(d => d.name === selectedOffice) + 1 %></strong> out of <strong><%= clusteredDepartments.length %></strong> rated offices university-wide.
  </div>
  <% } else { %>
- <p style="font-size:0.8rem; color:#9ea4b8; font-style:italic;">No cluster position assigned yet.</p>
+ <p style="font-size:0.8rem; color:#9ea4b8; font-style:italic;">No performance segment assigned yet.</p>
  <% } %>
  </div>
  </div>
@@ -1554,7 +1554,7 @@
     </div>
   </div>
    <% } %>
-   <!-- Department Performance Rankings + K-Means Clustering -->
+   <!-- Department Performance Rankings + Rating-Based Performance Segments -->
  <div class="ai-section" style="margin-top: 2rem;" id="kmeansClusterSection">
   <div class="ai-card glass" style="border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; background:#fff;">
   <div style="padding:0.9rem 1rem; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
@@ -1574,7 +1574,7 @@
   <th style="padding:0.55rem 0.75rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px; color:#475569; border-bottom:1px solid #e2e8f0; width:56px;">Rank</th>
   <th style="padding:0.55rem 0.75rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px; color:#475569; border-bottom:1px solid #e2e8f0;">Department / Office</th>
   <th style="padding:0.55rem 0.75rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px; color:#475569; border-bottom:1px solid #e2e8f0; width:160px;">Avg SQD Rating</th>
-  <th style="padding:0.55rem 0.75rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px; color:#475569; border-bottom:1px solid #e2e8f0; width:220px;">K-Means Assigned Cluster Segment</th>
+  <th style="padding:0.55rem 0.75rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px; color:#475569; border-bottom:1px solid #e2e8f0; width:220px;">Performance Segment</th>
   </tr>
   </thead>
    <tbody>
@@ -1617,8 +1617,8 @@
   <% } %>
   <% } else { %>
   <div class="ai-empty-state" style="padding:1.25rem; text-align:center;">
-  <p style="font-weight:600; color:#334155; margin:0;">No clustering data available.</p>
-  <p style="color:#64748b; font-size:0.78rem; margin-top:0.25rem;">Gather feedback responses from multiple departments to perform K-Means (k=3) pattern classification.</p>
+  <p style="font-weight:600; color:#334155; margin:0;">No ranking data available.</p>
+  <p style="color:#64748b; font-size:0.78rem; margin-top:0.25rem;">Ratings from multiple departments are needed to compute average SQD ratings and performance segments.</p>
   </div>
   <% } %>
   </div>
@@ -4109,7 +4109,7 @@ function toggleDeptRankings(){
  const rows = [
  ['Rank', `#${rank}`],
  ['Average SQD', `<strong style="color:#1b5e20;">${escH(avg)} / 5.00</strong>`],
- ['K-Means cluster segment', escH(cluster)],
+ ['Performance segment', escH(cluster)],
  ['Responses on record', `${d.count}`]
  ].map(r => `<div style="display:flex; justify-content:space-between; gap:1rem; padding:0.4rem 0; border-bottom:1px solid #f1f5f9;"><span style="color:#64748b;">${r[0]}</span><span style="text-align:right; color:#0f172a; font-weight:600;">${r[1]}</span></div>`).join('');
  const respondents = d.respondents || [];
@@ -4800,7 +4800,7 @@ function toggleDeptRankings(){
  }
  }
 
- // Update K-Means Clustering section
+ // Update Department Performance Rankings section
  function updateKMeansClustering(data) {
  const depts = data.clusteredDepartments;
  const container = document.getElementById('kmeansTableContainer');
@@ -4809,8 +4809,8 @@ function toggleDeptRankings(){
   if (depts.length === 0) {
   container.innerHTML = `
   <div class="ai-empty-state" style="padding:1.25rem; text-align:center;">
-  <p style="font-weight:600; color:#334155; margin:0;">No clustering data available.</p>
-  <p style="color:#64748b; font-size:0.78rem; margin-top:0.25rem;">Gather feedback responses from multiple departments to perform K-Means (k=3) pattern classification.</p>
+  <p style="font-weight:600; color:#334155; margin:0;">No ranking data available.</p>
+  <p style="color:#64748b; font-size:0.78rem; margin-top:0.25rem;">Ratings from multiple departments are needed to compute average SQD ratings and performance segments.</p>
   </div>`;
   return;
   }
@@ -4820,7 +4820,7 @@ function toggleDeptRankings(){
   <th style="padding:0.55rem 0.75rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px; color:#475569; border-bottom:1px solid #e2e8f0; width:56px;">Rank</th>
   <th style="padding:0.55rem 0.75rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px; color:#475569; border-bottom:1px solid #e2e8f0;">Department / Office</th>
   <th style="padding:0.55rem 0.75rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px; color:#475569; border-bottom:1px solid #e2e8f0; width:160px;">Avg SQD Rating</th>
-  <th style="padding:0.55rem 0.75rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px; color:#475569; border-bottom:1px solid #e2e8f0; width:220px;">K-Means Assigned Cluster Segment</th>
+  <th style="padding:0.55rem 0.75rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px; color:#475569; border-bottom:1px solid #e2e8f0; width:220px;">Performance Segment</th>
   </tr></thead><tbody>`;
 
   depts.forEach((dept, index) => {

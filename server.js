@@ -852,8 +852,13 @@ function computeDashboardData(feedbacks, detailSourceArg) {
   };
 }
 
-// K-Means Clustering for rating pattern analysis of departments/offices
-function runKMeansClustering(feedbacks) {
+// Department Performance Rankings — average-rating segment classification
+// (replaces the previous K-Means clustering approach)
+// Segments are assigned from the department's average SQD rating:
+//   4.00 and above  → Outstanding Performance (High Avg)
+//   3.00 – 3.99     → Satisfactory Performance (Mid Avg)
+//   below 3.00      → Needs Attention (Low Avg Ratings)
+function computeDepartmentRankings(feedbacks) {
   const deptData = {};
   const sqdFields = ['sqd0', 'sqd1', 'sqd2', 'sqd3', 'sqd4', 'sqd5', 'sqd6', 'sqd7', 'sqd8'];
 
@@ -877,114 +882,26 @@ function runKMeansClustering(feedbacks) {
     deptData[dept].count++;
   });
 
-  const departmentsList = [];
-  Object.keys(deptData).forEach(name => {
+  return Object.keys(deptData).map(name => {
     const dept = deptData[name];
     const features = dept.ratings.map(arr => {
       if (arr.length === 0) return 3.0; // Neutral default
       return arr.reduce((a, b) => a + b, 0) / arr.length;
     });
-    departmentsList.push({ name, features });
-  });
-
-  if (departmentsList.length === 0) return [];
-
-  const K = 3;
-  const actualK = Math.min(K, departmentsList.length);
-
-  // Pick initial centroids from the dataset at intervals
-  let centroids = [];
-  const step = Math.floor(departmentsList.length / actualK);
-  for (let i = 0; i < actualK; i++) {
-    centroids.push([...departmentsList[i * step].features]);
-  }
-
-  let assignments = new Array(departmentsList.length).fill(-1);
-  let changed = true;
-  let iterations = 0;
-  const maxIterations = 50;
-
-  const distance = (a, b) => {
-    let sum = 0;
-    for (let i = 0; i < a.length; i++) {
-      sum += Math.pow((a[i] || 0) - (b[i] || 0), 2);
-    }
-    return Math.sqrt(sum);
-  };
-
-  while (changed && iterations < maxIterations) {
-    changed = false;
-    iterations++;
-
-    for (let i = 0; i < departmentsList.length; i++) {
-      const features = departmentsList[i].features;
-      let minDist = Infinity;
-      let closestCentroidIdx = -1;
-
-      for (let c = 0; c < actualK; c++) {
-        const dist = distance(features, centroids[c]);
-        if (dist < minDist) {
-          minDist = dist;
-          closestCentroidIdx = c;
-        }
-      }
-
-      if (assignments[i] !== closestCentroidIdx) {
-        assignments[i] = closestCentroidIdx;
-        changed = true;
-      }
-    }
-
-    const newCentroids = Array.from({ length: actualK }, () => new Array(9).fill(0));
-    const counts = new Array(actualK).fill(0);
-
-    for (let i = 0; i < departmentsList.length; i++) {
-      const clusterIdx = assignments[i];
-      const features = departmentsList[i].features;
-      counts[clusterIdx]++;
-      for (let d = 0; d < 9; d++) {
-        newCentroids[clusterIdx][d] += features[d];
-      }
-    }
-
-    for (let c = 0; c < actualK; c++) {
-      if (counts[c] > 0) {
-        for (let d = 0; d < 9; d++) {
-          newCentroids[c][d] /= counts[c];
-        }
-        centroids[c] = newCentroids[c];
-      }
-    }
-  }
-
-  const centroidSums = centroids.map((c, idx) => ({
-    idx,
-    sum: c.reduce((a, b) => a + b, 0)
-  }));
-  centroidSums.sort((a, b) => a.sum - b.sum);
-
-  const labelMapping = {};
-  centroidSums.forEach((item, index) => {
-    if (actualK === 3) {
-      if (index === 0) labelMapping[item.idx] = 'Needs Attention (Low Avg Ratings)';
-      else if (index === 1) labelMapping[item.idx] = 'Satisfactory Performance (Mid Avg)';
-      else labelMapping[item.idx] = 'Outstanding Performance (High Avg)';
-    } else if (actualK === 2) {
-      if (index === 0) labelMapping[item.idx] = 'Needs Improvement';
-      else labelMapping[item.idx] = 'Excellent Performance';
-    } else {
-      labelMapping[item.idx] = 'General Performance Cluster';
-    }
-  });
-
-  return departmentsList.map((dept, i) => {
-    const avgScore = (dept.features.reduce((a, b) => a + b, 0) / 9).toFixed(2);
+    const avg = features.reduce((a, b) => a + b, 0) / 9;
     return {
-      name: dept.name,
-      avgScore,
-      cluster: labelMapping[assignments[i]]
+      name,
+      avgScore: avg.toFixed(2),
+      cluster: getPerformanceSegment(avg)
     };
   }).sort((a, b) => b.avgScore - a.avgScore);
+}
+
+// Fixed-threshold segment assignment based on the average SQD rating (1.00–5.00)
+function getPerformanceSegment(avg) {
+  if (avg >= 4.0) return 'Outstanding Performance (High Avg)';
+  if (avg >= 3.0) return 'Satisfactory Performance (Mid Avg)';
+  return 'Needs Attention (Low Avg Ratings)';
 }
 
 // ========== AUTH MIDDLEWARE ==========
@@ -1502,7 +1419,7 @@ app.get('/admin/api/ml-status', requireAuth, async (req, res) => {
     });
 
     const mlMetrics = naiveBayes.evaluateModel();
-    const clusteredDepartments = runKMeansClustering(allFeedbacks);
+    const clusteredDepartments = computeDepartmentRankings(allFeedbacks);
 
     // Determine AI engine status (cached 5 min)
     let aiEngineStatus = 'local_only';
@@ -1569,7 +1486,7 @@ app.get('/admin/dashboard', requireAuth, async (req, res) => {
     });
 
     const { stats, chartData, categorizedSqd, demographics } = computeDashboardData(feedbacks, allFeedbacks);
-    const clusteredDepartments = runKMeansClustering(allFeedbacks);
+    const clusteredDepartments = computeDepartmentRankings(allFeedbacks);
 
     const scopeLabel = filterParams.selectedOffice !== 'all' ? filterParams.selectedOffice : null;
     const localAnalysis = generateLocalReport(feedbacks, scopeLabel || filterParams.periodLabel);
@@ -2385,7 +2302,7 @@ app.get('/admin/report', requireAuth, async (req, res) => {
     const feedbacks = filterFeedbacksByParams(allFeedbacks, filterParams);
 
     const dashboardData = computeDashboardData(feedbacks);
-    const clusteredDepartments = runKMeansClustering(allFeedbacks);
+    const clusteredDepartments = computeDepartmentRankings(allFeedbacks);
 
     // --- Build PSAU-QMS-SF-20 data for report.ejs — Organizational Unit shows filtered office or 'All' ---
     const office = filterParams.selectedOffice && filterParams.selectedOffice !== 'all' ? filterParams.selectedOffice : 'All';
