@@ -286,7 +286,12 @@
 .dash-header { margin-bottom: 0.65rem !important; padding-bottom: 0.55rem !important; overflow: visible !important; position: relative !important; z-index: 40 !important; }
 .dash-header-right { overflow: visible !important; z-index: 50 !important; }
 #dashDatePopover { z-index: 1000 !important; }
-#dashDatePickerInput { box-sizing: border-box !important; }
+/* Quarter + Year date filter (replaces the old day-picker calendar) */
+.dash-q-btn { padding:0.45rem 0.5rem; border:1px solid #e2e8f0; background:#f8fafc; border-radius:8px; font-size:0.72rem; font-weight:700; color:#334155; cursor:pointer; font-family:inherit; line-height:1.2; transition:all 0.15s ease; }
+.dash-q-btn:hover { background:#e8f5e9; border-color:#a5d6a7; color:#1b5e20; }
+.dash-q-btn.active { background:#1b5e20; border-color:#1b5e20; color:#fff; box-shadow:0 2px 6px rgba(27,94,32,0.25); }
+#dashYearSelect { width:100%; padding:0.45rem 0.5rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.82rem; font-weight:600; color:#334155; background:#fff; cursor:pointer; }
+#dashYearSelect:focus { outline:none; border-color:#1b5e20; box-shadow:0 0 0 2px rgba(27,94,32,0.15); }
 .admin-main .filter-bar, .admin-main .stats-grid, .admin-main .charts-grid, .admin-main .ai-section { position: relative; z-index: 1; }
 .dash-header-left h1 { font-size: 1.05rem !important; margin-bottom: 0.1rem !important; }
 .dash-header-left p { font-size: 0.75rem !important; }
@@ -1099,22 +1104,39 @@
                 <span style="font-size:0.72rem; color:#64748b; font-weight:600; white-space:nowrap;">Filter office/department:</span>
                 <select id="headerOfficeFilter" class="filter-select" style="min-width:200px; max-width:280px; padding:0.35rem 0.6rem; font-size:0.78rem; border-radius:8px;" onchange="syncHeaderOfficeFilter()"></select>
                 </span>
-                <button type="button" id="dashDateBadge" class="dash-date-badge" onclick="toggleDashDatePicker()" title="Click to filter by any date/year/day — admin & employee" style="cursor:pointer; border:1px solid #e2e8f0; background:#fff; border-radius:20px; padding:0.35rem 0.7rem; font-size:0.78rem; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; color:#334155;">
-                  <i class="fas fa-calendar" style="color:#1b5e20;"></i> <span id="dashDateBadgeText"><%= (function(){ try{ var t=typeof filterType!=='undefined'?filterType:'overall'; var df=typeof dateFrom!=='undefined'?dateFrom:''; var dt=typeof dateTo!=='undefined'?dateTo:''; var pl=typeof periodLabel!=='undefined'?periodLabel:''; var txt=new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); if(t==='range'&&df&&dt&&df===dt){ var d=new Date(df); if(!isNaN(d.getTime())) txt=d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); } else if(t==='range'&&(df||dt)){ txt=pl||txt; } else if(t==='month'&&pl){ txt=pl; } return txt; }catch(e){ return new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); } })() %></span>
+                <button type="button" id="dashDateBadge" class="dash-date-badge" onclick="toggleDashDatePicker()" title="Click to filter by quarter & year — admin & employee" style="cursor:pointer; border:1px solid #e2e8f0; background:#fff; border-radius:20px; padding:0.35rem 0.7rem; font-size:0.78rem; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; color:#334155;">
+                  <i class="fas fa-calendar" style="color:#1b5e20;"></i> <span id="dashDateBadgeText"><%= (function(){ try{ var t=typeof filterType!=='undefined'?filterType:'overall'; var df=typeof dateFrom!=='undefined'?dateFrom:''; var dt=typeof dateTo!=='undefined'?dateTo:''; var pl=typeof periodLabel!=='undefined'?periodLabel:''; var txt='Overall (All Time)'; if(t==='quarter'){ txt=pl||txt; } else if(t==='range'&&df&&dt&&df===dt){ var d=new Date(df); if(!isNaN(d.getTime())) txt=d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); } else if(t==='range'&&(df||dt)){ txt=pl||txt; } else if(t==='month'&&pl){ txt=pl; } return txt; }catch(e){ return 'Overall (All Time)'; } })() %></span>
                 </button>
-                <!-- Clickable date popover — admin & employee, any previous date/year/day -->
+                <!-- Quarter + Year filter popover — admin & employee (quarters only, no calendar) -->
                 <div id="dashDatePopover" style="display:none; position:absolute; top:calc(100% + 0.5rem); right:0; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:0.9rem; box-shadow:0 12px 24px rgba(15,23,42,0.18); z-index:1000; min-width:268px; max-width:min(92vw,320px);">
-                  <label for="dashDatePickerInput" style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Jump to specific day / year</label>
-                  <input type="date" id="dashDatePickerInput" style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem;">
-                  <div style="display:flex; gap:0.4rem; margin-top:0.6rem;">
-                    <button type="button" onclick="shiftDashDate(-1)" style="flex:1; padding:0.4rem; border:1px solid #e2e8f0; background:#f8fafc; border-radius:7px; font-size:0.7rem; font-weight:600; cursor:pointer;">← Prev day</button>
-                    <button type="button" onclick="shiftDashDate(1)" style="flex:1; padding:0.4rem; border:1px solid #e2e8f0; background:#f8fafc; border-radius:7px; font-size:0.7rem; font-weight:600; cursor:pointer;">Next day →</button>
+                  <div style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:0.45rem;">Filter by quarter</div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.4rem;">
+                    <button type="button" class="dash-q-btn" data-quarter="Q1" onclick="selectDashQuarter('Q1')">1st Quarter<br><span style="font-size:0.62rem; font-weight:600; opacity:0.8;">Jan - Mar</span></button>
+                    <button type="button" class="dash-q-btn" data-quarter="Q2" onclick="selectDashQuarter('Q2')">2nd Quarter<br><span style="font-size:0.62rem; font-weight:600; opacity:0.8;">Apr - Jun</span></button>
+                    <button type="button" class="dash-q-btn" data-quarter="Q3" onclick="selectDashQuarter('Q3')">3rd Quarter<br><span style="font-size:0.62rem; font-weight:600; opacity:0.8;">Jul - Sep</span></button>
+                    <button type="button" class="dash-q-btn" data-quarter="Q4" onclick="selectDashQuarter('Q4')">4th Quarter<br><span style="font-size:0.62rem; font-weight:600; opacity:0.8;">Oct - Dec</span></button>
                   </div>
-                  <div style="display:flex; gap:0.4rem; margin-top:0.4rem;">
-                    <button type="button" onclick="applyDashDate()" style="flex:1; background:#1b5e20; color:#fff; border:none; padding:0.5rem; border-radius:7px; font-weight:700; font-size:0.78rem; cursor:pointer;">Apply to dashboard</button>
+                  <button type="button" class="dash-q-btn" data-quarter="all" onclick="selectDashQuarter('all')" style="width:100%; margin-top:0.4rem; text-align:center;">All (1st - 4th Quarter) — Whole Year</button>
+                  <div style="margin-top:0.7rem;">
+                    <label for="dashYearSelect" style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Year</label>
+                    <% // Year list: server-supplied years when available, otherwise current year + previous 5.
+                       // The selected year is always kept in the list (covers deep links to older years).
+                       var _qYearFallback = (function(){ var a=[]; var cy=new Date().getFullYear(); for(var i=0;i<6;i++) a.push(cy-i); return a; })();
+                       var _qYears = (typeof availableYears !== 'undefined' && availableYears && availableYears.length) ? availableYears.slice() : _qYearFallback.slice();
+                       var _qSelYear = (typeof selectedYear !== 'undefined' && selectedYear) ? selectedYear : new Date().getFullYear();
+                       if(_qYears.indexOf(_qSelYear) === -1) _qYears.push(_qSelYear);
+                       _qYears.sort(function(a,b){ return b-a; }); %>
+                    <select id="dashYearSelect" onchange="syncDashYear()">
+                      <% _qYears.forEach(function(y){ %>
+                      <option value="<%= y %>"<%= _qSelYear === y ? ' selected' : '' %>><%= y %></option>
+                      <% }); %>
+                    </select>
+                  </div>
+                  <div style="display:flex; gap:0.4rem; margin-top:0.7rem;">
+                    <button type="button" onclick="applyDashQuarter()" style="flex:1; background:#1b5e20; color:#fff; border:none; padding:0.5rem; border-radius:7px; font-weight:700; font-size:0.78rem; cursor:pointer;">Apply to dashboard</button>
                     <button type="button" onclick="clearDashDate()" style="padding:0.5rem 0.7rem; background:#fff; border:1px solid #e2e8f0; border-radius:7px; font-size:0.78rem; cursor:pointer;">Clear</button>
                   </div>
-                  <div style="font-size:0.65rem; color:#94a3b8; margin-top:0.5rem; text-align:center;">Admin & employee — filters dashboard data</div>
+                  <div style="font-size:0.65rem; color:#94a3b8; margin-top:0.5rem; text-align:center; line-height:1.45;">Admin &amp; employee — filters dashboard data by quarter</div>
                 </div>
             </div>
         </div>
@@ -1240,6 +1262,9 @@
  </select>
 
   <input type="hidden" id="filterTypeSelect" value="<%= filterType || 'overall' %>">
+  <!-- Quarter + Year filter state (used when filterType === 'quarter') -->
+  <input type="hidden" id="quarterVal" value="<%= (typeof quarterVal !== 'undefined' && quarterVal) ? quarterVal : 'all' %>">
+  <input type="hidden" id="yearVal" value="<%= (typeof selectedYear !== 'undefined' && selectedYear) ? selectedYear : new Date().getFullYear() %>">
 
   <div id="monthFilterGroup" class="filter-date-group" style="<%= filterType === 'month' ? '' : 'display:none;' %>">
   <input type="month" id="monthFilter" class="filter-date" value="<%= monthVal || new Date().toISOString().substring(0,7) %>">
@@ -1331,7 +1356,10 @@
  <div style="border-left: 1px solid var(--border-color); padding-left: 1.5rem;">
  <h4 style="font-size: 0.82rem; text-transform: uppercase; color: var(--text-primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 800; letter-spacing: 0.5px;">Comparative Performance Rank</h4>
  <% 
- const deptCluster = clusteredDepartments.find(d => d.name === selectedOffice);
+ // Defensive: if a render path forgets to pass clusteredDepartments, degrade to the empty state
+ // instead of crashing the whole dashboard (ReferenceError: clusteredDepartments is not defined).
+ var _scopeDeptRankings = (typeof clusteredDepartments !== 'undefined' && Array.isArray(clusteredDepartments)) ? clusteredDepartments : [];
+ const deptCluster = _scopeDeptRankings.find(d => d.name === selectedOffice);
  %>
  <% if (deptCluster) { %>
  <div style="margin-bottom: 0.6rem; font-size: 0.85rem;">
@@ -1345,7 +1373,7 @@
  <% } %>
  </div>
  <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; background: rgba(0,0,0,0.02); padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px dashed var(--border-color);">
- Comparative standing: <strong>Rank #<%= clusteredDepartments.findIndex(d => d.name === selectedOffice) + 1 %></strong> out of <strong><%= clusteredDepartments.length %></strong> rated offices university-wide.
+ Comparative standing: <strong>Rank #<%= _scopeDeptRankings.findIndex(d => d.name === selectedOffice) + 1 %></strong> out of <strong><%= _scopeDeptRankings.length %></strong> rated offices university-wide.
  </div>
  <% } else { %>
  <p style="font-size:0.8rem; color:#9ea4b8; font-style:italic;">No performance segment assigned yet.</p>
@@ -1566,7 +1594,7 @@
     </div>
   </div>
 
-  <% if (clusteredDepartments && clusteredDepartments.length > 0) { %>
+  <% if (typeof clusteredDepartments !== 'undefined' && clusteredDepartments && clusteredDepartments.length > 0) { %>
   <div id="kmeansTableContainer" style="overflow-x:auto;">
   <table class="data-table" style="margin-top:0; width:100%; border-collapse:collapse;">
   <thead>
@@ -2549,14 +2577,18 @@ function toggleDeptRankings(){
  <span id="m-suggestions">No written suggestion provided.</span>
  </div>
 
- <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+ <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+ <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
  <% if (typeof userRole !== 'undefined' && userRole === 'admin') { %>
  <button type="button" class="btn-danger-modal" onclick="deleteCurrentModalFeedback()">
  Delete Feedback Response
  </button>
- <% } else { %>
- <span></span>
  <% } %>
+ <button type="button" onclick="printCurrentModalFeedback()" title="Print the respondent's filled Customer Feedback Form"
+ style="background:#1b5e20; color:#fff; border:none; border-radius:8px; padding:0.65rem 1.1rem; font-weight:700; font-size:0.82rem; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:0.45rem;">
+ <i class="fas fa-print"></i> Print Filled Form
+ </button>
+ </div>
  <button type="button" class="btn-secondary-modal" onclick="closeFeedbackModal()">
  Close
  </button>
@@ -2673,7 +2705,7 @@ function toggleDeptRankings(){
     _badge.style.display = _isDash ? 'inline-flex' : 'none';
     if(_isDash){
       _badge.style.opacity='1'; _badge.style.cursor='pointer';
-      _badge.title='Click to filter by any date/year/day — admin & employee';
+      _badge.title='Click to filter by quarter & year — admin & employee';
       _badge.onclick=toggleDashDatePicker;
     } else {
       _badge.onclick=null;
@@ -3311,6 +3343,111 @@ function toggleDeptRankings(){
  // ========== FILTER & REPORT FUNCTIONS ==========
  let currentModalMode = '<%= filterType || "overall" %>';
 
+ // ===== QUARTER FILTER HELPERS (dashboard date filter: quarters + year only, no calendar) =====
+ // Boundaries match the server (quarterlyReports.js): Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec.
+ const QUARTER_LABELS = { Q1: '1st Quarter', Q2: '2nd Quarter', Q3: '3rd Quarter', Q4: '4th Quarter' };
+ const QUARTER_START_MONTH = { Q1: 0, Q2: 3, Q3: 6, Q4: 9 };
+ function pad2(n){ n=String(n); return n.length<2 ? '0'+n : n; }
+ function getQuarterDateRange(q, year){
+   const y = parseInt(year, 10) || new Date().getFullYear();
+   if(QUARTER_START_MONTH[q] === undefined){ return { from: y+'-01-01', to: y+'-12-31' }; } // All = whole year
+   const s = QUARTER_START_MONTH[q];
+   const lastDay = new Date(y, s + 3, 0);
+   return { from: y+'-'+pad2(s+1)+'-01', to: y+'-'+pad2(lastDay.getMonth()+1)+'-'+pad2(lastDay.getDate()) };
+ }
+ function healQuarterStateFromUrl(){
+   // Safety net for a stale/cached server render: if the address bar already
+   // carries filterType=quarter&quarter=Qx&year=YYYY, force the hidden inputs
+   // (and visible year dropdown) to match BEFORE any sync/highlight runs.
+   try{
+     const u=new URL(window.location.href);
+     const ft=(u.searchParams.get('filterType')||'').toLowerCase();
+     if(ft!=='quarter') return;
+     const qRaw=(u.searchParams.get('quarter')||'').toUpperCase();
+     const q=QUARTER_LABELS[qRaw] ? qRaw : 'all';
+     const yRaw=u.searchParams.get('year')||'';
+     const qv=document.getElementById('quarterVal');
+     const yHid=document.getElementById('yearVal');
+     const yVis=document.getElementById('dashYearSelect');
+     if(qv) qv.value=q;
+     if(yRaw && yHid) yHid.value=String(yRaw);
+     if(yRaw && yVis){
+       let has=false;
+       try{ has=Array.prototype.some.call(yVis.options||[], function(o){ return String(o.value)===String(yRaw); }); }catch(e){ has=false; }
+       if(!has){ try{ const o=document.createElement('option'); o.value=String(yRaw); o.textContent=String(yRaw); yVis.appendChild(o); }catch(e){} }
+       try{ yVis.value=String(yRaw); }catch(e){}
+     }
+     const ftEl=document.getElementById('filterTypeSelect');
+     if(ftEl) ftEl.value='quarter';
+   }catch(e){}
+ }
+ function getQuarterFilterState(){
+   const qEl=document.getElementById('quarterVal');
+   // Year source of truth is the visible dropdown; hidden #yearVal mirrors it for apply/payload.
+   const yVis=document.getElementById('dashYearSelect');
+   const yEl=document.getElementById('yearVal');
+   const q=(qEl && qEl.value) ? qEl.value : 'all';
+   const y=((yVis && yVis.value) ? yVis.value : ((yEl && yEl.value) ? yEl.value : String(new Date().getFullYear())));
+   const label=QUARTER_LABELS[q] ? (QUARTER_LABELS[q]+' '+y) : ('All Quarters (Q1-Q4) '+y);
+   const range=getQuarterDateRange(q, y);
+   return { quarter:q, year:String(y), label:label, dateFrom:range.from, dateTo:range.to };
+ }
+ function syncDashYear(){
+   const yVis=document.getElementById('dashYearSelect');
+   const yHid=document.getElementById('yearVal');
+   if(yVis && yHid && yVis.value) yHid.value=yVis.value;
+   try{ syncDashQuarterButtons(); }catch(e){}
+ }
+ function syncDashQuarterButtons(){
+   const st=getQuarterFilterState();
+   // keep hidden mirror in sync with the visible year dropdown
+   const yHid=document.getElementById('yearVal');
+   if(yHid && st.year) yHid.value=st.year;
+   const yVis=document.getElementById('dashYearSelect');
+   if(yVis && st.year && yVis.value !== st.year){
+     try{ yVis.value=st.year; }catch(e){}
+   }
+   document.querySelectorAll('#dashDatePopover .dash-q-btn').forEach(function(b){
+     const isActive = String(b.getAttribute('data-quarter')) === st.quarter;
+     b.classList.toggle('active', isActive);
+     b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+   });
+ }
+ function selectDashQuarter(q){
+   const hidden=document.getElementById('quarterVal');
+   if(hidden) hidden.value = QUARTER_LABELS[q] ? q : 'all';
+   syncDashQuarterButtons();
+ }
+ function hideDashDatePopover(){ const p=document.getElementById('dashDatePopover'); if(p) p.style.display='none'; }
+ function applyDashQuarter(){
+   const st=getQuarterFilterState();
+   const ft=document.getElementById('filterTypeSelect');
+   const yv=document.getElementById('yearVal');
+   if(yv) yv.value=st.year;
+   if(ft) ft.value='quarter';
+   toggleFilterTypeControls();
+   hideDashDatePopover();
+   applyFilters();
+ }
+
+ // Shared localStorage payload for follower tabs/pages (AI Assistant, Feedback, QR, Users, Settings)
+ function buildGlobalDateStorePayload(){
+   const ft=document.getElementById('filterTypeSelect')?.value||'overall';
+   let df=document.getElementById('dateFrom')?.value||'';
+   let dt=document.getElementById('dateTo')?.value||'';
+   const mv=document.getElementById('monthFilter')?.value||'';
+   const off=document.getElementById('officeFilter')?.value||document.getElementById('headerOfficeFilter')?.value||'all';
+   let badgeText=document.getElementById('dashDateBadgeText')?.textContent?.trim()||'';
+   let qv=''; let yv='';
+   if(ft==='quarter'){
+     const st=getQuarterFilterState();
+     qv=st.quarter; yv=st.year; df=st.dateFrom; dt=st.dateTo; badgeText=st.label;
+   } else if(ft==='range'&&df&&dt&&df===dt){ try{ badgeText=new Date(df).toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); }catch(e){ badgeText=df; } }
+   else if(ft==='range'&&(df||dt)){ badgeText=df&&dt?(df+' to '+dt):(df||dt); }
+   else if(ft==='month'&&mv){ try{ const p=mv.split('-'); const mn=['January','February','March','April','May','June','July','August','September','October','November','December']; badgeText=mn[parseInt(p[1])-1]+' '+p[0]; }catch(e){} }
+   return {filterType:ft,dateFrom:df,dateTo:dt,monthVal:mv,badgeText:badgeText,office:off,quarter:qv,year:yv,ts:Date.now()};
+ }
+
  function toggleFilterTypeControls() {
  const mode = document.getElementById('filterTypeSelect').value;
  document.getElementById('monthFilterGroup').style.display = mode === 'month' ? 'inline-flex' : 'none';
@@ -3325,7 +3462,16 @@ function toggleDeptRankings(){
  const filterType = document.getElementById('filterTypeSelect').value;
  params.set('filterType', filterType);
 
- if (filterType === 'month') {
+ if (filterType === 'quarter') {
+ const st = getQuarterFilterState();
+ params.set('quarter', st.quarter);
+ params.set('year', st.year);
+ // SAFETY NET: also send the concrete date range of the quarter. A server build that
+ // only understands 'range' still filters correctly (and shows the exact dates), while
+ // a server with quarter support uses the quarter branch and shows "1st Quarter 2026".
+ params.set('dateFrom', st.dateFrom);
+ params.set('dateTo', st.dateTo);
+ } else if (filterType === 'month') {
  const monthVal = document.getElementById('monthFilter').value;
  if (monthVal) params.set('month', monthVal);
  } else if (filterType === 'range') {
@@ -3337,17 +3483,7 @@ function toggleDeptRankings(){
 
   // persist for follower tabs/pages (AI Assistant, Feedback, QR, Users, Settings)
   try{
-    const _ft=document.getElementById('filterTypeSelect')?.value||'overall';
-    const _df=document.getElementById('dateFrom')?.value||'';
-    const _dt=document.getElementById('dateTo')?.value||'';
-    const _mv=document.getElementById('monthFilter')?.value||'';
-    const _off=document.getElementById('officeFilter')?.value||document.getElementById('headerOfficeFilter')?.value||'all';
-    const _bt=document.getElementById('dashDateBadgeText')?.textContent?.trim()||'';
-    let _badgeForStore=_bt;
-    if(_ft==='range'&&_df&&_dt&&_df===_dt){ try{ _badgeForStore=new Date(_df).toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); }catch(e){ _badgeForStore=_df; } }
-    else if(_ft==='range'&&( _df||_dt)){ _badgeForStore=_df&&_dt?(_df+' to '+_dt):(_df||_dt); }
-    else if(_ft==='month'&&_mv){ try{ const p=_mv.split('-'); const mn=['January','February','March','April','May','June','July','August','September','October','November','December']; _badgeForStore=mn[parseInt(p[1])-1]+' '+p[0]; }catch(e){} }
-    const _payload={filterType:_ft,dateFrom:_df,dateTo:_dt,monthVal:_mv,badgeText:_badgeForStore,office:_off,ts:Date.now()};
+    const _payload=buildGlobalDateStorePayload();
     try{ localStorage.setItem('psau_global_dateFilter', JSON.stringify(_payload)); }catch(e){}
   }catch(e){}
   showGlobalTimer('Applying filters...', '');
@@ -3366,10 +3502,12 @@ function toggleDeptRankings(){
         const dt=document.getElementById('dateTo')?.value||'';
         const bt=document.getElementById('dashDateBadgeText')?.textContent?.trim()||'';
         if(ft==='range'&&df&&dt&&df===dt){ const d=new Date(df); if(!isNaN(d.getTime())) return d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); }
+        if(ft==='quarter'){ return bt||null; }
         if((ft==='range'&&(df||dt))||ft==='month'){ return bt||null; }
       }catch(e){}
       return null;
     }
+    if(gf.filterType==='quarter'&&gf.badgeText) return gf.badgeText;
     if(gf.filterType==='range'&&gf.dateFrom&&gf.dateTo&&gf.dateFrom===gf.dateTo){
       try{ const d=new Date(gf.dateFrom); if(!isNaN(d.getTime())) return d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); }catch(e){}
       return gf.dateFrom;
@@ -3390,13 +3528,8 @@ function toggleDeptRankings(){
   }
   function syncGlobalDateFromUrlToStorage(){
     try{
-      const ft=document.getElementById('filterTypeSelect')?.value||'overall';
-      const df=document.getElementById('dateFrom')?.value||'';
-      const dt=document.getElementById('dateTo')?.value||'';
-      const mv=document.getElementById('monthFilter')?.value||'';
-      const bt=document.getElementById('dashDateBadgeText')?.textContent?.trim()||'';
-      const off=document.getElementById('officeFilter')?.value||document.getElementById('headerOfficeFilter')?.value||'all';
-      const payload={filterType:ft,dateFrom:df,dateTo:dt,monthVal:mv,badgeText:bt,office:off,ts:Date.now()};
+      // Single source of truth — includes quarter/year when the quarter filter is active
+      const payload=buildGlobalDateStorePayload();
       localStorage.setItem('psau_global_dateFilter', JSON.stringify(payload));
     }catch(e){}
   }
@@ -3407,20 +3540,24 @@ function toggleDeptRankings(){
       if(!gf || gf.filterType==='overall') return;
       let dateStr='';
       let year=null; let quarter=null;
-      if(gf.filterType==='range' && gf.dateFrom){
+      if(gf.filterType==='quarter' && gf.year){
+        // Quarter filter — pass the exact quarter straight through ("all" = whole year, no quarter param)
+        year=parseInt(gf.year,10) || null;
+        quarter=(gf.quarter && String(gf.quarter).toLowerCase()!=='all') ? String(gf.quarter).toUpperCase() : null;
+      } else if(gf.filterType==='range' && gf.dateFrom){
         dateStr=gf.dateFrom;
         const d=new Date(gf.dateFrom);
         if(!isNaN(d.getTime())){ year=d.getFullYear(); quarter=getQuarterFromMonth(d.getMonth()); }
       } else if(gf.filterType==='month' && gf.monthVal){
         const p=gf.monthVal.split('-'); year=parseInt(p[0]); const m=parseInt(p[1])-1; quarter=getQuarterFromMonth(m); dateStr=gf.monthVal+'-01';
       }
-      if(!year||!quarter) return;
+      if(!year) return;
       const base='/admin/quarterly-reports';
       document.querySelectorAll('a[href="/admin/quarterly-reports"], a.side-link[href="/admin/quarterly-reports"], a.dash-tab-btn[href="/admin/quarterly-reports"]').forEach(function(a){
         try{
           const u=new URL(a.getAttribute('href'), window.location.origin);
           if(!u.searchParams.has('year')) u.searchParams.set('year', year);
-          if(!u.searchParams.has('quarter')) u.searchParams.set('quarter', quarter);
+          if(quarter && !u.searchParams.has('quarter')) u.searchParams.set('quarter', quarter);
           if(dateStr && !u.searchParams.has('date')) u.searchParams.set('date', dateStr);
           a.setAttribute('href', u.pathname + '?' + u.searchParams.toString());
           // also intercept click to ensure params fresh
@@ -3429,9 +3566,10 @@ function toggleDeptRankings(){
               const cur=loadGlobalDateFilter();
               if(!cur || cur.filterType==='overall') return;
               let ds=''; let yr=null; let qr=null;
-              if(cur.filterType==='range' && cur.dateFrom){ ds=cur.dateFrom; const dd=new Date(cur.dateFrom); if(!isNaN(dd.getTime())){ yr=dd.getFullYear(); qr=getQuarterFromMonth(dd.getMonth()); } }
+              if(cur.filterType==='quarter' && cur.year){ yr=parseInt(cur.year,10)||null; qr=(cur.quarter && String(cur.quarter).toLowerCase()!=='all') ? String(cur.quarter).toUpperCase() : null; }
+              else if(cur.filterType==='range' && cur.dateFrom){ ds=cur.dateFrom; const dd=new Date(cur.dateFrom); if(!isNaN(dd.getTime())){ yr=dd.getFullYear(); qr=getQuarterFromMonth(dd.getMonth()); } }
               else if(cur.filterType==='month' && cur.monthVal){ const pp=cur.monthVal.split('-'); yr=parseInt(pp[0]); qr=getQuarterFromMonth(parseInt(pp[1])-1); ds=cur.monthVal+'-01'; }
-              if(yr&&qr){ e.preventDefault(); const nu=new URL('/admin/quarterly-reports', window.location.origin); nu.searchParams.set('year',yr); nu.searchParams.set('quarter',qr); if(ds) nu.searchParams.set('date',ds); if(cur.office&&cur.office!=='all') nu.searchParams.set('office',cur.office); window.location.href=nu.toString(); }
+              if(yr){ e.preventDefault(); const nu=new URL('/admin/quarterly-reports', window.location.origin); nu.searchParams.set('year',yr); if(qr) nu.searchParams.set('quarter',qr); if(ds) nu.searchParams.set('date',ds); if(cur.office&&cur.office!=='all') nu.searchParams.set('office',cur.office); window.location.href=nu.toString(); }
             }catch(err){}
           }, {once:true});
         }catch(e){}
@@ -3453,12 +3591,11 @@ function toggleDeptRankings(){
  if(from){ ft.value='range'; toggleFilterTypeControls(); if(df) df.value=fmt(from); if(dt) dt.value=fmt(to); setTimeout(()=> applyFilters(), 80); }
  }
 
- // ========== CLICKABLE DATE BADGE — admin & employee, any previous date/year/day ==========
- // Secure: validates YYYY-MM-DD via regex + Date check, sanitizes before navigation. Same stack: vanilla JS + existing filter infra.
+ // ========== QUARTER + YEAR FILTER POPOVER — admin & employee (no calendar) ==========
+ // Values are normalized server-side (Q1-Q4 + "all" = whole year). Same stack: vanilla JS + existing filter infra.
   function toggleDashDatePicker(){
     const pop=document.getElementById('dashDatePopover');
     const badge=document.getElementById('dashDateBadge');
-    const inp=document.getElementById('dashDatePickerInput');
     if(!pop || !badge) return;
     const isHidden = pop.style.display==='none' || !pop.style.display || getComputedStyle(pop).display==='none';
     if(isHidden){
@@ -3505,54 +3642,25 @@ function toggleDeptRankings(){
           pop.style.right='auto';
         }
       });
-      if(inp){
-        const df=document.getElementById('dateFrom')?.value;
-        const dt=document.getElementById('dateTo')?.value;
-        if(df && dt && df===dt) inp.value=df;
-        else if(df) inp.value=df;
-        else try{ inp.valueAsDate = new Date(); }catch(e){ inp.value=new Date().toISOString().split('T')[0]; }
-        setTimeout(function(){ try{inp.focus(); if(inp.showPicker) inp.showPicker(); }catch(e){} }, 30);
-      }
+      // reflect the active quarter button + year when the popover opens
+      syncDashQuarterButtons();
     } else {
       pop.style.display='none';
     }
   }
   window.addEventListener('resize', function(){ const p=document.getElementById('dashDatePopover'); if(p && getComputedStyle(p).display!=='none') p.style.display='none'; });
   window.addEventListener('scroll', function(){ const p=document.getElementById('dashDatePopover'); if(p && getComputedStyle(p).display!=='none') p.style.display='none'; }, true);
- function isValidYMD(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime()); }
- function shiftDashDate(dir){
-   const inp=document.getElementById('dashDatePickerInput');
-   if(!inp || !inp.value) { const t=new Date(); t.setDate(t.getDate()+dir); inp.value=t.toISOString().split('T')[0]; return; }
-   if(!isValidYMD(inp.value)) return;
-   const d=new Date(inp.value); d.setDate(d.getDate()+dir);
-   const iso=d.toISOString().split('T')[0];
-   if(isValidYMD(iso)) inp.value=iso;
- }
- function applyDashDate(){
-   const inp=document.getElementById('dashDatePickerInput');
-   const v = inp ? String(inp.value||'').trim() : '';
-   if(!v){ clearDashDate(); return; }
-   if(!isValidYMD(v)){ alert('Please pick a valid date (YYYY-MM-DD).'); return; }
-   // Use existing range infra: single-day range = specific day filter (server validates)
-   const ft=document.getElementById('filterTypeSelect');
-   const df=document.getElementById('dateFrom');
-   const dt=document.getElementById('dateTo');
-   if(ft) ft.value='range';
-   toggleFilterTypeControls();
-   if(df) df.value=v;
-   if(dt) dt.value=v;
-   document.getElementById('dashDatePopover').style.display='none';
-   applyFilters();
- }
  function clearDashDate(){
-   const pop=document.getElementById('dashDatePopover');
-   if(pop) pop.style.display='none';
+   hideDashDatePopover();
    const ft=document.getElementById('filterTypeSelect');
    const df=document.getElementById('dateFrom');
    const dt=document.getElementById('dateTo');
+   const qv=document.getElementById('quarterVal');
    if(ft) ft.value='overall';
    toggleFilterTypeControls();
    if(df) df.value=''; if(dt) dt.value='';
+   if(qv) qv.value='all';
+   syncDashQuarterButtons();
    applyFilters();
  }
  // close popover on outside click / Esc
@@ -3563,9 +3671,7 @@ function toggleDeptRankings(){
    if(pop.contains(e.target) || (badge && badge.contains(e.target))) return;
    pop.style.display='none';
  });
- document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ const pop=document.getElementById('dashDatePopover'); if(pop) pop.style.display='none'; }});
- // auto-submit on native picker change (Enter also)
- document.addEventListener('change', function(e){ if(e.target && e.target.id==='dashDatePickerInput'){ /* no auto-apply — wait for Apply click to allow prev/next */ }});
+ document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ hideDashDatePopover(); }});
 
  // Header office filter (visible before date) syncs with hidden #officeFilter for secure filtering
  function syncHeaderOfficeFilter(){
@@ -3583,6 +3689,8 @@ function toggleDeptRankings(){
  }
   document.addEventListener('DOMContentLoaded', function(){
     syncOfficeFiltersOnLoad();
+    try{ healQuarterStateFromUrl(); }catch(e){}
+    try{ syncDashQuarterButtons(); }catch(e){}
     try{ syncGlobalDateFromUrlToStorage(); }catch(e){}
     try{ updateAllGlobalDateContexts(); }catch(e){}
     try{ updateQuarterlyNavLinks(); }catch(e){}
@@ -3660,18 +3768,17 @@ function toggleDeptRankings(){
  }
 
  function setModalFilterMode(mode) {
+ // REPORT MODAL (quarter + year only, no calendar): Overall / Quarter only.
+ // Any legacy mode coming from the dashboard state falls back to Quarter.
+ if (mode !== 'overall' && mode !== 'quarter') mode = 'quarter';
  currentModalMode = mode;
  const bOverall = document.getElementById('modalBtnOverall');
- const bMonth = document.getElementById('modalBtnMonth');
- const bRange = document.getElementById('modalBtnRange');
+ const bQuarter = document.getElementById('modalBtnQuarter');
  if (bOverall) bOverall.classList.toggle('active', mode === 'overall');
- if (bMonth) bMonth.classList.toggle('active', mode === 'month');
- if (bRange) bRange.classList.toggle('active', mode === 'range');
+ if (bQuarter) bQuarter.classList.toggle('active', mode === 'quarter');
 
- const mGroup = document.getElementById('modalMonthGroup');
- const rGroup = document.getElementById('modalRangeGroup');
- if (mGroup) mGroup.style.display = mode === 'month' ? 'block' : 'none';
- if (rGroup) rGroup.style.display = mode === 'range' ? 'block' : 'none';
+ const qGroup = document.getElementById('modalQuarterGroup');
+ if (qGroup) qGroup.style.display = mode === 'quarter' ? 'block' : 'none';
  }
 
    function buildReportParams() {
@@ -3689,15 +3796,20 @@ function toggleDeptRankings(){
 
   params.set('filterType', currentModalMode);
 
-  if (currentModalMode === 'month') {
-  const monthInput = document.getElementById('modalMonthInput');
-  if (monthInput && monthInput.value) params.set('month', monthInput.value);
-  } else if (currentModalMode === 'range') {
-  const dFrom = document.getElementById('modalDateFrom');
-  const dTo = document.getElementById('modalDateTo');
-  if (dFrom && dFrom.value) params.set('dateFrom', dFrom.value);
-  if (dTo && dTo.value) params.set('dateTo', dTo.value);
+  if (currentModalMode === 'quarter') {
+  const qSel = document.getElementById('modalQuarterSelect');
+  const ySel = document.getElementById('modalQuarterYear');
+  const q = qSel && qSel.value ? qSel.value : 'all';
+  const y = ySel && ySel.value ? ySel.value : String(new Date().getFullYear());
+  params.set('quarter', q);
+  params.set('year', y);
+  // Same safety net as applyFilters(): send the concrete range too, so the report is
+  // quarter-scoped even on a server build that only knows 'range'.
+  const qRange = getQuarterDateRange(q, y);
+  params.set('dateFrom', qRange.from);
+  params.set('dateTo', qRange.to);
   }
+  // REPORT DATE (quarter + year only, no calendar): overall passes no date params.
   // Note: signatories are NOT passed here — they come from Settings → Report Signatories (server-persisted)
   return params;
   }
@@ -4361,6 +4473,13 @@ function toggleDeptRankings(){
  currentModalFeedbackId = null;
  }
 
+ // Print the respondent's ORIGINAL filled Customer Feedback Form (paper form look, filled answers).
+ // Opens a dedicated printable page rendered by the server route /admin/feedback/print/:id
+ function printCurrentModalFeedback() {
+ if (!currentModalFeedbackId) return;
+ window.open('/admin/feedback/print/' + encodeURIComponent(currentModalFeedbackId), '_blank', 'noopener');
+ }
+
  function confirmSingleDelete(e, id, name) {
  if (e) e.stopPropagation();
  deleteTargetIds = [id];
@@ -4560,17 +4679,44 @@ function toggleDeptRankings(){
  <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary, #1e2233); display: block; margin-bottom: 0.5rem;">
  1. Select Reporting Timeframe Filter:
  </label>
- <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;">
- <button type="button" class="btn-mode-tab active" id="modalBtnOverall" onclick="setModalFilterMode('overall')">
+ <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+ <button type="button" class="btn-mode-tab<%= (typeof filterType !== 'undefined' && filterType === 'overall') || typeof filterType === 'undefined' ? ' active' : '' %>" id="modalBtnOverall" onclick="setModalFilterMode('overall')">
  Overall Total
  </button>
- <button type="button" class="btn-mode-tab" id="modalBtnMonth" onclick="setModalFilterMode('month')">
- Specific Month
- </button>
- <button type="button" class="btn-mode-tab" id="modalBtnRange" onclick="setModalFilterMode('range')">
- Date Range
+ <button type="button" class="btn-mode-tab<%= (typeof filterType !== 'undefined' && filterType === 'quarter') ? ' active' : '' %>" id="modalBtnQuarter" onclick="setModalFilterMode('quarter')">
+ Quarter &amp; Year
  </button>
  </div>
+ </div>
+
+ <% // Same year list as the dashboard popover: server years, else current + previous 5 (selected year always kept)
+ var _mqSelYear = (typeof selectedYear !== 'undefined' && selectedYear) ? selectedYear : new Date().getFullYear();
+ var _mqSelQ = (typeof quarterVal !== 'undefined' && quarterVal) ? quarterVal : 'all';
+ var _mqYears = (typeof availableYears !== 'undefined' && availableYears && availableYears.length) ? availableYears.slice() : ((typeof _qYearFallback !== 'undefined' && _qYearFallback) ? _qYearFallback.slice() : [new Date().getFullYear()]);
+ if(_mqYears.indexOf(_mqSelYear) === -1) _mqYears.push(_mqSelYear);
+ _mqYears.sort(function(a,b){ return b-a; }); %>
+ <div id="modalQuarterGroup" style="display: none; background: var(--card-bg, #f8fafc); padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color, #e2e8f0);">
+ <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+ <div>
+ <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary, #475569); display: block; margin-bottom: 0.35rem;">Quarter:</label>
+ <select id="modalQuarterSelect" class="filter-select" style="width: 100%; padding: 0.6rem; font-size: 0.85rem;">
+ <option value="Q1"<%= _mqSelQ === 'Q1' ? ' selected' : '' %>>1st Quarter (Jan - Mar)</option>
+ <option value="Q2"<%= _mqSelQ === 'Q2' ? ' selected' : '' %>>2nd Quarter (Apr - Jun)</option>
+ <option value="Q3"<%= _mqSelQ === 'Q3' ? ' selected' : '' %>>3rd Quarter (Jul - Sep)</option>
+ <option value="Q4"<%= _mqSelQ === 'Q4' ? ' selected' : '' %>>4th Quarter (Oct - Dec)</option>
+ <option value="all"<%= _mqSelQ === 'all' ? ' selected' : '' %>>All (1st - 4th Quarter)</option>
+ </select>
+ </div>
+ <div>
+ <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary, #475569); display: block; margin-bottom: 0.35rem;">Year:</label>
+ <select id="modalQuarterYear" class="filter-select" style="width: 100%; padding: 0.6rem; font-size: 0.85rem;">
+ <% _mqYears.forEach(function(y){ %>
+ <option value="<%= y %>"<%= _mqSelYear === y ? ' selected' : '' %>><%= y %></option>
+ <% }); %>
+ </select>
+ </div>
+ </div>
+ <div style="font-size: 0.72rem; color: #64748b; margin-top: 0.5rem;">All covers the whole year (Jan 1 - Dec 31) of the selected year.</div>
  </div>
 
  <div id="modalMonthGroup" style="display: none; background: var(--card-bg, #f8fafc); padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color, #e2e8f0);">

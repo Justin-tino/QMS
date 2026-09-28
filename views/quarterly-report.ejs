@@ -374,7 +374,12 @@
     .dash-header { position: relative !important; z-index: 40 !important; overflow: visible !important; }
     .dash-header-right { position: relative !important; z-index: 50 !important; overflow: visible !important; }
     #quarterDatePopover { z-index: 1000 !important; }
-    #quarterDatePickerInput, #dashDatePickerInput { box-sizing: border-box !important; }
+    /* QUARTER + YEAR picker (same pattern as the dashboard filter — no calendar / day picker) */
+    #quarterYearSelect { width:100%; padding:0.45rem 0.5rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.82rem; font-weight:600; color:#334155; background:#fff; cursor:pointer; box-sizing:border-box !important; }
+    #quarterYearSelect:focus { outline:none; border-color:#1b5e20; box-shadow:0 0 0 2px rgba(27,94,32,0.15); }
+    .dash-q-btn { padding:0.45rem 0.5rem; border:1px solid #e2e8f0; background:#f8fafc; border-radius:8px; font-size:0.72rem; font-weight:700; color:#334155; cursor:pointer; font-family:inherit; line-height:1.2; transition:all 0.15s ease; }
+    .dash-q-btn:hover { background:#e8f5e9; border-color:#a5d6a7; color:#1b5e20; }
+    .dash-q-btn.active { background:#1b5e20; border-color:#1b5e20; color:#fff; box-shadow:0 2px 6px rgba(27,94,32,0.25); }
     .admin-shell { overflow: visible; }
     .glass { position: relative; z-index: 1; }
     @media (max-width: 560px) {
@@ -461,42 +466,47 @@
                 <% }); %>
                   <% } %>
           </select>
-          <div id="quarterDateBadge" class="dash-date-badge" title="Date follows Dashboard" style="display:none; cursor:default; border:1px solid #e2e8f0; background:#f8fafc; border-radius:20px; padding:0.35rem 0.7rem; font-size:0.78rem; font-weight:600; align-items:center; gap:0.35rem; color:#334155;">
-            <i class="fas fa-calendar" style="color:#1b5e20;"></i> <span id="quarterDateBadgeText"><%= (function(){ try{ if(typeof selectedQuarterDate!=='undefined'&&selectedQuarterDate){ var d=new Date(selectedQuarterDate); if(!isNaN(d.getTime())) return d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); } return new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); }catch(e){ return new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); } })() %></span>
-          </div>
-          <span id="quarterDateMirrorHint" style="display:none; font-size:0.68rem; color:#64748b; font-weight:600; align-items:center; gap:0.3rem; white-space:nowrap;">
-            <i class="fas fa-link" style="font-size:0.62rem;"></i> Mirrored from Dashboard <a href="/admin/dashboard" style="color:#1b5e20; text-decoration:underline; margin-left:0.25rem;">Change</a>
-          </span>
+          <button type="button" id="quarterDateBadge" class="dash-date-badge" onclick="toggleQuarterPicker()" title="Click to filter by quarter & year — admin & employee" style="cursor:pointer; border:1px solid #e2e8f0; background:#fff; border-radius:20px; padding:0.35rem 0.7rem; font-size:0.78rem; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; color:#334155;">
+            <i class="fas fa-calendar" style="color:#1b5e20;"></i> <span id="quarterDateBadgeText"><%= (function(){ try{ var q=String(typeof activeQuarter!=='undefined' && activeQuarter ? activeQuarter : 'Q1').toUpperCase(); var n=parseInt(q.replace(/[^1-4]/g,''),10); if(!n) n=1; var y=(typeof selectedYear!=='undefined' && selectedYear) ? selectedYear : new Date().getFullYear(); var sfx=(n===1?'st':n===2?'nd':n===3?'rd':'th'); return n+sfx+' Quarter '+y; }catch(e){ return 'Current Quarter'; } })() %></span>
+          </button>
+          <button type="button" id="quarterDateMirrorHint" onclick="applyDashboardQuarterHere()" title="Apply the quarter filter currently set on the Dashboard to this page" style="display:none; cursor:pointer; border:1px solid #bbf7d0; background:#f0fdf4; border-radius:20px; padding:0.32rem 0.7rem; font-size:0.68rem; color:#15803d; font-weight:700; align-items:center; gap:0.3rem; white-space:nowrap; font-family:inherit;">
+            <i class="fas fa-link" style="font-size:0.62rem;"></i> Dashboard: <span id="quarterDateMirrorLabel">—</span> <span style="text-decoration:underline;">Apply</span>
+          </button>
           <div id="quarterDatePopover"
             style="display:none; position:absolute; top:calc(100% + 0.5rem); right:0; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:0.9rem; box-shadow:0 12px 24px rgba(15,23,42,0.18); z-index:1000; min-width:268px; max-width:min(92vw,320px);">
-            <label for="quarterDatePickerInput"
-              style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Jump
-              to specific day / year</label>
-            <input type="date" id="quarterDatePickerInput"
-              style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem;">
-            <div style="display:flex; gap:0.4rem; margin-top:0.6rem;">
-              <button type="button" onclick="shiftQuarterDate(-1)"
-                style="flex:1; padding:0.4rem; border:1px solid #e2e8f0; background:#f8fafc; border-radius:7px; font-size:0.7rem; font-weight:600; cursor:pointer;">←
-                Prev day</button>
-              <button type="button" onclick="shiftQuarterDate(1)"
-                style="flex:1; padding:0.4rem; border:1px solid #e2e8f0; background:#f8fafc; border-radius:7px; font-size:0.7rem; font-weight:600; cursor:pointer;">Next
-                day →</button>
+            <div style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:0.45rem;">Filter by quarter</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.4rem;">
+              <button type="button" class="dash-q-btn" data-quarter="Q1" onclick="selectQuarterPicker('Q1')">1st Quarter<br><span style="font-size:0.62rem; font-weight:600; opacity:0.8;">Jan - Mar</span></button>
+              <button type="button" class="dash-q-btn" data-quarter="Q2" onclick="selectQuarterPicker('Q2')">2nd Quarter<br><span style="font-size:0.62rem; font-weight:600; opacity:0.8;">Apr - Jun</span></button>
+              <button type="button" class="dash-q-btn" data-quarter="Q3" onclick="selectQuarterPicker('Q3')">3rd Quarter<br><span style="font-size:0.62rem; font-weight:600; opacity:0.8;">Jul - Sep</span></button>
+              <button type="button" class="dash-q-btn" data-quarter="Q4" onclick="selectQuarterPicker('Q4')">4th Quarter<br><span style="font-size:0.62rem; font-weight:600; opacity:0.8;">Oct - Dec</span></button>
             </div>
-            <div style="display:flex; gap:0.4rem; margin-top:0.4rem;">
-              <button type="button" onclick="applyQuarterDate()"
-                style="flex:1; background:#1b5e20; color:#fff; border:none; padding:0.5rem; border-radius:7px; font-weight:700; font-size:0.78rem; cursor:pointer;">Apply
-                to quarterly</button>
-              <button type="button" onclick="clearQuarterDate()"
+            <button type="button" class="dash-q-btn" data-quarter="all" onclick="selectQuarterPicker('all')" style="width:100%; margin-top:0.4rem; text-align:center;">All (1st - 4th Quarter) — Whole Year</button>
+            <div style="margin-top:0.7rem;">
+              <label for="quarterYearSelect"
+                style="font-size:0.7rem; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:0.35rem;">Year</label>
+              <% var _qYearFallback = (function(){ var a=[]; var cy=new Date().getFullYear(); for(var i=0;i<6;i++) a.push(cy-i); return a; })();
+                 var _qYears = (typeof availableYears !== 'undefined' && availableYears && availableYears.length) ? availableYears.slice() : _qYearFallback.slice();
+                 var _qSelYear = (typeof selectedYear !== 'undefined' && selectedYear) ? selectedYear : new Date().getFullYear();
+                 if (_qYears.indexOf(_qSelYear) === -1) _qYears.push(_qSelYear);
+                 _qYears.sort(function(a,b){ return b-a; }); %>
+              <select id="quarterYearSelect" onchange="syncQuarterPickerYear()">
+                <% _qYears.forEach(function(y){ %>
+                <option value="<%= y %>"<%= String(_qSelYear) === String(y) ? ' selected' : '' %>><%= y %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div style="display:flex; gap:0.4rem; margin-top:0.7rem;">
+              <button type="button" onclick="applyQuarterPicker()"
+                style="flex:1; background:#1b5e20; color:#fff; border:none; padding:0.5rem; border-radius:7px; font-weight:700; font-size:0.78rem; cursor:pointer;">Apply to AI Assistant</button>
+              <button type="button" onclick="clearQuarterPicker()"
                 style="padding:0.5rem 0.7rem; background:#fff; border:1px solid #e2e8f0; border-radius:7px; font-size:0.78rem; cursor:pointer;">Clear</button>
             </div>
-            <div style="font-size:0.65rem; color:#94a3b8; margin-top:0.5rem; text-align:center;">Admin & employee —
-              jumps to year/quarter of chosen date</div>
+            <div style="font-size:0.65rem; color:#94a3b8; margin-top:0.5rem; text-align:center; line-height:1.45;">Admin &amp; employee — filters this AI Assistant page by quarter</div>
           </div>
-          <!-- Report-specific date (AI Assistant only, does not affect Dashboard filter) -->
-          <div style="display:flex; align-items:center; gap:0.35rem; background:#fff; border:1px solid #e2e8f0; border-radius:20px; padding:0.22rem 0.55rem 0.22rem 0.7rem;">
-            <label for="aiReportDate" style="font-size:0.68rem; font-weight:700; color:#475569; white-space:nowrap; cursor:pointer;"><i class="fas fa-calendar" style="color:#1b5e20; margin-right:0.2rem;"></i>Report date:</label>
-            <input type="date" id="aiReportDate" style="border:none; background:transparent; font-size:0.78rem; font-weight:600; color:#0f172a; outline:none; padding:0.15rem 0; cursor:pointer;">
-          </div>
+          <!-- Generate Report follows the quarter + year selected above (badge / popover) — no separate date control -->
+          <input type="hidden" id="quarterVal" value="<%= typeof activeQuarter !== 'undefined' && activeQuarter ? activeQuarter : 'Q1' %>">
+          <input type="hidden" id="yearVal" value="<%= typeof selectedYear !== 'undefined' && selectedYear ? selectedYear : new Date().getFullYear() %>">
           <a id="btnGenerateReport" href="/admin/report?filterType=range&office=<%= typeof selectedOffice !== 'undefined' ? encodeURIComponent(selectedOffice) : 'all' %>&dateFrom=<%= activeQuarter==='Q1' ? selectedYear+'-01-01' : activeQuarter==='Q2' ? selectedYear+'-04-01' : activeQuarter==='Q3' ? selectedYear+'-07-01' : selectedYear+'-10-01' %>&dateTo=<%= activeQuarter==='Q1' ? selectedYear+'-03-31' : activeQuarter==='Q2' ? selectedYear+'-06-30' : activeQuarter==='Q3' ? selectedYear+'-09-30' : selectedYear+'-12-31' %>"
             target="_blank" class="btn-submit"
             style="padding:0.5rem 0.9rem; font-size:0.78rem; border-radius:8px; background:#0f172a; color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:0.35rem; white-space:nowrap;"><i
@@ -694,130 +704,156 @@
       var sel = document.querySelector('select[onchange*="quarterly-reports"]');
       if (sel) sel.addEventListener('change', function () { showGlobalTimer('Loading year...', ''); });
     });
-    // Dashboard is sole writer — this picker is now read-only and mirrors Dashboard
-    function toggleQuarterDatePicker() {
-      var txt=null; try{ var r=localStorage.getItem('psau_global_dateFilter'); if(r){ var gf=JSON.parse(r); if(gf.filterType==='range'&&gf.dateFrom&&gf.dateTo&&gf.dateFrom===gf.dateTo){ var d=new Date(gf.dateFrom); if(!isNaN(d.getTime())) txt=d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); else txt=gf.dateFrom; } else if(gf.badgeText) txt=gf.badgeText; } }catch(e){}
-      var msg=txt ? ('Filtered date: '+txt+' (from Dashboard). Go to Dashboard to change.') : 'No date filter — Overall (All Time). Set date on Dashboard.';
-      // use app dialog if available
-      if(typeof psauAlert==='function'){ try{ psauAlert({title:'Date follows Dashboard', message:msg, variant:'info'}); return; }catch(e){} }
-      // fallback to unified dialog
-      var ov=document.getElementById('psauDialog');
-      if(ov && document.getElementById('psauDialogConfirm')){
-        try{
-          document.getElementById('psauDialogTitle').textContent='Date follows Dashboard';
-          document.getElementById('psauDialogMessage').textContent=msg;
-          document.getElementById('psauDialogCancel').textContent='OK';
-          document.getElementById('psauDialogConfirm').textContent='Go to Dashboard';
-          ov.style.display='flex'; ov.classList.add('open'); document.body.style.overflow='hidden';
-          var c=document.getElementById('psauDialogConfirm'), x=document.getElementById('psauDialogCancel');
-          var close=function(go){ ov.style.display='none'; ov.classList.remove('open'); document.body.style.overflow=''; c.onclick=null; x.onclick=null; ov.onclick=null; if(go) window.location.href='/admin/dashboard'; };
-          c.onclick=function(){ close(true); }; x.onclick=function(){ close(false); }; ov.onclick=function(ev){ if(ev.target===ov) close(false); };
-          return;
-        }catch(e){}
-      }
-      alert(msg);
+    // NOTE: the old day-picker dialog ("Date follows Dashboard") and the single-day mirror were
+    // replaced by the Quarter + Year picker (see quarterPickerInit below) — quarters only, no calendar.
+    // ===== QUARTER + YEAR — one control for the AI Assistant filter and the Generate Report link =====
+    // Same pattern as the fixed dashboard filter: quarter buttons + a year dropdown, no calendar / day picker.
+    var QRTERM_LABELS = { Q1: '1st Quarter', Q2: '2nd Quarter', Q3: '3rd Quarter', Q4: '4th Quarter', all: 'All Quarters (Q1-Q4)' };
+    var _qMirrorState = null; // dashboard filter mirrored from localStorage (surfaced by the "Dashboard: … Apply" chip)
+    function getQuarterRangeQ(q, y) {
+      var year = parseInt(y, 10) || new Date().getFullYear();
+      var map = {
+        Q1: [year + '-01-01', year + '-03-31'],
+        Q2: [year + '-04-01', year + '-06-30'],
+        Q3: [year + '-07-01', year + '-09-30'],
+        Q4: [year + '-10-01', year + '-12-31'],
+        all: [year + '-01-01', year + '-12-31']
+      };
+      var r = map[String(q || '').toUpperCase()] || map.all;
+      return { from: r[0], to: r[1] };
     }
-    // Auto-mirror Dashboard date on load if no explicit ?date in URL (hidden badge)
-    (function(){
-      try{
-        var url=new URL(window.location.href);
-        if(url.searchParams.has('date')) return;
-        var raw=localStorage.getItem('psau_global_dateFilter');
-        if(!raw) return;
-        var gf=JSON.parse(raw);
-        var dateStr='';
-        if(gf && gf.filterType==='range' && gf.dateFrom && gf.dateTo && gf.dateFrom===gf.dateTo) dateStr=gf.dateFrom;
-        else if(gf && gf.dateFrom) dateStr=gf.dateFrom;
-        if(!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
-        var d=new Date(dateStr); if(isNaN(d.getTime())) return;
-        var badge=document.getElementById('quarterDateBadgeText');
-        if(badge){ badge.textContent=d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}); badge.title='Filtered date: '+badge.textContent+' (from Dashboard)'; }
-        var br=document.getElementById('quarterDateBadge');
-        if(br) br.title='Date follows Dashboard: '+d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})+' — change on Dashboard';
-      }catch(e){}
-    })();
-    // Report-specific date for Generate Report (AI Assistant only, independent from Dashboard global filter)
-    (function(){
-      var inp=document.getElementById('aiReportDate');
-      var btn=document.getElementById('btnGenerateReport');
-      var officeSel=document.getElementById('quarterOfficeFilter');
-      if(!inp||!btn) return;
-      function getDefaultReportDate(){
-        var serverDate='<%= typeof selectedQuarterDate !== "undefined" ? selectedQuarterDate : "" %>';
-        if(serverDate && /^\d{4}-\d{2}-\d{2}$/.test(serverDate)) return serverDate;
-        try{
-          var raw=localStorage.getItem('psau_global_dateFilter');
-          if(raw){
-            var gf=JSON.parse(raw);
-            if(gf.filterType==='range' && gf.dateFrom && /^\d{4}-\d{2}-\d{2}$/.test(gf.dateFrom)) return gf.dateFrom;
-            if(gf.dateFrom && /^\d{4}-\d{2}-\d{2}$/.test(gf.dateFrom)) return gf.dateFrom;
-          }
-        }catch(e){}
-        return new Date().toISOString().split('T')[0];
-      }
-      function updateGenerateReportLink(){
-        var v=inp.value;
-        if(!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
-        var office=officeSel ? officeSel.value : '<%= typeof selectedOffice !== "undefined" ? selectedOffice : "all" %>';
-        // QUARTERLY RANGE FIX: a report date selects the WHOLE quarter up to that
-        // day (quarter start → report date), not just the single day. Previously
-        // dateFrom=dateTo=report date, so only feedback submitted on that exact
-        // day appeared (e.g. Total Respondents: 1) while the rest of the quarter
-        // was silently excluded.
-        var p=v.split('-');
-        var d=new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10));
-        if(isNaN(d.getTime())) return;
-        var qStartMonth=[0,3,6,9][Math.floor(d.getMonth()/3)];
-        var qStart=new Date(d.getFullYear(), qStartMonth, 1);
-        function pad2(n){ n=String(n); return n.length<2 ? '0'+n : n; }
-        var from=qStart.getFullYear()+'-'+pad2(qStart.getMonth()+1)+'-01';
-        var params=new URLSearchParams();
-        params.set('filterType','range');
-        params.set('office', office||'all');
-        params.set('dateFrom', from);
-        params.set('dateTo', v);
-        btn.href='/admin/report?' + params.toString();
-        try{
-          var opts={year:'numeric',month:'long',day:'numeric'};
-          btn.title='Generate quarterly report for '+qStart.toLocaleDateString('en-PH',opts)+' to '+d.toLocaleDateString('en-PH',opts);
-        }catch(e){}
-      }
-      inp.value=getDefaultReportDate();
-      updateGenerateReportLink();
-      inp.addEventListener('change', updateGenerateReportLink);
-      inp.addEventListener('input', updateGenerateReportLink);
-      if(officeSel) officeSel.addEventListener('change', updateGenerateReportLink);
-    })();
-    function isValidYMDQ(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime()); }
-    function shiftQuarterDate(dir) {
-      var inp = document.getElementById('quarterDatePickerInput');
-      if (!inp) return;
-      if (!inp.value) { var t = new Date(); t.setDate(t.getDate() + dir); inp.value = t.toISOString().split('T')[0]; return; }
-      if (!isValidYMDQ(inp.value)) return;
-      var d = new Date(inp.value); d.setDate(d.getDate() + dir);
-      var iso = d.toISOString().split('T')[0];
-      if (isValidYMDQ(iso)) inp.value = iso;
-    }
-    function getQuarterFromMD(m) { // 0-indexed month
+    function getQuarterFromMonthQ(m) { // 0-indexed month
       if (m <= 2) return 'Q1'; if (m <= 5) return 'Q2'; if (m <= 8) return 'Q3'; return 'Q4';
     }
-    function applyQuarterDate() {
-      var inp = document.getElementById('quarterDatePickerInput');
-      var v = inp ? String(inp.value || '').trim() : '';
-      if (!v) { clearQuarterDate(); return; }
-      if (!isValidYMDQ(v)) { alert('Please pick a valid date (YYYY-MM-DD).'); return; }
-      var d = new Date(v);
-      var y = d.getFullYear(); var q = getQuarterFromMD(d.getMonth());
-      // sanitize year 2000-2100
-      y = Math.max(2000, Math.min(2100, y));
-      document.getElementById('quarterDatePopover').style.display = 'none';
-      showGlobalTimer('Loading ' + q + ' ' + y + '...', '');
+    function getQuarterPickerState() {
+      var qEl = document.getElementById('quarterVal');
+      var yVis = document.getElementById('quarterYearSelect');
+      var yEl = document.getElementById('yearVal');
+      var qRaw = (qEl && qEl.value) ? String(qEl.value).trim() : 'Q1';
+      var q = (qRaw.toLowerCase() === 'all') ? 'all' : qRaw.toUpperCase();
+      if (!QRTERM_LABELS[q]) q = 'Q1';
+      var y = (yVis && yVis.value) ? yVis.value : ((yEl && yEl.value) ? yEl.value : String(new Date().getFullYear()));
+      var range = getQuarterRangeQ(q, y);
+      return { quarter: q, year: String(y), label: (QRTERM_LABELS[q] + ' ' + y), dateFrom: range.from, dateTo: range.to };
+    }
+    function syncQuarterPickerButtons() {
+      var st = getQuarterPickerState();
+      var yVis = document.getElementById('quarterYearSelect');
+      var yHid = document.getElementById('yearVal');
+      if (yVis && st.year && yVis.value !== st.year) { try { yVis.value = st.year; } catch (e) {} }
+      if (yHid && st.year) yHid.value = st.year;
+      document.querySelectorAll('#quarterDatePopover .dash-q-btn').forEach(function (b) {
+        var isActive = String(b.getAttribute('data-quarter')) === st.quarter;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      var badgeTxt = document.getElementById('quarterDateBadgeText');
+      if (badgeTxt && document.getElementById('quarterDateBadge')) badgeTxt.textContent = st.label;
+      // keep Generate Report in step with the visible quarter + year (single control, no separate date field)
+      updateAiReportLink();
+    }
+    function syncQuarterPickerYear() {
+      var yVis = document.getElementById('quarterYearSelect');
+      var yHid = document.getElementById('yearVal');
+      if (yVis && yHid && yVis.value) yHid.value = yVis.value;
+      syncQuarterPickerButtons();
+    }
+    function selectQuarterPicker(q) {
+      var hidden = document.getElementById('quarterVal');
+      if (hidden) hidden.value = QRTERM_LABELS[q] ? q : 'Q1';
+      syncQuarterPickerButtons();
+    }
+    function hideQuarterPicker() { var p = document.getElementById('quarterDatePopover'); if (p) p.style.display = 'none'; }
+    function toggleQuarterPicker() {
+      var pop = document.getElementById('quarterDatePopover');
+      if (!pop) return;
+      if (pop.style.display !== 'block') { pop.style.display = 'block'; syncQuarterPickerButtons(); }
+      else { pop.style.display = 'none'; }
+    }
+    function applyQuarterPicker() {
+      var st = getQuarterPickerState();
+      hideQuarterPicker();
+      showGlobalTimer('Loading ' + st.label + '...', '');
       var url = new URL(window.location.href);
-      url.searchParams.set('year', y);
-      url.searchParams.set('quarter', q);
-      url.searchParams.set('date', v);
+      url.searchParams.set('quarter', st.quarter);
+      url.searchParams.set('year', st.year);
+      url.searchParams.delete('date'); // day-level deep links are gone — the filter is quarter + year only
       window.location.href = url.toString();
     }
+    function clearQuarterPicker() {
+      hideQuarterPicker();
+      showGlobalTimer('Clearing filter...', '');
+      var url = new URL(window.location.href);
+      url.searchParams.delete('quarter');
+      url.searchParams.delete('year');
+      url.searchParams.delete('date');
+      window.location.href = url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '');
+    }
+    function applyDashboardQuarterHere() {
+      if (!_qMirrorState) return;
+      var url = new URL(window.location.href);
+      url.searchParams.set('quarter', _qMirrorState.quarter);
+      url.searchParams.set('year', _qMirrorState.year);
+      url.searchParams.delete('date');
+      showGlobalTimer('Loading ' + _qMirrorState.label + '...', '');
+      window.location.href = url.toString();
+    }
+    // Generate Report follows the SAME quarter + year as the page filter (badge / popover) — one control only
+    function updateAiReportLink() {
+      var btn = document.getElementById('btnGenerateReport');
+      if (!btn) return;
+      var st = getQuarterPickerState();
+      var range = getQuarterRangeQ(st.quarter, st.year);
+      var officeSel = document.getElementById('quarterOfficeFilter');
+      var office = officeSel ? officeSel.value : '<%= typeof selectedOffice !== "undefined" ? selectedOffice : "all" %>';
+      var params = new URLSearchParams();
+      params.set('filterType', 'range');
+      params.set('office', office || 'all');
+      params.set('dateFrom', range.from);
+      params.set('dateTo', range.to);
+      btn.href = '/admin/report?' + params.toString();
+      var label = (st.quarter === 'all') ? ('Whole Year ' + st.year) : ((QRTERM_LABELS[st.quarter] || 'Q1') + ' ' + st.year);
+      btn.title = 'Generate report for ' + label + ' (' + range.from + ' to ' + range.to + ')';
+    }
+    // ---- Dashboard mirror: read the dashboard's quarter filter (localStorage) and surface it here ----
+    (function quarterPickerInit() {
+      try {
+        var url = new URL(window.location.href);
+        var explicit = url.searchParams.has('quarter') || url.searchParams.has('year');
+        // URL says "all" (whole year): keep that state so the badge never shows a single quarter by mistake
+        if (String(url.searchParams.get('quarter') || '').toLowerCase() === 'all') {
+          var hq = document.getElementById('quarterVal');
+          if (hq) hq.value = 'all';
+          var hy = document.getElementById('yearVal');
+          var uy = url.searchParams.get('year');
+          if (hy && uy) hy.value = String(uy);
+        }
+        var raw = localStorage.getItem('psau_global_dateFilter');
+        var gf = null; try { gf = raw ? JSON.parse(raw) : null; } catch (e) { gf = null; }
+        var q = null, y = null, label = '';
+        if (gf && gf.filterType==='quarter' && gf.badgeText) {
+          // QUARTER FILTER: the dashboard filters by quarter + year — mirror the readable label
+          // ("3rd Quarter 2026") instead of converting it to a single day (the old day picker is gone).
+          q = (gf.quarter && String(gf.quarter).toLowerCase() !== 'all') ? String(gf.quarter).toUpperCase() : 'all';
+          y = gf.year ? String(gf.year) : '';
+          label = gf.badgeText;
+        } else if (gf && gf.dateFrom && /^\d{4}-\d{2}-\d{2}$/.test(gf.dateFrom)) {
+          var gd = new Date(gf.dateFrom);
+          if (!isNaN(gd.getTime())) { q = getQuarterFromMonthQ(gd.getMonth()); y = String(gd.getFullYear()); label = QRTERM_LABELS[q] + ' ' + y; }
+        }
+        if (q && y) {
+          _qMirrorState = { quarter: q, year: y, label: label || (QRTERM_LABELS[q] + ' ' + y) };
+          var st = getQuarterPickerState();
+          var differs = (st.quarter !== _qMirrorState.quarter) || (String(st.year) !== _qMirrorState.year);
+          var mirrorLabel = document.getElementById('quarterDateMirrorLabel');
+          var hint = document.getElementById('quarterDateMirrorHint');
+          if (mirrorLabel) mirrorLabel.textContent = _qMirrorState.label;
+          // Offer the shortcut only when this page does not already follow the dashboard filter
+          if (hint && (!explicit || differs)) hint.style.display = 'inline-flex';
+        }
+        syncQuarterPickerButtons();
+      } catch (e) {}
+    })();
     function applyQuarterOfficeFilter(val) {
       showGlobalTimer('Filtering by office...', '');
       var url = new URL(window.location.href);
@@ -828,11 +864,7 @@
       }
       window.location.href = url.toString();
     }
-    function clearQuarterDate() {
-      var pop = document.getElementById('quarterDatePopover');
-      if (pop) pop.style.display = 'none';
-      window.location.href = '/admin/quarterly-reports';
-    }
+    // close the quarter picker on outside click / Esc (same behaviour as the dashboard popover)
     document.addEventListener('click', function (e) {
       var pop = document.getElementById('quarterDatePopover');
       var badge = document.getElementById('quarterDateBadge');
@@ -840,7 +872,7 @@
       if (pop.contains(e.target) || (badge && badge.contains(e.target))) return;
       pop.style.display = 'none';
     });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { var pop = document.getElementById('quarterDatePopover'); if (pop) pop.style.display = 'none'; } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hideQuarterPicker(); });
     function printAIReport() {
       const activeOffice = (document.getElementById('quarterOfficeFilter') && document.getElementById('quarterOfficeFilter').value) ? document.getElementById('quarterOfficeFilter').value : '<%= typeof selectedOffice !== "undefined" ? selectedOffice : "all" %>';
       const p = new URLSearchParams({ quarter: '<%= activeQuarter %>', year: '<%= selectedYear %>', office: activeOffice }); window.open('/admin/print-ai-report?' + p.toString(), '_blank');

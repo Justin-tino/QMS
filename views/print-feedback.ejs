@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filled Feedback - <%= typeof fb !== 'undefined' ? fb.pangalan : 'PSAU' %></title>
+<link rel="icon" type="image/png" href="/images/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+body{background:#eef2f1;}
+.pf-topbar{max-width:860px;margin:1rem auto 0 auto;padding:0 1rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+.pf-topbar .meta{font-size:.78rem;color:#475569;font-weight:600;}
+.pf-topbar .actions{display:flex;gap:.5rem;}
+.pf-topbar button{padding:.55rem 1.1rem;border:none;border-radius:8px;font-weight:800;font-size:.8rem;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:.45rem;}
+.btn-print{background:#1b5e20;color:#fff;}
+.btn-close{background:#475569;color:#fff;}
+.filled-form .emoji-card,.filled-form .radio-option,.filled-form .check-option{cursor:default;}
+.filled-form input,.filled-form select,.filled-form textarea{pointer-events:none;}
+.filled-form input[type="text"],.filled-form input[type="number"],.filled-form input[type="date"],.filled-form input[type="email"],.filled-form select,.filled-form textarea{background:#f8fafc;color:#0f172a;font-weight:600;}
+.filled-form .radio-option.is-chosen .radio-label{background:rgba(27,94,32,.12);border-color:#1b5e20;color:#1b5e20;font-weight:800;box-shadow:0 0 0 2px rgba(27,94,32,.18);}
+.filled-form .check-option.is-chosen{background:rgba(27,94,32,.07);border-color:#1b5e20;}
+.filled-form .check-option.is-chosen .check-label{color:#1b5e20;font-weight:800;}
+.filled-form .check-option.is-chosen input[type="radio"]{background:#1b5e20;border-color:#1b5e20;}
+.filled-form .check-option.is-chosen input[type="radio"]::after{content:'\2713';color:#fff;}
+.filled-form .emoji-card.is-chosen .emoji-card-content{border-color:#1b5e20;background:rgba(27,94,32,.08);box-shadow:0 0 0 2px rgba(27,94,32,.25);}
+.filled-form .emoji-card.is-chosen .emoji-label{color:#1b5e20;font-weight:800;}
+.filled-form .emoji-card.is-chosen .emoji-face{transform:scale(1.25);}
+.chosen-tag{display:inline-block;margin-top:.35rem;font-size:.68rem;font-weight:800;color:#1b5e20;background:#e8f5e9;border:1px solid #1b5e20;padding:.1rem .5rem;border-radius:20px;}
+.audit-strip{max-width:860px;margin:1rem auto 2rem auto;padding:.7rem 1rem;background:#fff;border:1px dashed #94a3b8;border-radius:10px;font-size:.75rem;color:#475569;}
+@media print{
+@page{margin:10mm;}
+body{background:#fff;}
+.pf-topbar,.audit-strip,.site-footer{display:none !important;}
+.form-page{padding:0 !important;}
+.form-container{max-width:100% !important;}
+.form-card{box-shadow:none !important;border:1px solid #000 !important;}
+.form-header,.filled-form .is-chosen .radio-label,.filled-form .is-chosen .emoji-card-content{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
+</style>
+</head>
+<body>
+<div class="pf-topbar">
+<div class="meta"><i class="fas fa-file-lines"></i> Filled Customer Feedback Form &bull; ID: <%= typeof feedbackId !== 'undefined' ? feedbackId : 'N/A' %> &bull; Printed by <%= typeof printedBy !== 'undefined' ? printedBy : '' %> (<%= typeof printedRole !== 'undefined' ? printedRole : '' %>)</div>
+<div class="actions">
+<button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print / Save as PDF</button>
+<button class="btn-close" onclick="window.close()"><i class="fas fa-xmark"></i> Close</button>
+</div>
+</div>
+<div class="form-page" style="padding-top:1rem;">
+<div class="form-container">
+<div class="form-card filled-form">
+<div class="form-header">
+<div class="form-logo-wrap" style="margin-bottom:.75rem;">
+<img src="/images/logo.png" alt="PSAU Logo" class="form-logo-img" style="height:70px;width:auto;">
+</div>
+<div class="control-no">Quality Management System Unit &nbsp;&nbsp;&nbsp; Control No.: QMS-CFF-2026 &nbsp;-&nbsp; <%= typeof officeCode !== 'undefined' ? officeCode : 'OQA' %></div>
+<h1>CUSTOMER FEEDBACK FORM</h1>
+<div class="subtitle">Pampanga State Agricultural University</div>
+</div>
+<div class="form-intro">
+<strong style="color:var(--psau-gold);">TULUNGAN MO KAMI MAS MAPABUTI ANG AMING MGA PROSESO AT SERBISYO!</strong><br><br>
+Salamat sa pagbisita sa Pampanga State Agricultural University (PSAU) isang malaking kasiyahan para amin na lagging maibigay sa inyo ang pinakamahusay na kalidad ng serbisyo. Ang Client Satisfaction Measurement (CSM) ay naglalayong masubaybayan ang karanasan ng taumbabayan hingil sainyong naging karanasan sa kakatapos lamang na transaksyon, upang mas mapabuti at lalong mapahusay ang aming sebisyo publiko. Ang personal ng impormasyon sa iyong ibabahagi ay mananatiling kumpidensyal. Maari ring piliin na hindi sagutan ang sarbey na ito.
+</div>
+<div class="form-body">
+<div class="section-title"><i class="fas fa-user"></i> Impormasyon ng Kliyente</div>
+<div class="form-row">
+<div class="form-group"><label>Pangalan</label><input type="text" value="<%= typeof fb !== 'undefined' ? fb.pangalan : '' %>" readonly></div>
+<div class="form-group"><label>Telepono</label><input type="text" value="<%= typeof fb !== 'undefined' ? fb.telepono : '' %>" readonly></div>
+</div>
+<div class="form-row"><div class="form-group"><label>Uri ng Kliyente</label>
+<div class="radio-group">
+<% ['Mamamayan','Negosyo','Gobyerno'].forEach(function(opt){ %>
+<label class="radio-option <%= (typeof fb !== 'undefined' && String(fb.uri_kliyente||'').toLowerCase().indexOf(opt.toLowerCase()) !== -1) ? 'is-chosen' : '' %>"><input type="radio" <%= (typeof fb !== 'undefined' && String(fb.uri_kliyente||'').toLowerCase().indexOf(opt.toLowerCase()) !== -1) ? 'checked' : '' %> disabled><span class="radio-label"><%= opt === 'Gobyerno' ? 'Gobyerno (Empleyado o Ahensya)' : opt %></span></label>
+<% }); %>
+</div></div></div>
+<div class="form-row"><div class="form-group"><label>Petsa</label><input type="text" value="<%= typeof fb !== 'undefined' ? fb.petsa : '' %>" readonly></div>
+<div class="form-group"><label>Kasarian</label>
+<div class="radio-group">
+<% ['Lalaki','Babae'].forEach(function(opt){ %>
+<label class="radio-option <%= (typeof fb !== 'undefined' && String(fb.kasarian||'').toLowerCase() === opt.toLowerCase()) ? 'is-chosen' : '' %>"><input type="radio" <%= (typeof fb !== 'undefined' && String(fb.kasarian||'').toLowerCase() === opt.toLowerCase()) ? 'checked' : '' %> disabled><span class="radio-label"><%= opt %></span></label>
+<% }); %>
+</div></div></div>
+<div class="form-row"><div class="form-group"><label>Edad</label><input type="text" value="<%= typeof fb !== 'undefined' ? fb.edad : '' %>" readonly></div>
+<div class="form-group"><label>Rehiyon</label><input type="text" value="<%= typeof fb !== 'undefined' ? fb.rehiyon : '' %>" readonly></div></div>
+<div class="form-row"><div class="form-group full-width"><label>Tanggapan na binisita</label><input type="text" value="<%= typeof fb !== 'undefined' ? fb.tanggapan : '' %>" readonly></div></div>
+<div class="form-row"><div class="form-group full-width"><label>Uri ng transaksyon o serbisyo</label><input type="text" value="<%= typeof fb !== 'undefined' ? fb.uri_transaksyon : '' %>" readonly></div></div>
+<div class="section-title"><i class="fas fa-landmark"></i> Citizen's Charter (CC)</div>
+<div class="sqd-instruction">PANUTO: Lagyan ng tsek ang iyong sagot sa mga sumusunod na katanungan tungkol sa Citizen's Charter (CC).</div>
+<div class="sqd-item"><div class="sqd-label"><strong>CC1</strong> &mdash; Alin sa mga sumusunod ang naglalarawan sa iyong kaalaman sa CC?</div>
+<div class="sqd-options" style="flex-direction:column;">
+<% cc1Options.forEach(function(opt){ %>
+<label class="check-option <%= (typeof fb !== 'undefined' && String(fb.cc1||'') === String(opt.value)) ? 'is-chosen' : '' %>"><input type="radio" <%= (typeof fb !== 'undefined' && String(fb.cc1||'') === String(opt.value)) ? 'checked' : '' %> disabled><span class="check-label"><%= opt.label %></span></label>
+<% }); %>
+</div></div>
+<div class="sqd-item"><div class="sqd-label"><strong>CC2</strong> &mdash; Kung alam ang CC (opsyon 1-3 sa CC1), masasabi mo ba na ang CC ay...?</div>
+<div class="sqd-options" style="flex-direction:column;">
+<% cc2Options.forEach(function(opt){ %>
+<label class="check-option <%= (typeof fb !== 'undefined' && String(fb.cc2||'') === String(opt.value)) ? 'is-chosen' : '' %>"><input type="radio" <%= (typeof fb !== 'undefined' && String(fb.cc2||'') === String(opt.value)) ? 'checked' : '' %> disabled><span class="check-label"><%= opt.label %></span></label>
+<% }); %>
+</div></div>
+<div class="sqd-item"><div class="sqd-label"><strong>CC3</strong> &mdash; Kung alam ang CC (opsyon 1-3 sa CC1), gaano nakatulong ang CC sa transaksyon mo?</div>
+<div class="sqd-options" style="flex-direction:column;">
+<% cc3Options.forEach(function(opt){ %>
+<label class="check-option <%= (typeof fb !== 'undefined' && String(fb.cc3||'') === String(opt.value)) ? 'is-chosen' : '' %>"><input type="radio" <%= (typeof fb !== 'undefined' && String(fb.cc3||'') === String(opt.value)) ? 'checked' : '' %> disabled><span class="check-label"><%= opt.label %></span></label>
+<% }); %>
+</div></div>
+<div class="section-title"><i class="fas fa-chart-bar"></i> Service Quality Dimensions (SQD 0-8)</div>
+<div class="sqd-instruction">PANUTO: Para sa SQD 0-8, lagyan ng tsek ang hanay na pinakaangkop sa iyong sagot.</div>
+<% sqdItems.forEach(function(item){ %>
+<div class="sqd-item"><div class="sqd-label"><strong><%= item.code %></strong>. <%= item.text %></div>
+<div class="emoji-grid">
+<% ratingLabels.forEach(function(rating){ %>
+<label class="emoji-card <%= (typeof fb !== 'undefined' && String(fb[item.id]||'') === String(rating.value)) ? 'is-chosen' : '' %>"><input type="radio" <%= (typeof fb !== 'undefined' && String(fb[item.id]||'') === String(rating.value)) ? 'checked' : '' %> disabled><div class="emoji-card-content"><span class="emoji-face"><%= rating.emoji %></span><span class="emoji-label"><%= rating.text %></span></div></label>
+<% }); %>
+</div></div>
+<% }); %>
+<div class="section-title"><i class="fas fa-comment-dots"></i> Karagdagang Feedback</div>
+<div class="form-group full-width"><label>Mga suhestiyon (opsyonal)</label><textarea rows="4" readonly><%= typeof fb !== 'undefined' ? fb.suggestions : '' %></textarea></div>
+<div class="form-group full-width"><label>Email address (opsyonal)</label><input type="email" value="<%= typeof fb !== 'undefined' ? fb.email : '' %>" readonly></div>
+</div></div></div></div>
+<div class="audit-strip"><strong>Audit trail:</strong> Feedback ID <%= typeof feedbackId !== 'undefined' ? feedbackId : 'N/A' %> &bull; Isinumite: <%= typeof fb !== 'undefined' ? (fb.submittedAt || fb.petsa || 'N/A') : 'N/A' %> &bull; Average SQD: <%= typeof fb !== 'undefined' ? (fb.avgSQD || 'N/A') : 'N/A' %> &bull; Printed: <%= typeof printedAt !== 'undefined' ? printedAt : '' %> by <%= typeof printedBy !== 'undefined' ? printedBy : '' %></div>
+<footer class="site-footer"><div class="footer-content"><p>&copy; 2026 Pampanga State Agricultural University &mdash; Quality Management System</p></div></footer>
+</body>
+</html>
+
+

@@ -4,3 +4,5 @@ serviceAccountKey.json
 .qodo/
 TASK/
 docx_extracted/
+server.out.log
+server.err.log

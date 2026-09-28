@@ -1280,14 +1280,47 @@ app.get('/admin/logout', (req, res) => {
 // ========== HELPERS: Date & Filter ==========
 function getFilterParams(reqQuery) {
   const selectedOffice = reqQuery.office || 'all';
-  const filterType = reqQuery.filterType || (reqQuery.month ? 'month' : ((reqQuery.dateFrom || reqQuery.dateTo) ? 'range' : 'overall'));
+  const filterType = reqQuery.filterType || (reqQuery.quarter ? 'quarter' : (reqQuery.month ? 'month' : ((reqQuery.dateFrom || reqQuery.dateTo) ? 'range' : 'overall')));
 
   let dateFrom = null;
   let dateTo = null;
   let periodLabel = 'Overall Total (All Time)';
   let monthVal = reqQuery.month || '';
+  // QUARTER FILTER (dashboard date filter): quarters + year only, no specific day/month picker.
+  // Boundaries match quarterlyReports.js — Q1: Jan 1 - Mar 31 | Q2: Apr 1 - Jun 30 |
+  // Q3: Jul 1 - Sep 30 | Q4: Oct 1 - Dec 31. "all" = entire year (Q1 through Q4).
+  let selectedYear = null;
+  let quarterVal = '';
+  let dateFromStr = reqQuery.dateFrom || '';
+  let dateToStr = reqQuery.dateTo || '';
 
-  if (filterType === 'month' && monthVal) {
+  if (filterType === 'quarter') {
+    const parsedYear = parseInt(reqQuery.year, 10);
+    const yearNum = (!isNaN(parsedYear) && parsedYear >= 2000 && parsedYear <= 2100) ? parsedYear : new Date().getFullYear();
+    const quarterMap = {
+      Q1: { startMonth: 0, label: '1st Quarter' },
+      Q2: { startMonth: 3, label: '2nd Quarter' },
+      Q3: { startMonth: 6, label: '3rd Quarter' },
+      Q4: { startMonth: 9, label: '4th Quarter' }
+    };
+    const qKey = String(reqQuery.quarter || '').trim().toUpperCase();
+    const quarter = quarterMap[qKey] || null;
+    if (quarter) {
+      dateFrom = new Date(yearNum, quarter.startMonth, 1, 0, 0, 0, 0);
+      dateTo = new Date(yearNum, quarter.startMonth + 3, 0, 23, 59, 59, 999);
+      periodLabel = `${quarter.label} ${yearNum}`;
+    } else {
+      // All = entire year, from the first quarter to the fourth quarter
+      dateFrom = new Date(yearNum, 0, 1, 0, 0, 0, 0);
+      dateTo = new Date(yearNum, 11, 31, 23, 59, 59, 999);
+      periodLabel = `All Quarters (Q1-Q4) ${yearNum}`;
+    }
+    const pad2 = (n) => String(n).padStart(2, '0');
+    dateFromStr = `${dateFrom.getFullYear()}-${pad2(dateFrom.getMonth() + 1)}-${pad2(dateFrom.getDate())}`;
+    dateToStr = `${dateTo.getFullYear()}-${pad2(dateTo.getMonth() + 1)}-${pad2(dateTo.getDate())}`;
+    selectedYear = yearNum;
+    quarterVal = quarter ? qKey : 'all';
+  } else if (filterType === 'month' && monthVal) {
     const parts = monthVal.split('-');
     if (parts.length === 2) {
       const yearNum = parseInt(parts[0]);
@@ -1340,8 +1373,10 @@ function getFilterParams(reqQuery) {
     dateFrom,
     dateTo,
     monthVal,
-    dateFromStr: reqQuery.dateFrom || '',
-    dateToStr: reqQuery.dateTo || '',
+    dateFromStr,
+    dateToStr,
+    selectedYear,
+    quarterVal,
     periodLabel
   };
 }
@@ -1477,6 +1512,19 @@ app.get('/admin/dashboard', requireAuth, async (req, res) => {
 
     const filterParams = getFilterParams(req.query);
     const feedbacks = filterFeedbacksByParams(allFeedbacks, filterParams);
+
+    // Year picker for the quarter filter (year only, no month/day) — current year plus the
+    // 5 previous calendar years, plus every year present in the feedback data.
+    const yearSet = new Set();
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= currentYear - 5; y--) yearSet.add(y);
+    allFeedbacks.forEach(f => {
+      const d = new Date(f.petsa || f.submittedAt || 0);
+      if (!isNaN(d.getTime())) yearSet.add(d.getFullYear());
+    });
+    if (filterParams.selectedYear) yearSet.add(filterParams.selectedYear);
+    const availableYears = [...yearSet].sort((a, b) => b - a);
+
     // BUGFIX: default order = newest first (matches the "Pinakabago Unang Itala" sort label).
     // Sort key: server timestamp (submittedAt) with client date (petsa) as fallback.
     feedbacks.sort((a, b) => {
@@ -1522,6 +1570,9 @@ app.get('/admin/dashboard', requireAuth, async (req, res) => {
       filterType: filterParams.filterType,
       periodLabel: filterParams.periodLabel,
       monthVal: filterParams.monthVal,
+      quarterVal: filterParams.quarterVal,
+      selectedYear: filterParams.selectedYear,
+      availableYears,
       clusteredDepartments,
       mlMetrics,
       userRole: req.session.role || 'admin',
@@ -2253,8 +2304,10 @@ app.get(['/admin/print-ai-report', '/admin/print-report'], requireAuth, async (r
     let feedbacks = allFeedbacks;
     let periodTitle = '';
     let scopeLabel = null;
+    let renderDateFrom = req.query.dateFrom || '';
+    let renderDateTo = req.query.dateTo || '';
 
-    if (selectedQuarter && selectedYear) {
+    if (selectedQuarter && selectedYear && String(selectedQuarter).toUpperCase() !== 'ALL') {
       const quarterlyData = processQuarterlyData(allFeedbacks, selectedYear, selectedQuarter);
       feedbacks = quarterlyData.activeReport.items;
       if (req.query.office && req.query.office !== 'all') {
@@ -2267,6 +2320,8 @@ app.get(['/admin/print-ai-report', '/admin/print-report'], requireAuth, async (r
     } else {
       const filterParams = getFilterParams(req.query);
       feedbacks = filterFeedbacksByParams(allFeedbacks, filterParams);
+      renderDateFrom = filterParams.dateFromStr || '';
+      renderDateTo = filterParams.dateToStr || '';
       periodTitle = filterParams.selectedOffice !== 'all'
         ? `${filterParams.selectedOffice} — ${filterParams.periodLabel}`
         : `All Offices / Departments — ${filterParams.periodLabel}`;
@@ -2277,8 +2332,8 @@ app.get(['/admin/print-ai-report', '/admin/print-report'], requireAuth, async (r
 
     res.render('print-ai-report', {
       officeName: periodTitle,
-      dateFrom: req.query.dateFrom || '',
-      dateTo: req.query.dateTo || '',
+      dateFrom: renderDateFrom,
+      dateTo: renderDateTo,
       aiAnalysisCleaned: hybridAnalysis,
       localAnalysisCleaned: hybridAnalysis,
       generatedAt: new Date().toLocaleString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -2286,6 +2341,86 @@ app.get(['/admin/print-ai-report', '/admin/print-report'], requireAuth, async (r
   } catch (err) {
     console.error('Print ML Report error:', err);
     res.status(500).send('Error generating print view for ML report.');
+  }
+});
+
+// Admin/Staff: Print single filled Customer Feedback Form (same look as public form, read-only)
+app.get('/admin/feedback/print/:id', requireAuth, async (req, res) => {
+  try {
+    const fid = String(req.params.id || '').trim();
+    if (!isValidId(fid)) return res.status(400).send('Invalid feedback ID.');
+    const doc = await db.collection('feedbacks').doc(fid).get();
+    if (!doc || !doc.exists) return res.status(404).send('Feedback not found.');
+    const d = doc.data() || {};
+    const fb = {
+      pangalan: sanitizeText(d.pangalan, 200) || 'N/A',
+      telepono: sanitizeText(d.telepono, 50) || 'N/A',
+      uri_kliyente: sanitizeText(d.uri_kliyente, 100) || 'N/A',
+      petsa: sanitizeText(d.petsa, 20) || '',
+      kasarian: sanitizeText(d.kasarian, 20) || 'N/A',
+      edad: sanitizeText(d.edad, 10) || 'N/A',
+      rehiyon: sanitizeText(d.rehiyon, 200) || 'N/A',
+      tanggapan: sanitizeText(d.tanggapan, 300) || 'N/A',
+      uri_transaksyon: sanitizeText(d.uri_transaksyon, 200) || 'N/A',
+      cc1: sanitizeText(d.cc1, 10), cc2: sanitizeText(d.cc2, 10), cc3: sanitizeText(d.cc3, 10),
+      sqd0: sanitizeText(d.sqd0, 10), sqd1: sanitizeText(d.sqd1, 10), sqd2: sanitizeText(d.sqd2, 10),
+      sqd3: sanitizeText(d.sqd3, 10), sqd4: sanitizeText(d.sqd4, 10), sqd5: sanitizeText(d.sqd5, 10),
+      sqd6: sanitizeText(d.sqd6, 10), sqd7: sanitizeText(d.sqd7, 10), sqd8: sanitizeText(d.sqd8, 10),
+      suggestions: sanitizeText(d.suggestions, 2000),
+      email: sanitizeText(d.email, 200),
+      avgSQD: d.avgSQD ? String(d.avgSQD).substring(0, 10) : 'N/A',
+      submittedAt: d.submittedAt ? String(d.submittedAt).substring(0, 25) : ''
+    };
+    const officeCodeMap = { 'Office of Institutional Quality Assurance': 'OQA', 'College of Veterinary Medicine': 'CVM', 'Office of the President': 'OPR', 'Legal Unit': 'LEU', 'Quality Management System Unit': 'QMS' };
+    let officeCode = officeCodeMap[fb.tanggapan] || 'OQA';
+    if (!officeCodeMap[fb.tanggapan] && fb.tanggapan && fb.tanggapan !== 'N/A') {
+      const m = fb.tanggapan.match(/\(([A-Z]{2,4})\)/);
+      if (m) officeCode = m[1];
+      else officeCode = fb.tanggapan.split(/\s+/).map(w => w[0]).join('').substring(0, 4).toUpperCase();
+    }
+    const cc1Options = [
+      { value: '1', label: 'Alam ko ang CC at nakita ko ito sa napuntahang opisina' },
+      { value: '2', label: 'Alam ko ang CC pero hindi ko ito nakita sa napuntahang opisina' },
+      { value: '3', label: 'Nalaman ko ang CC nang makita ko ito sa napuntahang opisina' },
+      { value: '4', label: 'Hindi ko alam kung ano ang CC at wala akong nakita sa napuntahang opisina' }
+    ];
+    const cc2Options = [
+      { value: '1', label: 'Madaling makita' }, { value: '2', label: 'Medyo madaling makita' },
+      { value: '3', label: 'Mahirap makita' }, { value: '4', label: 'Hindi makita' },
+      { value: 'N/A', label: 'N/A' }
+    ];
+    const cc3Options = [
+      { value: '1', label: 'Sobrang nakatulong' }, { value: '2', label: 'Nakatulong naman' },
+      { value: '3', label: 'Hindi nakatulong' }, { value: 'N/A', label: 'N/A' }
+    ];
+    const sqdItems = [
+      { id: 'sqd0', code: 'SQD0', text: 'Nasiyahan ako sa serbisyo na aking natanggap sa napuntahan na tanggapan.' },
+      { id: 'sqd1', code: 'SQD1', text: 'Makatawiran ang oras na aking ginugol para sa pagproseso ng aking transaksyon.' },
+      { id: 'sqd2', code: 'SQD2', text: 'Ang opisina ay sumusunod sa mga kinakailangang dokumento at mga hakbang batay sa impormasyong ibinigay.' },
+      { id: 'sqd3', code: 'SQD3', text: 'Ang mga hakbang sa pagproseso, kasama na ang pagbayad ay madali at simple lamang.' },
+      { id: 'sqd4', code: 'SQD4', text: 'Mabilis at madali akong nakahanap ng impormasyon tungkol sa aking transaksyon mula sa opisina o sa website nito.' },
+      { id: 'sqd5', code: 'SQD5', text: 'Nagbayad ako ng makatwirang halaga para sa aking transaksyon. (Kung libre, N/A).' },
+      { id: 'sqd6', code: 'SQD6', text: 'Pakiramdam ko ay patas ang opisina sa lahat, o "walang palakasan".' },
+      { id: 'sqd7', code: 'SQD7', text: 'Magalang akong tinrato ng mga tauhan, at handang tumulong sa akin.' },
+      { id: 'sqd8', code: 'SQD8', text: 'Nakuha ko ang kinakailangan ko mula sa tanggapan ng gobyerno, kung tinanggihan man, ito ay sapat na ipinaliwanag sa akin.' }
+    ];
+    const ratingLabels = [
+      { value: '1', emoji: '😡', text: 'Lubos na hindi sumasang-ayon' },
+      { value: '2', emoji: '🙁', text: 'Hindi sumasang-ayon' },
+      { value: '3', emoji: '😐', text: 'Walang kinikilingan' },
+      { value: '4', emoji: '🙂', text: 'Sumasang-ayon' },
+      { value: '5', emoji: '😍', text: 'Lubos na sumasang-ayon' },
+      { value: 'N/A', emoji: '🚫', text: 'N/A' }
+    ];
+    res.render('print-feedback', {
+      fb, feedbackId: fid, officeCode, cc1Options, cc2Options, cc3Options, sqdItems, ratingLabels,
+      printedBy: req.session.adminUser || 'staff',
+      printedRole: req.session.role || (req.session.isAdmin ? 'admin' : 'staff'),
+      printedAt: new Date().toLocaleString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    });
+  } catch (err) {
+    console.error('Print single feedback error:', err);
+    res.status(500).send('Error generating printable feedback form.');
   }
 });
 
