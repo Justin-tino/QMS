@@ -247,6 +247,30 @@ body {
     background: var(--bg-secondary);
 }
 
+/* Office locked via QR code link (?office=CODE) */
+.form-group select:disabled {
+    cursor: not-allowed;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    opacity: 1;
+    -webkit-text-fill-color: var(--text-primary);
+    border-style: dashed;
+}
+
+.locked-field-note {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.45rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.locked-field-note i {
+    color: var(--accent-blue);
+}
+
 .radio-group {
     display: flex;
     flex-wrap: wrap;

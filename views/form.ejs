@@ -541,22 +541,42 @@
             }
         });
 
-        // Auto-select office from URL query parameter (e.g. ?office=OQA)
+        // Auto-select office from URL query parameter (e.g. ?office=OQA).
+        // When the form is opened through a QR code link, lock the office so the
+        // respondent cannot change it (keeps every QR submission attributed correctly).
         const urlParams = new URLSearchParams(window.location.search);
         const officeParam = urlParams.get('office');
         if (officeParam) {
             const selectEl = document.getElementById('tanggapan');
             const paramLower = officeParam.toLowerCase().trim();
+            let matchedOption = null;
             for (let i = 0; i < selectEl.options.length; i++) {
                 const opt = selectEl.options[i];
                 const optVal = opt.value.toLowerCase().trim();
                 const optCode = (opt.getAttribute('data-code') || '').toLowerCase().trim();
                 if (optCode === paramLower || optVal === paramLower) {
                     selectEl.selectedIndex = i;
+                    matchedOption = opt;
                     // Trigger change event to update the header code
                     selectEl.dispatchEvent(new Event('change'));
                     break;
                 }
+            }
+
+            if (matchedOption) {
+                // Disabled controls are excluded from FormData, so mirror the locked
+                // value into a hidden input that still carries name="tanggapan".
+                selectEl.disabled = true;
+                const lockedValue = document.createElement('input');
+                lockedValue.type = 'hidden';
+                lockedValue.name = 'tanggapan';
+                lockedValue.value = matchedOption.value;
+                selectEl.parentNode.appendChild(lockedValue);
+
+                const lockNote = document.createElement('div');
+                lockNote.className = 'locked-field-note';
+                lockNote.innerHTML = '<i class="fas fa-lock"></i> Naka-lock ang tanggapang ito dahil sa QR code na iyong na-scan.';
+                selectEl.parentNode.appendChild(lockNote);
             }
         }
 
