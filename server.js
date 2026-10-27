@@ -196,7 +196,10 @@ async function getAllAdminEmails() {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-// Railway / production is behind a proxy (HTTPS terminated at proxy, forwarded as http)
+// Public deployment URL (Render sets RENDER_EXTERNAL_URL automatically; BASE_URL is
+// configured explicitly in render.yaml as https://psauqms.onrender.com).
+const BASE_URL = (process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`).replace(/\/+$/, '');
+// Render / production is behind a proxy (HTTPS terminated at proxy, forwarded as http)
 // Must trust proxy so secure cookies are set correctly
 if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
@@ -1864,7 +1867,7 @@ app.post('/admin/settings/send-password-reset', requireAuth, requireAdmin, valid
     }
 
     if (!resetLink) {
-      resetLink = `http://localhost:${PORT}/admin/login`;
+      resetLink = `${BASE_URL}/admin/login`;
     }
 
     const sent = await emailService.sendPasswordResetEmail(adminEmail, resetLink);
@@ -2840,10 +2843,10 @@ async function startServer() {
   await initMLModel();
   migrateDecodeStoredEntities(); // fire-and-forget: repairs legacy double-escaped records
   const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n PSAU Feedback System running on http://localhost:${PORT}`);
-    console.log(` Form: http://localhost:${PORT}/`);
-    console.log(` Admin: http://localhost:${PORT}/admin/login`);
-    console.log(` Dashboard: http://localhost:${PORT}/admin/login\n`);
+    console.log(`\n PSAU Feedback System running on ${BASE_URL}`);
+    console.log(` Form: ${BASE_URL}/`);
+    console.log(` Admin: ${BASE_URL}/admin/login`);
+    console.log(` Dashboard: ${BASE_URL}/admin/login\n`);
   });
 
   // Graceful shutdown

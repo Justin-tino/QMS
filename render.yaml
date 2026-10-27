@@ -5,7 +5,7 @@
 
 services:
   - type: web
-    name: psau-qms
+    name: psauqms          # service name -> https://psauqms.onrender.com
     runtime: node
     plan: free            # change to starter/pro if you need more RAM or no spin-down
     branch: main
@@ -16,8 +16,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000      # Render injects its own PORT; 10000 is sensible default
+      # Public URL of the deployed service (used for absolute links in emails/logs)
+      - key: BASE_URL
+        value: https://psauqms.onrender.com
+      # Render injects PORT automatically; do not hardcode it here.
       # --- Required secrets — set these in Render Dashboard -> Environment ---
       # Generate SESSION_SECRET:  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
       - key: SESSION_SECRET
@@ -33,12 +35,12 @@ services:
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
-        value: 465         # Render: use 465 (SSL). 587 is often blocked on free tiers (ETIMEDOUT)
+        value: 465         # NOTE: Render Free blocks outbound SMTP (25/465/587) — Brevo HTTPS is used for email
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS
         sync: false
-      # Brevo HTTPS API (Railway/Render Free safe — uses 443, not blocked like SMTP)
+      # Brevo HTTPS API (Render Free safe — uses 443, not blocked like SMTP)
       - key: BREVO_API_KEY
         sync: false
       - key: BREVO_SENDER_EMAIL
@@ -48,3 +50,12 @@ services:
       # JSON stringified serviceAccountKey.json — see notes below
       - key: FIREBASE_SERVICE_ACCOUNT
         sync: false
+
+# NOTES
+# - The service name above ("psauqms") determines the default URL:
+#   https://psauqms.onrender.com
+# - Set all `sync: false` secrets in Render Dashboard -> Environment on first deploy.
+# - FIREBASE_SERVICE_ACCOUNT must be the ONE-LINE JSON of serviceAccountKey.json:
+#   node -e "console.log(JSON.stringify(require('./serviceAccountKey.json')))"
+# - Render Free blocks outbound SMTP ports 25/465/587. Email relies on BREVO_API_KEY
+#   (HTTPS API on port 443); SMTP is only a fallback for paid instances.
